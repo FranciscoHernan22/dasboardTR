@@ -15,14 +15,18 @@ class Rutina extends Model
         'grupo',
         'segmento',
         'nombre',
+            'ejercicio_id',  // 👈 ¿está esto?
         'series',
-        'reps',
         'dia',
         'semana',
         'mes',
         'anio',
         'usuario',
         'entrenador',
+    ];
+
+    protected $casts = [
+        'series' => 'array',
     ];
 
     public function user()

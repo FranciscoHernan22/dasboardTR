@@ -27,8 +27,10 @@ class EntrenadorRutinaController extends Controller
 
     // 🔥 ejercicios indexados por id
     $ejercicios = Ejercicio::all()->keyBy('id');
-    $ejerciciosPorGrupo = Ejercicio::all()->groupBy('segmento');
-
+$ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
+    ->get()
+    ->groupBy('segmento');
+    
     // 🔥 lectura correcta
     $bloques = Rutina::where('user_id', $cliente->id)
         ->where('semana', $semana)
@@ -66,21 +68,35 @@ public function guardar(Request $request, User $cliente, $semana, $dia)
 
         foreach ($bloque['ejercicios'] as $ej) {
 
-            // 🔥 ejercicio REAL
             $ejercicio = Ejercicio::findOrFail($ej['ejercicio_id']);
 
+            // 🔥 NORMALIZAR SERIES SIEMPRE
+             $series = [];
+
+            if (!empty($ej['series']) && is_array($ej['series'])) {
+                    foreach ($ej['series'] as $s) {
+                        $series[] = [
+                            'reps' => (int) ($s['reps'] ?? 0),
+                            'peso' => (int) ($s['peso'] ?? 0),
+                        ];
+                    }
+                }
+
             Rutina::create([
-                'user_id'       => $cliente->id,
-                'semana'        => $semana,
-                'dia'           => $dia,
-                'grupo'         => $grupo,
-                'tipo'          => $bloque['tipo'],
-                'orden'         => $orden,
-                'ejercicio_id'  => $ejercicio->id,
-                'segmento'      => $ejercicio->segmento, // ✅ SIEMPRE CORRECTO
-                'nombre'        => $ejercicio->nombre,
-                'series'        => $ej['series'] ?? 0,
-                'reps'          => $ej['reps'] ?? 0,
+                'user_id'      => $cliente->id,
+                'semana'       => $semana,
+                'dia'          => $dia,
+                'grupo'        => $grupo,
+                'tipo'         => $bloque['tipo'],
+                'orden'        => $orden,
+                'ejercicio_id' => $ejercicio->id,
+                'segmento'     => $ejercicio->segmento,
+                'nombre'       => $ejercicio->nombre,
+                'series'       => $series,
+
+                // 🔥 AQUÍ ESTÁ EL FIX
+             
+                //    'series'       => $ej['series'] ?? [],
             ]);
         }
 

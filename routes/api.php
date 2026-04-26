@@ -22,3 +22,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('/rutina/{cliente}/{semana}/{dia}', 
     [RutinaApiController::class, 'ver']);
+
+    Route::patch('rutina/{cliente}/{semana}/{dia}/pesos', [RutinaApiController::class, 'guardarPesos']);

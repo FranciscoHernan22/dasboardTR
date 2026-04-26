@@ -11,7 +11,7 @@ use App\Http\Controllers\recibirguardarController;
 use App\Http\Controllers\EntrenadorRutinaController;
 use App\Http\Controllers\EntrenadorClienteController;
 
- 
+ use App\Http\Controllers\RutinaPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,7 +56,9 @@ Route::post('/rutinas/guardar', [recibirguardarController::class, 'guardarRutina
     Route::get('/rutina', [CrearRutinaController::class, 'crearRutina'])->name('crearRutina');
 
 
-
+Route::get('entrenador/clientes/{cliente}/rutina/{semana}/{dia}/pdf',
+    [RutinaPdfController::class, 'generar']
+)->name('entrenador.rutina.pdf');
  
 
 // Dashboard entrenador

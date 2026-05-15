@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,7 +13,7 @@ class Rutina extends Model
         'grupo',
         'segmento',
         'nombre',
-            'ejercicio_id',  // 👈 ¿está esto?
+        'ejercicio_id',
         'series',
         'dia',
         'semana',
@@ -23,6 +21,11 @@ class Rutina extends Model
         'anio',
         'usuario',
         'entrenador',
+        'orden',
+        'descanso_valor',
+        'descanso_unidad',
+        'nota_sesion',   // ← nuevo
+        'nota_ej',       // ← nuevo
     ];
 
     protected $casts = [

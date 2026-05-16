@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -19,16 +18,16 @@ class HIstorialController extends Controller
         $anio = (int) request('anio', date('Y'));
 
         $rutinas = Rutina::where('user_id', $cliente->id)
-            ->whereYear('created_at', $anio)
-            ->select('semana', 'dia')
+            ->whereYear('fecha', $anio)
+            ->whereNotNull('fecha')
+            ->select('semana', 'dia', 'fecha')
             ->distinct()
             ->get();
 
         $mapa = [];
         foreach ($rutinas as $r) {
-            $mes      = (int) ceil($r->semana / 4);
-            $semLocal = (($r->semana - 1) % 4) + 1;
-            $mapa[$mes][$semLocal][$r->dia] = true;
+            $mes  = (int) date('n', strtotime($r->fecha));
+            $mapa[$mes][$r->semana][$r->dia] = true;
         }
 
         $mesesData = collect(range(1, 12))->map(fn($m) => [
@@ -44,16 +43,14 @@ class HIstorialController extends Controller
 
     public function mes(User $cliente, int $anio, int $mes)
     {
-        $semanaInicio = ($mes - 1) * 4 + 1;
-        $semanaFin    = $mes * 4;
-
         $rutinas = Rutina::where('user_id', $cliente->id)
-            ->whereYear('created_at', $anio)
-            ->whereBetween('semana', [$semanaInicio, $semanaFin])
-            ->select('semana', 'dia')
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->whereNotNull('fecha')
+            ->select('semana', 'dia', 'fecha')
             ->distinct()
             ->get()
-            ->groupBy(fn($r) => (($r->semana - 1) % 4) + 1)
+            ->groupBy('semana')
             ->map(fn($s) => $s->pluck('dia')->flip());
 
         return view('entrenador.historial.mes', compact('cliente', 'anio', 'mes', 'rutinas'));
@@ -61,12 +58,12 @@ class HIstorialController extends Controller
 
     public function dia(User $cliente, int $anio, int $mes, int $sem, int $dia)
     {
-        $semanaGlobal = ($mes - 1) * 4 + $sem;
-
         $rutinas = Rutina::where('user_id', $cliente->id)
-            ->whereYear('created_at', $anio)
-            ->where('semana', $semanaGlobal)
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->where('semana', $sem)
             ->where('dia', $dia)
+            ->whereNotNull('fecha')
             ->get();
 
         $bloques = $rutinas->groupBy('grupo')->map(function ($grupo) {

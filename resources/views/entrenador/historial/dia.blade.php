@@ -159,12 +159,12 @@ body, .entrenador-content {
         {{ $cliente->name }}
     </span>
     @if($rutina)
-        <a href="{{ route('entrenador.rutina.editar', [$cliente->id, $mes, $sem, $dia]) }}"
+<a href="{{ route('entrenador.rutina.editar', [$cliente->id, $sem, $dia]) }}"
            class="btn-editar" style="margin-left:auto">
             ✏️ &nbsp;Editar rutina
         </a>
     @else
-        <a href="{{ route('entrenador.rutina.editar', [$cliente->id, $mes, $sem, $dia]) }}"
+<a href="{{ route('entrenador.rutina.editar', [$cliente->id, $sem, $dia]) }}"
            class="btn-crear" style="margin-left:auto">
             ＋ &nbsp;Crear rutina
         </a>
@@ -263,7 +263,7 @@ body, .entrenador-content {
             <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
         <p>Sin rutina registrada para este día</p>
-        <a href="{{ route('entrenador.rutina.editar', [$cliente->id, $mes, $sem, $dia]) }}"
+<a href="{{ route('entrenador.rutina.editar', [$cliente->id, $sem, $dia]) }}"
            class="btn-crear" style="margin-top:6px">
             ＋ &nbsp;Crear rutina
         </a>

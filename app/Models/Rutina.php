@@ -7,26 +7,27 @@ class Rutina extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'tipo',
-        'grupo',
-        'segmento',
-        'nombre',
-        'ejercicio_id',
-        'series',
-        'dia',
-        'semana',
-        'mes',
-        'anio',
-        'usuario',
-        'entrenador',
-        'orden',
-        'descanso_valor',
-        'descanso_unidad',
-        'nota_sesion',   // ← nuevo
-        'nota_ej',       // ← nuevo
-    ];
+   protected $fillable = [
+    'user_id',
+    'tipo',
+    'grupo',
+    'segmento',
+    'nombre',
+    'ejercicio_id',
+    'series',
+    'dia',
+    'semana',
+    'mes',
+    'anio',
+    'usuario',
+    'entrenador',
+    'orden',
+    'descanso_valor',
+    'descanso_unidad',
+    'nota_sesion',
+    'nota_ej',
+    'fecha',        // ← agregar esta línea
+];
 
     protected $casts = [
         'series' => 'array',

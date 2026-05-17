@@ -16,78 +16,29 @@
 }
 * { box-sizing: border-box; }
 body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); }
-
-/* PAGE HEADER */
-.page-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid var(--border); }
+.page-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid var(--border); flex-wrap:wrap; }
 .page-header h2 { font-size:1.1rem; font-weight:700; margin:0; }
 .badge { font-size:0.63rem; font-weight:700; background:var(--accent-l); color:var(--accent); border:1px solid #bfdbfe; padding:2px 8px; border-radius:99px; text-transform:uppercase; letter-spacing:.05em; }
-.btn-metodos { margin-left:auto; display:inline-flex; align-items:center; gap:5px; background:white; color:var(--muted); border:1px solid var(--border2); border-radius:7px; padding:5px 12px; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all .13s; font-family:'DM Sans',sans-serif; }
+.btn-metodos { display:inline-flex; align-items:center; gap:5px; background:white; color:var(--muted); border:1px solid var(--border2); border-radius:7px; padding:5px 12px; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all .13s; font-family:'DM Sans',sans-serif; }
 .btn-metodos:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-l); }
-
-/* ── NOTA DE SESIÓN ── */
-.nota-sesion-card {
-    background:#fffdf5; border:1.5px solid #fde68a;
-    border-radius:var(--radius); padding:10px 14px;
-    margin-bottom:14px; display:flex; flex-direction:column; gap:6px;
-}
-.nota-sesion-label {
-    display:flex; align-items:center; gap:6px;
-    font-size:0.7rem; font-weight:700; color:#92400e;
-    text-transform:uppercase; letter-spacing:.06em;
-}
+.nota-sesion-card { background:#fffdf5; border:1.5px solid #fde68a; border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; display:flex; flex-direction:column; gap:6px; }
+.nota-sesion-label { display:flex; align-items:center; gap:6px; font-size:0.7rem; font-weight:700; color:#92400e; text-transform:uppercase; letter-spacing:.06em; }
 .nota-sesion-label i { font-size:0.9rem; color:#d97706; }
-.nota-sesion-textarea {
-    width:100%; border:1px solid #fde68a; border-radius:7px;
-    padding:7px 10px; font-size:0.82rem; font-family:'DM Sans',sans-serif;
-    color:var(--text); background:white; resize:vertical;
-    min-height:52px; line-height:1.5; box-sizing:border-box;
-    transition:border-color .13s;
-}
+.nota-sesion-textarea { width:100%; border:1px solid #fde68a; border-radius:7px; padding:7px 10px; font-size:0.82rem; font-family:'DM Sans',sans-serif; color:var(--text); background:white; resize:vertical; min-height:52px; line-height:1.5; box-sizing:border-box; transition:border-color .13s; }
 .nota-sesion-textarea:focus { outline:none; border-color:#f59e0b; }
 .nota-sesion-textarea::placeholder { color:#d1a054; }
-
-/* ── NOTA POR EJERCICIO ── */
-.nota-ej-input-wrap {
-    background:#fffbeb;
-    border-left:2px solid #f59e0b;
-    border-radius:0 4px 4px 0;
-    padding:5px 8px;
-    display:flex;
-    align-items:flex-start;
-    gap:6px;
-    margin-top:6px;
-}
-.nota-ej-input-wrap i {
-    font-size:13px;
-    color:#d97706;
-    margin-top:2px;
-    flex-shrink:0;
-}
-.nota-ej-input {
-    width:100%;
-    border:none;
-    background:transparent;
-    padding:0;
-    font-size:0.66rem;
-    font-family:'DM Sans',sans-serif;
-    color:#92400e;
-    line-height:1.5;
-    resize:none;
-    overflow:hidden;
-    display:block;
-    box-sizing:border-box;
-}
+.nota-ej-input-wrap { background:#fffbeb; border-left:2px solid #f59e0b; border-radius:0 4px 4px 0; padding:5px 8px; display:flex; align-items:flex-start; gap:6px; margin-top:6px; }
+.nota-ej-input-wrap i { font-size:13px; color:#d97706; margin-top:2px; flex-shrink:0; }
+.nota-ej-input { width:100%; border:none; background:transparent; padding:0; font-size:0.66rem; font-family:'DM Sans',sans-serif; color:#92400e; line-height:1.5; resize:none; overflow:hidden; display:block; box-sizing:border-box; }
 .nota-ej-input:focus { outline:none; }
 .nota-ej-input::placeholder { color:#d1a054; }
-
-/* MODAL MÉTODOS */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10000; align-items:center; justify-content:center; padding:16px; }
 .modal-overlay.open { display:flex; }
 .modal-box { background:white; border-radius:14px; width:100%; max-width:620px; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); animation:modalIn .18s ease; }
 @keyframes modalIn { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
 .modal-header { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--border); position:sticky; top:0; background:white; z-index:1; border-radius:14px 14px 0 0; }
 .modal-header h3 { font-size:1rem; font-weight:700; margin:0; }
-.modal-close { width:28px; height:28px; border-radius:7px; background:#f3f4f6; border:none; cursor:pointer; font-size:1rem; color:var(--muted); display:flex; align-items:center; justify-content:center; transition:background .12s; }
+.modal-close { width:28px; height:28px; border-radius:7px; background:#f3f4f6; border:none; cursor:pointer; font-size:1rem; color:var(--muted); display:flex; align-items:center; justify-content:center; }
 .modal-close:hover { background:#fee2e2; color:var(--danger); }
 .modal-body { padding:16px 20px 20px; display:flex; flex-direction:column; gap:10px; }
 .metodo-card { border:1px solid var(--border); border-radius:9px; overflow:hidden; }
@@ -99,8 +50,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .metodo-card-nombre { font-size:0.875rem; font-weight:700; color:var(--text); }
 .metodo-card-body { padding:10px 14px; font-size:0.82rem; color:var(--muted); line-height:1.6; }
 .metodo-card-body b { color:var(--text); }
-
-/* MODAL CIRCUITO */
 .modal-circ-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10001; align-items:center; justify-content:center; }
 .modal-circ-overlay.open { display:flex; }
 .modal-circ-box { background:white; border-radius:14px; width:100%; max-width:320px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.2); }
@@ -112,8 +61,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .circ-btn-cancel { flex:1; padding:8px; border:1px solid var(--border2); border-radius:7px; background:white; color:var(--muted); font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
 .circ-btn-ok { flex:1; padding:8px; border:none; border-radius:7px; background:var(--accent); color:white; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
 .circ-btn-ok:hover { background:#1d4ed8; }
-
-/* BLOQUES */
 .add-block-bar { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
 .add-block-btn { flex:1; min-width:80px; padding:7px 4px; background:var(--surface); border:1.5px dashed var(--border2); border-radius:7px; font-size:0.72rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all .13s; }
 .add-block-btn:hover { background:var(--accent-l); border-color:var(--accent); color:var(--accent); }
@@ -126,19 +73,15 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .bloque-series-count input { width:42px; border:1px solid var(--border2); border-radius:5px; padding:2px 5px; font-size:0.74rem; font-family:'DM Mono',monospace; text-align:center; color:var(--text); }
 .btn-remove { width:24px; height:24px; border-radius:5px; background:#fee2e2; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .btn-remove:hover { background:#fca5a5; }
-
-/* BLOQUE FOOTER */
 .bloque-footer { border-top:1px solid var(--border); background:#f9fafb; padding:7px 12px; border-radius:0 0 var(--radius) var(--radius); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .descanso-inline { display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--muted); flex:1; flex-wrap:wrap; }
 .descanso-inline span { font-size:0.7rem; }
 .descanso-valor-input { width:46px; border:1px solid var(--border2); border-radius:5px; padding:2px 5px; font-size:0.74rem; font-family:'DM Mono',monospace; text-align:center; color:var(--text); }
 .descanso-valor-input:focus { outline:none; border-color:#059669; }
-.descanso-unit-btn { padding:2px 6px; border:1px solid var(--border2); border-radius:4px; background:white; font-size:0.62rem; font-weight:600; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .1s; }
+.descanso-unit-btn { padding:2px 6px; border:1px solid var(--border2); border-radius:4px; background:white; font-size:0.62rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all .1s; }
 .descanso-unit-btn:hover { border-color:#059669; color:#059669; }
 .descanso-unit-btn.sel { background:#059669; color:white; border-color:#059669; }
 .descanso-badge { font-size:0.62rem; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:99px; padding:1px 7px; font-family:'DM Mono',monospace; }
-
-/* SERIES */
 .series-header-row { display:flex; border-bottom:2px solid var(--border); background:#f0f2f5; }
 .series-header-row .col-info-header { width:265px; flex-shrink:0; border-right:1px solid var(--border); padding:5px 10px; font-size:0.6rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; }
 .series-header-row .col-series-headers { flex:1; display:flex; padding:0; min-width:0; }
@@ -176,8 +119,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .ej-select-option.selected { background:var(--accent-l); font-weight:600; color:var(--accent); }
 .ej-select-option img { width:46px; height:46px; object-fit:cover; border-radius:5px; flex-shrink:0; }
 .ej-no-img { width:46px; height:46px; border-radius:5px; background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.58rem; border:1px dashed var(--border2); flex-shrink:0; }
-
-/* SERIES COLS */
 .series-cols { display:flex; flex-direction:row; gap:5px; width:100%; align-items:stretch; }
 .serie-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:white; border:1px solid var(--border); border-radius:6px; padding:5px 4px; min-width:0; }
 .metodo-select { width:100%; border:1px solid var(--border2); border-radius:4px; padding:2px 3px; font-size:0.62rem; font-family:'DM Sans',sans-serif; color:var(--muted); background:white; text-align:center; }
@@ -191,8 +132,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .peso-group { display:flex; align-items:center; gap:2px; width:100%; }
 .peso-group .campo-input { flex:1; min-width:0; }
 .unidad-select { width:34px; flex-shrink:0; border:1px solid var(--border2); border-radius:4px; padding:3px 1px; font-size:0.58rem; font-family:'DM Sans',sans-serif; color:var(--muted); background:white; text-align:center; cursor:pointer; }
-
-/* TEMPO */
 .tempo-wrap { width:100%; margin-top:4px; }
 .tempo-toggle { width:100%; padding:3px 5px; border:1px dashed var(--border2); border-radius:5px; background:white; font-size:0.6rem; font-weight:600; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:3px; transition:all .13s; }
 .tempo-toggle:hover,.tempo-toggle.active { border-color:var(--accent); color:var(--accent); background:var(--accent-l); border-style:solid; }
@@ -206,8 +145,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .tempo-unit { font-size:0.48rem; color:var(--muted); }
 .tempo-sep { font-size:0.7rem; color:var(--border2); font-weight:700; padding-bottom:8px; }
 .tempo-preview { margin-top:4px; text-align:center; font-size:0.6rem; font-weight:700; color:var(--accent); background:var(--accent-l); border-radius:4px; padding:2px 4px; font-family:'DM Mono',monospace; letter-spacing:.04em; }
-
-/* RIR/RPE */
 .rir-wrap { width:100%; margin-top:4px; }
 .rir-toggle { width:100%; padding:3px 5px; border:1px dashed var(--border2); border-radius:5px; background:white; font-size:0.6rem; font-weight:600; color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:3px; transition:all .13s; }
 .rir-toggle:hover,.rir-toggle.active { border-color:#7c3aed; color:#7c3aed; background:#f5f3ff; border-style:solid; }
@@ -219,8 +156,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .rir-mode-btn.sel { background:#7c3aed; color:white; border-color:#7c3aed; }
 .rir-scale { font-size:0.48rem; color:var(--muted); text-align:center; margin-top:2px; line-height:1.3; }
 .rir-preview { margin-top:4px; text-align:center; font-size:0.6rem; font-weight:700; color:#7c3aed; background:#f5f3ff; border-radius:4px; padding:2px 4px; font-family:'DM Mono',monospace; }
-
-/* BOTONES */
 .btn-guardar { display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:white; font-family:'DM Sans',sans-serif; font-size:0.87rem; font-weight:600; padding:9px 24px; border:none; border-radius:var(--radius); cursor:pointer; box-shadow:0 2px 8px rgba(37,99,235,.3); transition:all .14s; margin-top:14px; }
 .btn-guardar:hover { background:#1d4ed8; transform:translateY(-1px); }
 .btn-guardar:disabled { background:#93c5fd; cursor:not-allowed; transform:none; }
@@ -257,7 +192,71 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         <input type="number" class="circ-num-input" id="circuitoNum" min="2" max="12" value="4">
         <div class="circ-btns">
             <button class="circ-btn-cancel" onclick="cerrarModalCircuito()">Cancelar</button>
-            <button class="circ-btn-ok"     onclick="confirmarCircuito()">Agregar</button>
+            <button class="circ-btn-ok" onclick="confirmarCircuito()">Agregar</button>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL PLANTILLA --}}
+<div id="modalPlantilla" onclick="if(event.target===this)cerrarModalPlantilla()"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10002;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:white;border-radius:14px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e5ea;border-radius:14px 14px 0 0;">
+            <h3 style="font-size:1rem;font-weight:700;margin:0;">📋 Aplicar plantilla</h3>
+            <button onclick="cerrarModalPlantilla()" style="width:28px;height:28px;border-radius:7px;background:#f3f4f6;border:none;cursor:pointer;font-size:1rem;color:#6b7280;">✕</button>
+        </div>
+        <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px;">
+
+            <div>
+                <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Plantilla</label>
+                <select id="selectPlantilla" onchange="mostrarInfoPlantilla()"
+                    style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.85rem;font-family:'DM Sans',sans-serif;color:#111827;">
+                    <option value="">-- Selecciona una plantilla --</option>
+                    @foreach($plantillas as $pt)
+                        <option value="{{ $pt->id }}">{{ $pt->nombre }} · {{ count($pt->bloques ?? []) }} días</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="infoPlantilla" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 12px;font-size:0.82rem;color:#5b21b6;line-height:1.6;"></div>
+
+            <div style="display:flex;gap:10px;">
+                <div style="flex:1;">
+                    <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Semana inicio</label>
+                    <input type="number" id="plantillaSemanaInicio" min="1" max="16" value="{{ $semana }}"
+                        style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.9rem;font-family:'DM Mono',monospace;color:#111827;text-align:center;">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Día inicio</label>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">
+                        @foreach(['L','M','X','J','V','S','D'] as $idx => $letra)
+                        <button type="button" onclick="setDiaInicioPlantilla({{ $idx+1 }}, this)"
+                            data-dia-plt="{{ $idx+1 }}"
+                            style="padding:5px 2px;border:1.5px solid {{ ($idx+1)==$dia ? '#7c3aed' : '#d0d5dd' }};border-radius:5px;background:{{ ($idx+1)==$dia ? '#f5f3ff' : 'white' }};color:{{ ($idx+1)==$dia ? '#7c3aed' : '#6b7280' }};font-size:0.72rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+                            {{ $letra }}
+                        </button>
+                        @endforeach
+                    </div>
+                    <input type="hidden" id="plantillaDiaInicio" value="{{ $dia }}">
+                </div>
+            </div>
+
+            <div style="background:#fefce8;border:1px solid #fde047;border-radius:7px;padding:10px 12px;font-size:0.78rem;color:#854d0e;">
+                ⚠️ Los días de la plantilla se pegarán <strong>consecutivamente</strong> desde la semana y día elegidos. Reemplaza cualquier rutina existente en esos días.
+            </div>
+
+            <form id="formAplicarPlantilla" method="POST" action="">
+                @csrf
+                <input type="hidden" name="cliente_id" value="{{ $cliente->id }}">
+                <input type="hidden" name="semana_inicio" id="hiddenSemanaInicio">
+                <input type="hidden" name="dia_inicio" id="hiddenDiaInicio">
+                <button type="button" onclick="submitPlantillaCompleta()"
+                    style="width:100%;padding:10px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;"
+                    onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
+                    ✅ Aplicar plantilla completa
+                </button>
+            </form>
+
         </div>
     </div>
 </div>
@@ -267,23 +266,22 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     <h2>{{ $cliente->name }}</h2>
     <span class="badge">Semana {{ $semana }} · Día {{ $dia }}</span>
     <button class="btn-metodos" onclick="abrirModal()">❓ Métodos</button>
+    <button class="btn-metodos" onclick="abrirModalPlantilla()" style="border-color:#7c3aed;color:#7c3aed;">📋 Plantilla</button>
 </div>
 
 <form method="POST" action="{{ route('entrenador.rutina.guardar', [$cliente->id,$semana,$dia]) }}" id="form-rutina">
 @csrf
 <input type="hidden" name="datos_json" id="datos_json">
 
-{{-- ── NOTA DE SESIÓN ── --}}
 <div class="nota-sesion-card">
     <div class="nota-sesion-label">
-        <i class="ti ti-clipboard-text" aria-hidden="true"></i>
+        <i class="ti ti-clipboard-text"></i>
         Nota de la sesión
     </div>
     <textarea id="nota-sesion" class="nota-sesion-textarea"
         placeholder="Contexto del día, observaciones generales, indicaciones para el cliente…">{{ $notaSesion ?? '' }}</textarea>
 </div>
 
-{{-- ── BLOQUES ── --}}
 <div id="contenedor-bloques">
 @foreach($bloques as $grupo => $rutinasGrupo)
 @php
@@ -311,14 +309,12 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         </div>
         <button type="button" class="btn-remove" onclick="this.closest('.bloque').remove();actualizarOrden();">✕</button>
     </div>
-
     <div class="series-header-row" data-header="{{ $grupo }}">
         <div class="col-info-header">Ejercicio</div>
         <div class="col-series-headers">
             @for($s = 0; $s < $numSeries; $s++)<div class="serie-header-col">S{{ $s+1 }}</div>@endfor
         </div>
     </div>
-
     @foreach($rutinasGrupo as $i => $rutina)
     @php
         $seriesRaw  = $rutina->series ?? [];
@@ -333,7 +329,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     @endphp
     <div class="ejercicio-row {{ $bgClass }}">
         <div class="ej-letra {{ $letraClass }}">{{ $numLetra }}</div>
-
         <div class="col-segmento">
             <div class="field-label">Segmento</div>
             <select class="segmento-select" data-ej="ej-{{ $grupo }}-{{ $i }}" onchange="onSegmentoChange(this)">
@@ -342,7 +337,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
                 @endforeach
             </select>
         </div>
-
         <div class="col-ejercicio">
             <div class="field-label">Ejercicio</div>
             <input type="hidden" id="ej-{{ $grupo }}-{{ $i }}" class="ejercicio-id-input" value="{{ $rutina->ejercicio_id }}">
@@ -364,13 +358,11 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
                     @endforeach
                 </div>
             </div>
-            {{-- ── NOTA POR EJERCICIO ── --}}
             <div class="nota-ej-input-wrap">
-                <i class="ti ti-pencil" aria-hidden="true"></i>
+                <i class="ti ti-pencil"></i>
                 <textarea class="nota-ej-input" placeholder="nota…">{{ $notaEj }}</textarea>
             </div>
         </div>
-
         <div class="col-series">
             <div class="series-cols" data-grupo="{{ $grupo }}" data-ej="{{ $i }}">
                 @foreach($series as $s => $serie)
@@ -475,7 +467,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         </div>
     </div>
     @endforeach
-
     <div class="bloque-footer">
         <span class="descanso-inline">
             <span>💤 Descanso entre series:</span>
@@ -501,28 +492,61 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 <button type="button" onclick="guardarRutina()" class="btn-guardar" id="btn-guardar">💾 &nbsp;Guardar rutina</button>
 </form>
 
+
 <script>
 const ejerciciosPorGrupo = @json($ejerciciosPorGrupo);
+const plantillasData     = @json($plantillas->keyBy('id'));
 let contador = Date.now();
 const contenedor = document.getElementById('contenedor-bloques');
 const NUMS   = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 const LETRAS = ['ej-letra-a','ej-letra-b','ej-letra-c','ej-letra-d','ej-letra-e','ej-letra-f','ej-letra-g','ej-letra-h','ej-letra-i','ej-letra-j','ej-letra-k','ej-letra-l'];
 const BGS    = ['ej-bg-a','ej-bg-b','ej-bg-c','ej-bg-d','ej-bg-e','ej-bg-f','ej-bg-g','ej-bg-h','ej-bg-i','ej-bg-j','ej-bg-k','ej-bg-l'];
 
-/* ── Modales ── */
+/* ── Modales métodos / circuito ── */
 function abrirModal()  { document.getElementById('modalMetodos').classList.add('open'); document.body.style.overflow='hidden'; }
 function cerrarModal() { document.getElementById('modalMetodos').classList.remove('open'); document.body.style.overflow=''; }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal(); cerrarModalCircuito(); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal(); cerrarModalCircuito(); cerrarModalPlantilla(); } });
 function abrirModalCircuito() { document.getElementById('circuitoNum').value=4; document.getElementById('modalCircuito').classList.add('open'); setTimeout(()=>document.getElementById('circuitoNum').focus(),50); }
 function cerrarModalCircuito() { document.getElementById('modalCircuito').classList.remove('open'); }
 function confirmarCircuito() { const n=Math.min(12,Math.max(2,parseInt(document.getElementById('circuitoNum').value)||4)); cerrarModalCircuito(); agregarBloque('circuito',n); }
 document.getElementById('circuitoNum').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmarCircuito(); if(e.key==='Escape') cerrarModalCircuito(); });
 
-/* ── Auto-expand nota ejercicio ── */
-function autoExpandNota(el) {
-    el.style.height = '0';
-    el.style.height = el.scrollHeight + 'px';
+/* ── Modal plantilla ── */
+function abrirModalPlantilla()  { document.getElementById('modalPlantilla').style.display='flex'; }
+function cerrarModalPlantilla() { document.getElementById('modalPlantilla').style.display='none'; }
+
+function mostrarInfoPlantilla() {
+    const plantillaId=document.getElementById('selectPlantilla').value;
+    const info=document.getElementById('infoPlantilla');
+    if(!plantillaId){ info.style.display='none'; return; }
+    const plantilla=plantillasData[plantillaId];
+    const numDias=Object.keys(plantilla?.bloques??{}).length;
+    info.style.display='block';
+    info.innerHTML=`📅 <strong>${plantilla.nombre}</strong><br>${numDias} días de entrenamiento`;
 }
+
+function setDiaInicioPlantilla(dia, btn) {
+    document.getElementById('plantillaDiaInicio').value=dia;
+    document.querySelectorAll('#modalPlantilla [data-dia-plt]').forEach(b=>{
+        b.style.borderColor='#d0d5dd'; b.style.background='white'; b.style.color='#6b7280';
+    });
+    btn.style.borderColor='#7c3aed'; btn.style.background='#f5f3ff'; btn.style.color='#7c3aed';
+}
+
+function submitPlantillaCompleta() {
+    const plantillaId=document.getElementById('selectPlantilla').value;
+    if(!plantillaId){ alert('Selecciona una plantilla'); return; }
+    const semana=document.getElementById('plantillaSemanaInicio').value;
+    const dia   =document.getElementById('plantillaDiaInicio').value;
+    document.getElementById('hiddenSemanaInicio').value=semana;
+    document.getElementById('hiddenDiaInicio').value   =dia;
+    const form=document.getElementById('formAplicarPlantilla');
+    form.action=`/entrenador/plantillas/${plantillaId}/aplicar`;
+    form.submit();
+}
+
+/* ── Auto-expand nota ejercicio ── */
+function autoExpandNota(el) { el.style.height='0'; el.style.height=el.scrollHeight+'px'; }
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.nota-ej-input').forEach(el => {
         autoExpandNota(el);
@@ -538,8 +562,7 @@ function actualizarDescansoBadge(grupo) {
     const input=document.querySelector(`[data-bloque-descanso-valor="${grupo}"]`), badge=document.getElementById(`desc-badge-${grupo}`);
     const unidad=document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`)?.value||'seg';
     if(!input||!badge) return;
-    if(input.value){badge.textContent=`${input.value} ${unidad}`;badge.style.display='';}
-    else{badge.style.display='none';}
+    if(input.value){badge.textContent=`${input.value} ${unidad}`;badge.style.display='';}else{badge.style.display='none';}
 }
 function setDescUnidadBloque(btn, grupo, unidad) {
     const hidden=document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
@@ -560,8 +583,7 @@ function actualizarTempoLabel(input) {
     const tP=wrap.querySelector('[data-key="tempo_pausa"]')?.value||'0';
     const tC=wrap.querySelector('[data-key="tempo_concentrica"]')?.value||'0';
     const btn=wrap.querySelector('.tempo-toggle span'), prev=wrap.querySelector('.tempo-preview');
-    if(btn)  btn.textContent =`${tE}–${tP}–${tC}`;
-    if(prev) prev.textContent=`${tE} – ${tP} – ${tC}`;
+    if(btn) btn.textContent=`${tE}–${tP}–${tC}`; if(prev) prev.textContent=`${tE} – ${tP} – ${tC}`;
 }
 
 /* ── RIR/RPE ── */
@@ -573,8 +595,8 @@ function toggleRir(btn) {
 function actualizarRirLabel(input) {
     const wrap=input.closest('.rir-wrap'), modo=wrap.querySelector('[data-key="rir_modo"]')?.value||'rir', val=wrap.querySelector('[data-key="rir_valor"]')?.value||'';
     const label=modo==='rir'?'RIR':'RPE', btn=wrap.querySelector('.rir-toggle span'), prev=wrap.querySelector('.rir-preview'), scale=wrap.querySelector('.rir-scale');
-    if(btn)   btn.textContent  =val?`${label} ${val}`:'RIR/RPE';
-    if(prev)  prev.textContent =val?`${label} ${val}`:'–';
+    if(btn) btn.textContent=val?`${label} ${val}`:'RIR/RPE';
+    if(prev) prev.textContent=val?`${label} ${val}`:'–';
     if(scale) scale.textContent=modo==='rir'?'RIR 0 = fallo · RIR 2 = 2 reps reserva':'RPE 10 = fallo · RPE 7 = moderado';
 }
 function setRirModo(btn, modo) {
@@ -588,18 +610,15 @@ function setRirModo(btn, modo) {
 function guardarRutina() {
     const btn=document.getElementById('btn-guardar');
     btn.disabled=true; btn.textContent='⏳ Guardando...';
-
     const notaSesion=document.getElementById('nota-sesion')?.value||'';
     const bloques={};
     let orden=0;
-
     document.querySelectorAll('#contenedor-bloques .bloque').forEach(bloque=>{
         const grupo=bloque.dataset.grupo, tipo=bloque.dataset.tipo;
         if(!grupo) return;
         const descInput=bloque.querySelector(`[data-bloque-descanso-valor="${grupo}"]`);
         const descHidden=bloque.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
         bloques[grupo]={ tipo, orden:orden++, descanso_valor:descInput?.value||'', descanso_unidad:descHidden?.value||'seg', ejercicios:{} };
-
         bloque.querySelectorAll('.ejercicio-row').forEach((ejRow,i)=>{
             const segmento    =ejRow.querySelector('.segmento-select')?.value    ??'';
             const ejercicio_id=ejRow.querySelector('.ejercicio-id-input')?.value ??'';
@@ -614,7 +633,6 @@ function guardarRutina() {
             bloques[grupo].ejercicios[i]={segmento,ejercicio_id,nota_ej,series};
         });
     });
-
     document.getElementById('datos_json').value=JSON.stringify({nota_sesion:notaSesion,bloques});
     document.getElementById('form-rutina').submit();
 }
@@ -782,14 +800,12 @@ function agregarBloque(tipo, cantidad) {
         const ejId=`ej-${grupo}-${i}`, lClass=LETRAS[i%LETRAS.length], bgClass=BGS[i%BGS.length];
         html+=`<div class="ejercicio-row ${bgClass}">
             <div class="ej-letra ${lClass}">${NUMS[i]??(i+1)}</div>
-            <div class="col-segmento">
-                <div class="field-label">Segmento</div>
+            <div class="col-segmento"><div class="field-label">Segmento</div>
                 <select class="segmento-select" data-ej="${ejId}" onchange="onSegmentoChange(this)">
                     <option value="">-- Segmento --</option>${opts}
                 </select>
             </div>
-            <div class="col-ejercicio">
-                <div class="field-label">Ejercicio</div>
+            <div class="col-ejercicio"><div class="field-label">Ejercicio</div>
                 <input type="hidden" id="${ejId}" class="ejercicio-id-input" value="">
                 <div class="ej-select-wrapper" data-target="${ejId}">
                     <div class="ej-select-trigger" onclick="toggleDropdown(this)">
@@ -800,7 +816,7 @@ function agregarBloque(tipo, cantidad) {
                     <div class="ej-select-dropdown"></div>
                 </div>
                 <div class="nota-ej-input-wrap">
-                    <i class="ti ti-pencil" aria-hidden="true"></i>
+                    <i class="ti ti-pencil"></i>
                     <textarea class="nota-ej-input" placeholder="nota…"></textarea>
                 </div>
             </div>

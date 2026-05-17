@@ -7,46 +7,43 @@ use App\Models\Rutina;
 class HIstorialController extends Controller
 {
     private array $nombresMes = [
-        1  => 'Enero',    2  => 'Febrero',   3  => 'Marzo',
-        4  => 'Abril',    5  => 'Mayo',       6  => 'Junio',
-        7  => 'Julio',    8  => 'Agosto',     9  => 'Septiembre',
-        10 => 'Octubre',  11 => 'Noviembre',  12 => 'Diciembre',
+        1=>'Enero', 2=>'Febrero', 3=>'Marzo', 4=>'Abril',
+        5=>'Mayo', 6=>'Junio', 7=>'Julio', 8=>'Agosto',
+        9=>'Septiembre', 10=>'Octubre', 11=>'Noviembre', 12=>'Diciembre',
     ];
 
-    public function anio(User $cliente)
-    {
-        $anio = (int) request('anio', date('Y'));
+   public function anio(User $cliente)
+{
+    $anio = (int) request('anio', date('Y'));
 
-        $rutinas = Rutina::where('user_id', $cliente->id)
-            ->whereYear('fecha', $anio)
-            ->whereNotNull('fecha')
-            ->select('semana', 'dia', 'fecha')
-            ->distinct()
-            ->get();
+    $rutinas = Rutina::where('user_id', $cliente->id)
+        ->whereNotNull('fecha')
+        ->whereYear('fecha', $anio)
+        ->select('fecha')
+        ->distinct()
+        ->get();
 
-        $mapa = [];
-        foreach ($rutinas as $r) {
-            $mes  = (int) date('n', strtotime($r->fecha));
-            $mapa[$mes][$r->semana][$r->dia] = true;
-        }
+    // Fechas con entrenamiento como set
+    $fechasConEntrenamiento = $rutinas->pluck('fecha')->map(fn($f) => substr($f, 0, 10))->flip()->toArray();
 
-        $mesesData = collect(range(1, 12))->map(fn($m) => [
-            'nombre' => $this->nombresMes[$m],
-            'total'  => isset($mapa[$m])
-                ? collect($mapa[$m])->flatten()->count()
-                : 0,
-            'dias'   => $mapa[$m] ?? [],
-        ]);
+    // Total por mes
+    $mesesData = collect(range(1, 12))->map(fn($m) => [
+        'nombre'    => $this->nombresMes[$m],
+        'mes'       => $m,
+        'diasMes'   => cal_days_in_month(CAL_GREGORIAN, $m, $anio),
+        'total'     => $rutinas->filter(fn($r) => (int)date('n', strtotime($r->fecha)) === $m)->count(),
+        'fechas'    => $fechasConEntrenamiento,
+    ]);
 
-        return view('entrenador.historial.anio', compact('cliente', 'anio', 'mesesData'));
-    }
+    return view('entrenador.historial.anio', compact('cliente', 'anio', 'mesesData'));
+}
 
     public function mes(User $cliente, int $anio, int $mes)
     {
         $rutinas = Rutina::where('user_id', $cliente->id)
+            ->whereNotNull('fecha')
             ->whereYear('fecha', $anio)
             ->whereMonth('fecha', $mes)
-            ->whereNotNull('fecha')
             ->select('semana', 'dia', 'fecha')
             ->distinct()
             ->get()
@@ -59,11 +56,11 @@ class HIstorialController extends Controller
     public function dia(User $cliente, int $anio, int $mes, int $sem, int $dia)
     {
         $rutinas = Rutina::where('user_id', $cliente->id)
+            ->whereNotNull('fecha')
             ->whereYear('fecha', $anio)
             ->whereMonth('fecha', $mes)
             ->where('semana', $sem)
             ->where('dia', $dia)
-            ->whereNotNull('fecha')
             ->get();
 
         $bloques = $rutinas->groupBy('grupo')->map(function ($grupo) {

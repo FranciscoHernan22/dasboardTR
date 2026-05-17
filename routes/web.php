@@ -110,4 +110,5 @@ Route::post('/entrenador/plan/{clienteId}', [EntrenadorClienteController::class,
     ->name('entrenador.plan.guardar');
 
 
-  
+  Route::post('/entrenador/plantillas/{plantilla}/aplicar', [PlantillaController::class, 'aplicar'])
+    ->name('entrenador.plantillas.aplicar');

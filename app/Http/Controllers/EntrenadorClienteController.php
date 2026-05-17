@@ -24,23 +24,19 @@ class EntrenadorClienteController extends Controller
         $planExistente = Plan::where('user_id', $clienteId)->first();
 
         if ($planExistente) {
-            // La semana inicio del nuevo bloque es la última semana del plan anterior + 1
-            $ultimaSemana  = $planExistente->semana_inicio + $planExistente->semanas - 1;
-            $nuevaInicio   = $ultimaSemana + 1;
-            $fechaInicio   = Carbon::parse($planExistente->fecha_inicio)
-                ->addWeeks($ultimaSemana);
+            $nuevaInicio = $planExistente->semana_inicio + $planExistente->semanas;
 
+            // fecha_inicio NO cambia — siempre apunta a la semana 1
             $planExistente->update([
                 'semanas'       => $semanas,
                 'semana_inicio' => $nuevaInicio,
-                'fecha_inicio'  => $fechaInicio,
             ]);
         } else {
             Plan::create([
                 'user_id'       => $clienteId,
                 'semanas'       => $semanas,
                 'semana_inicio' => 1,
-                'fecha_inicio'  => Carbon::now()->startOfWeek(),
+                'fecha_inicio'  => Carbon::now()->startOfWeek()->toDateString(),
             ]);
         }
 

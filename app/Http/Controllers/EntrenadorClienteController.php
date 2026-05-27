@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Plan;
@@ -25,8 +26,6 @@ class EntrenadorClienteController extends Controller
 
         if ($planExistente) {
             $nuevaInicio = $planExistente->semana_inicio + $planExistente->semanas;
-
-            // fecha_inicio NO cambia — siempre apunta a la semana 1
             $planExistente->update([
                 'semanas'       => $semanas,
                 'semana_inicio' => $nuevaInicio,
@@ -41,5 +40,26 @@ class EntrenadorClienteController extends Controller
         }
 
         return redirect()->route('entrenador.rutina.menu', $cliente->id);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:100',
+            'apellido' => 'required|string|max:100',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        User::create([
+            'name'          => trim($request->name . ' ' . $request->apellido),
+            'email'         => $request->email,
+            'password'      => Hash::make($request->password),
+            'entrenador_id' => Auth::id(),
+            'status'        => 'activo',
+        ]);
+
+        return redirect()->route('entrenador.clientes')
+                 ->with('success', 'Cliente registrado correctamente.');
     }
 }

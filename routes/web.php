@@ -112,3 +112,15 @@ Route::post('/entrenador/plan/{clienteId}', [EntrenadorClienteController::class,
 
   Route::post('/entrenador/plantillas/{plantilla}/aplicar', [PlantillaController::class, 'aplicar'])
     ->name('entrenador.plantillas.aplicar');
+
+
+    use App\Http\Controllers\Api\PlanApiController;
+use App\Http\Controllers\Api\RutinaApiController;
+
+ 
+
+Route::post('/entrenador/clientes', [EntrenadorClienteController::class, 'store'])
+     ->name('entrenador.clientes.store');
+
+
+     

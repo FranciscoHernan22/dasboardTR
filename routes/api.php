@@ -3,6 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\RutinaApiController;
+use App\Http\Controllers\Api\PlanApiController;
+use App\Http\Controllers\Api\AuthApiController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -27,4 +30,14 @@ Route::get('/rutina/{cliente}/{semana}/{dia}',
 
 
 
- 
+ // Plan
+Route::get('/cliente/{id}/semana-actual', [PlanApiController::class, 'semanaActual']);
+Route::post('/cliente/{id}/semana/{semana}/dia/{dia}/completar', [PlanApiController::class, 'completarDia']);
+
+// Rutina
+Route::get('/cliente/{id}/semana/{semana}/dia/{dia}', [RutinaApiController::class, 'ver']);
+
+Route::post('/login', [AuthApiController::class, 'login']);
+Route::post('/logout', [AuthApiController::class, 'logout'])->middleware('auth:sanctum');
+
+Route::get('/cliente/{id}/semanas', [PlanApiController::class, 'todasLasSemanas']);

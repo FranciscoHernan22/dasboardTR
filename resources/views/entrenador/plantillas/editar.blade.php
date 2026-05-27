@@ -1,4 +1,4 @@
- @extends('layouts.entrenador')
+@extends('layouts.entrenador')
 @section('titulo', 'Editar Plantilla')
 @section('contenido')
 
@@ -183,11 +183,11 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 </style>
 
 {{-- MODAL MÉTODOS --}}
-<div class="modal-overlay" id="modalMetodos" onclick="if(event.target===this)cerrarModal()">
+<div class="modal-overlay" id="modalMetodos" onclick="if(event.target===this)cerrarModal('modalMetodos')">
     <div class="modal-box">
         <div class="modal-header">
             <h3>📚 Métodos de entrenamiento</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
+            <button class="modal-close" onclick="cerrarModal('modalMetodos')">✕</button>
         </div>
         <div class="modal-body">
             <div class="metodo-card"><div class="metodo-card-header"><span class="metodo-tag tag-normal">Normal</span><span class="metodo-card-nombre">Serie normal</span></div><div class="metodo-card-body">Repeticiones con peso fijo, descanso entre series. <b>Ideal para fuerza y masa muscular.</b></div></div>
@@ -204,13 +204,13 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 </div>
 
 {{-- MODAL CIRCUITO --}}
-<div class="modal-circ-overlay" id="modalCircuito" onclick="if(event.target===this)cerrarModalCircuito()">
+<div class="modal-circ-overlay" id="modalCircuito" onclick="if(event.target===this)cerrarModal('modalCircuito')">
     <div class="modal-circ-box">
         <h3>Circuito</h3>
         <p>¿Cuántos ejercicios? (2 – 12)</p>
         <input type="number" class="circ-num-input" id="circuitoNum" min="2" max="12" value="4">
         <div class="circ-btns">
-            <button class="circ-btn-cancel" onclick="cerrarModalCircuito()">Cancelar</button>
+            <button class="circ-btn-cancel" onclick="cerrarModal('modalCircuito')">Cancelar</button>
             <button class="circ-btn-ok" onclick="confirmarCircuito()">Agregar</button>
         </div>
     </div>
@@ -222,7 +222,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
        style="font-size:1.2rem;color:var(--muted);text-decoration:none;line-height:1">‹</a>
     <h2>Editar plantilla</h2>
     <span class="badge">Editando</span>
-    <button class="btn-metodos" onclick="abrirModal()">❓ Métodos</button>
+    <button class="btn-metodos" onclick="abrirModal('modalMetodos')">❓ Métodos</button>
 </div>
 
 <form method="POST" action="{{ route('entrenador.plantillas.actualizar', $plantilla->id) }}" id="form-plantilla">
@@ -270,34 +270,62 @@ const NUMS   = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 const LETRAS = ['ej-letra-a','ej-letra-b','ej-letra-c','ej-letra-d','ej-letra-e','ej-letra-f','ej-letra-g','ej-letra-h','ej-letra-i','ej-letra-j','ej-letra-k','ej-letra-l'];
 const BGS    = ['ej-bg-a','ej-bg-b','ej-bg-c','ej-bg-d','ej-bg-e','ej-bg-f','ej-bg-g','ej-bg-h','ej-bg-i','ej-bg-j','ej-bg-k','ej-bg-l'];
 
-/* ── Modales ── */
-function abrirModal()  { document.getElementById('modalMetodos').classList.add('open'); document.body.style.overflow='hidden'; }
-function cerrarModal() { document.getElementById('modalMetodos').classList.remove('open'); document.body.style.overflow=''; }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal(); cerrarModalCircuito(); } });
-let _diaCircuito=1;
-function abrirModalCircuito(dia) { _diaCircuito=dia; document.getElementById('circuitoNum').value=4; document.getElementById('modalCircuito').classList.add('open'); setTimeout(()=>document.getElementById('circuitoNum').focus(),50); }
-function cerrarModalCircuito() { document.getElementById('modalCircuito').classList.remove('open'); }
-function confirmarCircuito() { const n=Math.min(12,Math.max(2,parseInt(document.getElementById('circuitoNum').value)||4)); cerrarModalCircuito(); agregarBloque('circuito',n,_diaCircuito); }
-document.getElementById('circuitoNum').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmarCircuito(); if(e.key==='Escape') cerrarModalCircuito(); });
+/* ── Utilidad: URL de imagen ── */
+const imgUrl = img => img ? `/storage/${img}` : '';
+
+/* ── Modales (generalizados) ── */
+function abrirModal(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        cerrarModal('modalMetodos');
+        cerrarModal('modalCircuito');
+    }
+});
+
+/* ── Modal circuito ── */
+let _diaCircuito = 1;
+function abrirModalCircuito(dia) {
+    _diaCircuito = dia;
+    document.getElementById('circuitoNum').value = 4;
+    abrirModal('modalCircuito');
+    setTimeout(() => document.getElementById('circuitoNum').focus(), 50);
+}
+function confirmarCircuito() {
+    const n = Math.min(12, Math.max(2, parseInt(document.getElementById('circuitoNum').value) || 4));
+    cerrarModal('modalCircuito');
+    agregarBloque('circuito', n, _diaCircuito);
+}
+document.getElementById('circuitoNum').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmarCircuito();
+    if (e.key === 'Escape') cerrarModal('modalCircuito');
+});
 
 /* ── Auto-expand nota ── */
-function autoExpandNota(el) { el.style.height='0'; el.style.height=el.scrollHeight+'px'; }
+function autoExpandNota(el) { el.style.height = '0'; el.style.height = el.scrollHeight + 'px'; }
 
 /* ── Generar tabs ── */
-function generarTabs(diasData=null) {
-    totalDias=Math.min(7,Math.max(1,parseInt(document.getElementById('numDias').value)||7));
-    const tabsEl=document.getElementById('dias-tabs'), panelsEl=document.getElementById('dias-panels');
-    tabsEl.innerHTML=''; panelsEl.innerHTML='';
-    for(let d=1;d<=totalDias;d++){
-        const tab=document.createElement('div');
-        tab.className='dia-tab'+(d===1?' active':'');
-        tab.textContent=`Día ${d}`; tab.dataset.dia=d;
-        tab.onclick=()=>activarTab(d); tabsEl.appendChild(tab);
-        const notaValor=diasData&&diasData[d]?diasData[d].nota_sesion??'':'';
-        const panel=document.createElement('div');
-        panel.className='dia-panel'+(d===1?' active':'');
-        panel.id=`panel-dia-${d}`; panel.dataset.dia=d;
-        panel.innerHTML=`
+function generarTabs(diasData = null) {
+    totalDias = Math.min(7, Math.max(1, parseInt(document.getElementById('numDias').value) || 7));
+    const tabsEl = document.getElementById('dias-tabs');
+    const panelsEl = document.getElementById('dias-panels');
+    tabsEl.innerHTML = '';
+    panelsEl.innerHTML = '';
+
+    for (let d = 1; d <= totalDias; d++) {
+        const tab = document.createElement('div');
+        tab.className = 'dia-tab' + (d === 1 ? ' active' : '');
+        tab.textContent = `Día ${d}`;
+        tab.dataset.dia = d;
+        tab.onclick = () => activarTab(d);
+        tabsEl.appendChild(tab);
+
+        const notaValor = diasData && diasData[d] ? diasData[d].nota_sesion ?? '' : '';
+        const panel = document.createElement('div');
+        panel.className = 'dia-panel' + (d === 1 ? ' active' : '');
+        panel.id = `panel-dia-${d}`;
+        panel.dataset.dia = d;
+        panel.innerHTML = `
             <div class="nota-sesion-card">
                 <div class="nota-sesion-label"><i class="ti ti-clipboard-text"></i> Nota del día ${d}</div>
                 <textarea class="nota-sesion-textarea nota-dia" data-dia="${d}" placeholder="Indicaciones generales para este día…">${notaValor}</textarea>
@@ -310,215 +338,336 @@ function generarTabs(diasData=null) {
                 <button type="button" onclick="abrirModalCircuito(${d})"          class="add-block-btn">＋ Circuito</button>
             </div>`;
         panelsEl.appendChild(panel);
-        if(diasData&&diasData[d]){
-            const bloques=diasData[d].bloques??{};
-            Object.entries(bloques).forEach(([grupo,bloque])=>precargarBloque(grupo,bloque,d));
+
+        if (diasData && diasData[d]) {
+            const bloques = diasData[d].bloques ?? {};
+            Object.entries(bloques).forEach(([grupo, bloque]) => precargarBloque(grupo, bloque, d));
         }
     }
-    diaActivo=1;
+    diaActivo = 1;
 }
 
 function activarTab(d) {
-    document.querySelectorAll('.dia-tab').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.dia)===d));
-    document.querySelectorAll('.dia-panel').forEach(p=>p.classList.toggle('active',parseInt(p.dataset.dia)===d));
-    diaActivo=d;
+    document.querySelectorAll('.dia-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.dia) === d));
+    document.querySelectorAll('.dia-panel').forEach(p => p.classList.toggle('active', parseInt(p.dataset.dia) === d));
+    diaActivo = d;
 }
 
 /* ── Guardar ── */
-function guardarPlantilla() {
-    const btn=document.getElementById('btn-guardar');
-    btn.disabled=true; btn.textContent='⏳ Guardando...';
-    const dias={};
-    for(let d=1;d<=totalDias;d++){
-        const contenedor=document.getElementById(`bloques-dia-${d}`);
-        if(!contenedor) continue;
-        const notaSesion=document.querySelector(`.nota-dia[data-dia="${d}"]`)?.value||'';
-        const bloques={};
-        let orden=0;
-        contenedor.querySelectorAll('.bloque').forEach(bloque=>{
-            const grupo=bloque.dataset.grupo, tipo=bloque.dataset.tipo;
-            if(!grupo) return;
-            const descInput=bloque.querySelector(`[data-bloque-descanso-valor="${grupo}"]`);
-            const descHidden=bloque.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
-            bloques[grupo]={ tipo, orden:orden++, descanso_valor:descInput?.value||'', descanso_unidad:descHidden?.value||'seg', ejercicios:{} };
-            bloque.querySelectorAll('.ejercicio-row').forEach((ejRow,i)=>{
-                const segmento    =ejRow.querySelector('.segmento-select')?.value??'';
-                const ejercicio_id=ejRow.querySelector('.ejercicio-id-input')?.value??'';
-                const nota_ej     =ejRow.querySelector('.nota-ej-input')?.value??'';
-                const series=[];
-                ejRow.querySelectorAll('[data-serie]').forEach(col=>{
-                    const metodo=col.querySelector('.metodo-select')?.value??'normal';
-                    const s={metodo};
-                    col.querySelectorAll('[data-key]').forEach(el=>{s[el.dataset.key]=el.value;});
+function recolectarDias() {
+    const dias = {};
+    for (let d = 1; d <= totalDias; d++) {
+        const contenedor = document.getElementById(`bloques-dia-${d}`);
+        if (!contenedor) continue;
+        const notaSesion = document.querySelector(`.nota-dia[data-dia="${d}"]`)?.value || '';
+        const bloques = {};
+        let orden = 0;
+        contenedor.querySelectorAll('.bloque').forEach(bloque => {
+            const grupo = bloque.dataset.grupo, tipo = bloque.dataset.tipo;
+            if (!grupo) return;
+            const descInput  = bloque.querySelector(`[data-bloque-descanso-valor="${grupo}"]`);
+            const descHidden = bloque.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
+            bloques[grupo] = {
+                tipo, orden: orden++,
+                descanso_valor: descInput?.value || '',
+                descanso_unidad: descHidden?.value || 'seg',
+                ejercicios: {}
+            };
+            bloque.querySelectorAll('.ejercicio-row').forEach((ejRow, i) => {
+                const segmento    = ejRow.querySelector('.segmento-select')?.value ?? '';
+                const ejercicio_id = ejRow.querySelector('.ejercicio-id-input')?.value ?? '';
+                const nota_ej     = ejRow.querySelector('.nota-ej-input')?.value ?? '';
+                const series = [];
+                ejRow.querySelectorAll('[data-serie]').forEach(col => {
+                    const metodo = col.querySelector('.metodo-select')?.value ?? 'normal';
+                    const s = { metodo };
+                    col.querySelectorAll('[data-key]').forEach(el => { s[el.dataset.key] = el.value; });
                     series.push(s);
                 });
-                bloques[grupo].ejercicios[i]={segmento,ejercicio_id,nota_ej,series};
+                bloques[grupo].ejercicios[i] = { segmento, ejercicio_id, nota_ej, series };
             });
         });
-        dias[d]={ nombre:`Día ${d}`, nota_sesion:notaSesion, bloques };
+        dias[d] = { nombre: `Día ${d}`, nota_sesion: notaSesion, bloques };
     }
-    document.getElementById('datos_json').value=JSON.stringify({dias});
+    return dias;
+}
+
+function guardarPlantilla() {
+    const btn = document.getElementById('btn-guardar');
+    btn.disabled = true;
+    btn.textContent = '⏳ Guardando...';
+    document.getElementById('datos_json').value = JSON.stringify({ dias: recolectarDias() });
     document.getElementById('form-plantilla').submit();
 }
 
 /* ── Helpers dropdown ── */
 function toggleDropdown(trigger) {
-    const wrapper=trigger.closest('.ej-select-wrapper'), dropdown=wrapper.querySelector('.ej-select-dropdown'), isOpen=dropdown.classList.contains('open');
-    document.querySelectorAll('.ej-select-dropdown.open').forEach(d=>d.classList.remove('open'));
-    if(!isOpen) dropdown.classList.add('open');
+    const wrapper  = trigger.closest('.ej-select-wrapper');
+    const dropdown = wrapper.querySelector('.ej-select-dropdown');
+    const isOpen   = dropdown.classList.contains('open');
+    document.querySelectorAll('.ej-select-dropdown.open').forEach(d => d.classList.remove('open'));
+    if (!isOpen) dropdown.classList.add('open');
 }
+
 function seleccionarEjercicio(option) {
-    const wrapper=option.closest('.ej-select-wrapper'), trigger=wrapper.querySelector('.ej-select-trigger'), hidden=document.getElementById(wrapper.dataset.target);
-    hidden.value=option.dataset.value;
-    const img=trigger.querySelector('img'), label=trigger.querySelector('.ej-trigger-nombre,.ej-trigger-placeholder');
-    if(option.dataset.imagen){img.src=option.dataset.imagen;img.style.display='block';}else{img.src='';img.style.display='none';}
-    label.className='ej-trigger-nombre'; label.textContent=option.dataset.nombre;
-    wrapper.querySelectorAll('.ej-select-option').forEach(o=>o.classList.remove('selected')); option.classList.add('selected');
+    const wrapper = option.closest('.ej-select-wrapper');
+    const trigger = wrapper.querySelector('.ej-select-trigger');
+    const hidden  = document.getElementById(wrapper.dataset.target);
+    hidden.value  = option.dataset.value;
+    const img   = trigger.querySelector('img');
+    const label = trigger.querySelector('.ej-trigger-nombre,.ej-trigger-placeholder');
+    if (option.dataset.imagen) { img.src = option.dataset.imagen; img.style.display = 'block'; }
+    else { img.src = ''; img.style.display = 'none'; }
+    label.className  = 'ej-trigger-nombre';
+    label.textContent = option.dataset.nombre;
+    wrapper.querySelectorAll('.ej-select-option').forEach(o => o.classList.remove('selected'));
+    option.classList.add('selected');
     wrapper.querySelector('.ej-select-dropdown').classList.remove('open');
 }
-document.addEventListener('click', e=>{if(!e.target.closest('.ej-select-wrapper')) document.querySelectorAll('.ej-select-dropdown.open').forEach(d=>d.classList.remove('open'));});
-function onSegmentoChange(select) {
-    const ejId=select.dataset.ej, seg=select.value, wrapper=document.querySelector(`.ej-select-wrapper[data-target="${ejId}"]`);
-    if(!wrapper) return;
-    const trigger=wrapper.querySelector('.ej-select-trigger'), img=trigger.querySelector('img'), label=trigger.querySelector('.ej-trigger-nombre,.ej-trigger-placeholder');
-    const dropdown=wrapper.querySelector('.ej-select-dropdown'), hidden=document.getElementById(ejId);
-    hidden.value=''; img.src=''; img.style.display='none'; label.className='ej-trigger-placeholder'; label.textContent='-- Ejercicio --'; dropdown.innerHTML='';
-    (ejerciciosPorGrupo[seg]??[]).forEach(e=>{
-        const url=e.imagen?`https://res.cloudinary.com/ddls3oqbe/image/upload/${e.imagen}`:'', div=document.createElement('div');
-        div.className='ej-select-option'; div.dataset.value=e.id; div.dataset.nombre=e.nombre; div.dataset.imagen=url; div.onclick=()=>seleccionarEjercicio(div);
-        div.innerHTML=url?`<img src="${url}" alt="${e.nombre}"><span>${e.nombre}</span>`:`<div class="ej-no-img">Sin img</div><span>${e.nombre}</span>`;
-        dropdown.appendChild(div);
-    });
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('.ej-select-wrapper'))
+        document.querySelectorAll('.ej-select-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+
+function construirOpcionEjercicio(e, ejSeleccionadoId = null) {
+    const url = imgUrl(e.imagen);
+    const sel = String(e.id) === String(ejSeleccionadoId) ? 'selected' : '';
+    const div = document.createElement('div');
+    div.className = `ej-select-option ${sel}`;
+    div.dataset.value  = e.id;
+    div.dataset.nombre = e.nombre;
+    div.dataset.imagen = url;
+    div.onclick = () => seleccionarEjercicio(div);
+    div.innerHTML = url
+        ? `<img src="${url}" alt="${e.nombre}"><span>${e.nombre}</span>`
+        : `<div class="ej-no-img">Sin img</div><span>${e.nombre}</span>`;
+    return div;
 }
-document.addEventListener('change', e=>{if(e.target.classList.contains('segmento-select')) onSegmentoChange(e.target);});
+
+function onSegmentoChange(select) {
+    const ejId    = select.dataset.ej;
+    const seg     = select.value;
+    const wrapper = document.querySelector(`.ej-select-wrapper[data-target="${ejId}"]`);
+    if (!wrapper) return;
+    const trigger  = wrapper.querySelector('.ej-select-trigger');
+    const img      = trigger.querySelector('img');
+    const label    = trigger.querySelector('.ej-trigger-nombre,.ej-trigger-placeholder');
+    const dropdown = wrapper.querySelector('.ej-select-dropdown');
+    const hidden   = document.getElementById(ejId);
+    hidden.value = ''; img.src = ''; img.style.display = 'none';
+    label.className = 'ej-trigger-placeholder'; label.textContent = '-- Ejercicio --';
+    dropdown.innerHTML = '';
+    (ejerciciosPorGrupo[seg] ?? []).forEach(e => dropdown.appendChild(construirOpcionEjercicio(e)));
+}
+
+document.addEventListener('change', e => {
+    if (e.target.classList.contains('segmento-select')) onSegmentoChange(e.target);
+});
 
 /* ── Descanso ── */
 function actualizarDescansoBadge(grupo) {
-    const input=document.querySelector(`[data-bloque-descanso-valor="${grupo}"]`), badge=document.getElementById(`desc-badge-${grupo}`);
-    const unidad=document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`)?.value||'seg';
-    if(!input||!badge) return;
-    if(input.value){badge.textContent=`${input.value} ${unidad}`;badge.style.display='';}else{badge.style.display='none';}
+    const input  = document.querySelector(`[data-bloque-descanso-valor="${grupo}"]`);
+    const badge  = document.getElementById(`desc-badge-${grupo}`);
+    const unidad = document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`)?.value || 'seg';
+    if (!input || !badge) return;
+    if (input.value) { badge.textContent = `${input.value} ${unidad}`; badge.style.display = ''; }
+    else { badge.style.display = 'none'; }
 }
-function setDescUnidadBloque(btn,grupo,unidad) {
-    const hidden=document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
-    if(hidden) hidden.value=unidad;
-    document.querySelectorAll(`[data-bloque-descanso-unidad="${grupo}"]`).forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel'); actualizarDescansoBadge(grupo);
+
+function setDescUnidadBloque(btn, grupo, unidad) {
+    const hidden = document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
+    if (hidden) hidden.value = unidad;
+    document.querySelectorAll(`[data-bloque-descanso-unidad="${grupo}"]`).forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    actualizarDescansoBadge(grupo);
 }
 
 /* ── Tempo ── */
 function toggleTempo(btn) {
-    const wrap=btn.closest('.tempo-wrap'), fields=wrap.querySelector('.tempo-fields'), hidden=wrap.querySelector('[data-key="tempo_activo"]'), isOpen=fields.classList.contains('open');
-    fields.classList.toggle('open',!isOpen); btn.classList.toggle('active',!isOpen); hidden.value=isOpen?'0':'1';
-    if(isOpen){btn.querySelector('span').textContent='Tempo';}else{actualizarTempoLabel(wrap.querySelector('[data-key="tempo_excentrica"]'));}
+    const wrap   = btn.closest('.tempo-wrap');
+    const fields = wrap.querySelector('.tempo-fields');
+    const hidden = wrap.querySelector('[data-key="tempo_activo"]');
+    const isOpen = fields.classList.contains('open');
+    fields.classList.toggle('open', !isOpen);
+    btn.classList.toggle('active', !isOpen);
+    hidden.value = isOpen ? '0' : '1';
+    if (isOpen) { btn.querySelector('span').textContent = 'Tempo'; }
+    else { actualizarTempoLabel(wrap.querySelector('[data-key="tempo_excentrica"]')); }
 }
+
 function actualizarTempoLabel(input) {
-    const wrap=input.closest('.tempo-wrap');
-    const tE=wrap.querySelector('[data-key="tempo_excentrica"]')?.value||'0';
-    const tP=wrap.querySelector('[data-key="tempo_pausa"]')?.value||'0';
-    const tC=wrap.querySelector('[data-key="tempo_concentrica"]')?.value||'0';
-    const btn=wrap.querySelector('.tempo-toggle span'), prev=wrap.querySelector('.tempo-preview');
-    if(btn) btn.textContent=`${tE}–${tP}–${tC}`; if(prev) prev.textContent=`${tE} – ${tP} – ${tC}`;
+    const wrap = input.closest('.tempo-wrap');
+    const tE = wrap.querySelector('[data-key="tempo_excentrica"]')?.value || '0';
+    const tP = wrap.querySelector('[data-key="tempo_pausa"]')?.value || '0';
+    const tC = wrap.querySelector('[data-key="tempo_concentrica"]')?.value || '0';
+    const btn  = wrap.querySelector('.tempo-toggle span');
+    const prev = wrap.querySelector('.tempo-preview');
+    if (btn)  btn.textContent  = `${tE}–${tP}–${tC}`;
+    if (prev) prev.textContent = `${tE} – ${tP} – ${tC}`;
 }
 
 /* ── RIR/RPE ── */
 function toggleRir(btn) {
-    const wrap=btn.closest('.rir-wrap'), fields=wrap.querySelector('.rir-fields'), hidden=wrap.querySelector('[data-key="rir_activo"]'), isOpen=fields.classList.contains('open');
-    fields.classList.toggle('open',!isOpen); btn.classList.toggle('active',!isOpen); hidden.value=isOpen?'0':'1';
-    if(isOpen){btn.querySelector('span').textContent='RIR/RPE';}else{actualizarRirLabel(wrap.querySelector('[data-key="rir_valor"]'));}
+    const wrap   = btn.closest('.rir-wrap');
+    const fields = wrap.querySelector('.rir-fields');
+    const hidden = wrap.querySelector('[data-key="rir_activo"]');
+    const isOpen = fields.classList.contains('open');
+    fields.classList.toggle('open', !isOpen);
+    btn.classList.toggle('active', !isOpen);
+    hidden.value = isOpen ? '0' : '1';
+    if (isOpen) { btn.querySelector('span').textContent = 'RIR/RPE'; }
+    else { actualizarRirLabel(wrap.querySelector('[data-key="rir_valor"]')); }
 }
+
 function actualizarRirLabel(input) {
-    const wrap=input.closest('.rir-wrap'), modo=wrap.querySelector('[data-key="rir_modo"]')?.value||'rir', val=wrap.querySelector('[data-key="rir_valor"]')?.value||'';
-    const label=modo==='rir'?'RIR':'RPE', btn=wrap.querySelector('.rir-toggle span'), prev=wrap.querySelector('.rir-preview'), scale=wrap.querySelector('.rir-scale');
-    if(btn) btn.textContent=val?`${label} ${val}`:'RIR/RPE';
-    if(prev) prev.textContent=val?`${label} ${val}`:'–';
-    if(scale) scale.textContent=modo==='rir'?'RIR 0 = fallo · RIR 2 = 2 reps reserva':'RPE 10 = fallo · RPE 7 = moderado';
+    const wrap  = input.closest('.rir-wrap');
+    const modo  = wrap.querySelector('[data-key="rir_modo"]')?.value || 'rir';
+    const val   = wrap.querySelector('[data-key="rir_valor"]')?.value || '';
+    const label = modo === 'rir' ? 'RIR' : 'RPE';
+    const btn   = wrap.querySelector('.rir-toggle span');
+    const prev  = wrap.querySelector('.rir-preview');
+    const scale = wrap.querySelector('.rir-scale');
+    if (btn)   btn.textContent   = val ? `${label} ${val}` : 'RIR/RPE';
+    if (prev)  prev.textContent  = val ? `${label} ${val}` : '–';
+    if (scale) scale.textContent = modo === 'rir'
+        ? 'RIR 0 = fallo · RIR 2 = 2 reps reserva'
+        : 'RPE 10 = fallo · RPE 7 = moderado';
 }
-function setRirModo(btn,modo) {
-    const wrap=btn.closest('.rir-wrap'), hidden=wrap.querySelector('[data-key="rir_modo"]');
-    if(hidden) hidden.value=modo;
-    wrap.querySelectorAll('.rir-mode-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
+
+function setRirModo(btn, modo) {
+    const wrap   = btn.closest('.rir-wrap');
+    const hidden = wrap.querySelector('[data-key="rir_modo"]');
+    if (hidden) hidden.value = modo;
+    wrap.querySelectorAll('.rir-mode-btn').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
     actualizarRirLabel(wrap.querySelector('[data-key="rir_valor"]'));
 }
 
 /* ── Utilidades ── */
-function actualizarOrden(dia) { document.querySelectorAll(`#bloques-dia-${dia} .bloque`).forEach((b,i)=>{b.dataset.orden=i;}); }
-function cambiarMetodo(select) { select.closest('.serie-col').querySelectorAll('.metodo-fields').forEach(d=>d.classList.toggle('active',d.dataset.metodo===select.value)); }
-function calcular40(input) { const p=parseFloat(input.value)||0,c=input.closest('.serie-col').querySelector('.peso-21-result'); if(c) c.value=p>0?Math.round(p*.6*2)/2:''; }
-function actualizar888Nota(input) { const n=input.closest('.metodo-fields').querySelector('.nota-888'); if(n) n.textContent=`${input.value||'?'} c/u·desc.`; }
-function actualizar21sNota(input) { const n=input.closest('.metodo-fields').querySelector('.nota-21s'),r=input.value||'?'; if(n) n.textContent=`${r}+${r}+${r}`; }
-function actualizarHeader(grupo,numSeries) {
-    const header=document.querySelector(`.series-header-row[data-header="${grupo}"] .col-series-headers`);
-    if(!header) return; header.innerHTML='';
-    for(let s=0;s<numSeries;s++){const d=document.createElement('div');d.className='serie-header-col';d.textContent=`S${s+1}`;header.appendChild(d);}
+function actualizarOrden(dia) {
+    document.querySelectorAll(`#bloques-dia-${dia} .bloque`).forEach((b, i) => { b.dataset.orden = i; });
+}
+function cambiarMetodo(select) {
+    select.closest('.serie-col').querySelectorAll('.metodo-fields')
+        .forEach(d => d.classList.toggle('active', d.dataset.metodo === select.value));
+}
+function calcular40(input) {
+    const p = parseFloat(input.value) || 0;
+    const c = input.closest('.serie-col').querySelector('.peso-21-result');
+    if (c) c.value = p > 0 ? Math.round(p * .6 * 2) / 2 : '';
+}
+function actualizar888Nota(input) {
+    const n = input.closest('.metodo-fields').querySelector('.nota-888');
+    if (n) n.textContent = `${input.value || '?'} c/u·desc.`;
+}
+function actualizar21sNota(input) {
+    const n = input.closest('.metodo-fields').querySelector('.nota-21s');
+    const r = input.value || '?';
+    if (n) n.textContent = `${r}+${r}+${r}`;
+}
+function actualizarHeader(grupo, numSeries) {
+    const header = document.querySelector(`.series-header-row[data-header="${grupo}"] .col-series-headers`);
+    if (!header) return;
+    header.innerHTML = '';
+    for (let s = 0; s < numSeries; s++) {
+        const d = document.createElement('div');
+        d.className   = 'serie-header-col';
+        d.textContent = `S${s + 1}`;
+        header.appendChild(d);
+    }
 }
 
-function bloqueFooterHTML(grupo,descVal='',descUnidad='seg') {
-    return `<div class="bloque-footer"><span class="descanso-inline"><span>💤 Descanso entre series:</span><input type="number" min="0" class="descanso-valor-input" data-bloque-descanso-valor="${grupo}" value="${descVal}" placeholder="0" oninput="actualizarDescansoBadge('${grupo}')"><button type="button" class="descanso-unit-btn ${descUnidad==='seg'?'sel':''}" data-bloque-descanso-unidad="${grupo}" onclick="setDescUnidadBloque(this,'${grupo}','seg')">seg</button><button type="button" class="descanso-unit-btn ${descUnidad==='min'?'sel':''}" data-bloque-descanso-unidad="${grupo}" onclick="setDescUnidadBloque(this,'${grupo}','min')">min</button></span><input type="hidden" data-bloque-descanso-unidad-val="${grupo}" value="${descUnidad}"><span class="descanso-badge" id="desc-badge-${grupo}" style="${descVal?'':'display:none'}">${descVal?descVal+' '+descUnidad:''}</span></div>`;
+/* ── Footer bloque ── */
+function bloqueFooterHTML(grupo, descVal = '', descUnidad = 'seg') {
+    return `<div class="bloque-footer">
+        <span class="descanso-inline">
+            <span>💤 Descanso entre series:</span>
+            <input type="number" min="0" class="descanso-valor-input" data-bloque-descanso-valor="${grupo}" value="${descVal}" placeholder="0" oninput="actualizarDescansoBadge('${grupo}')">
+            <button type="button" class="descanso-unit-btn ${descUnidad === 'seg' ? 'sel' : ''}" data-bloque-descanso-unidad="${grupo}" onclick="setDescUnidadBloque(this,'${grupo}','seg')">seg</button>
+            <button type="button" class="descanso-unit-btn ${descUnidad === 'min' ? 'sel' : ''}" data-bloque-descanso-unidad="${grupo}" onclick="setDescUnidadBloque(this,'${grupo}','min')">min</button>
+        </span>
+        <input type="hidden" data-bloque-descanso-unidad-val="${grupo}" value="${descUnidad}">
+        <span class="descanso-badge" id="desc-badge-${grupo}" style="${descVal ? '' : 'display:none'}">${descVal ? descVal + ' ' + descUnidad : ''}</span>
+    </div>`;
 }
 
-function htmlSerieCol(ex={}) {
-    const m=ex.metodo??'normal', a=k=>m===k?'active':'', v=(k,d='')=>ex[k]??d;
-    const pg=(lbl,pk,uk)=>`<div class="campo-wrap"><label>${lbl}</label><div class="peso-group"><input class="campo-input" type="number" step="0.5" data-key="${pk}" value="${v(pk)}" placeholder="–"><select class="unidad-select" data-key="${uk}"><option value="kg" ${v(uk,'kg')==='kg'?'selected':''}>kg</option><option value="lb" ${v(uk,'kg')==='lb'?'selected':''}>lb</option></select></div></div>`;
-    const r21=v('reps_21s','7'), tA=ex.tempo_activo==='1', tE=v('tempo_excentrica',''), tP=v('tempo_pausa',''), tC=v('tempo_concentrica','');
-    const rA=ex.rir_activo==='1', rM=v('rir_modo','rir'), rV=v('rir_valor','');
+/* ── HTML serie col ── */
+function htmlSerieCol(ex = {}) {
+    const m  = ex.metodo ?? 'normal';
+    const a  = k => m === k ? 'active' : '';
+    const v  = (k, d = '') => ex[k] ?? d;
+    const pg = (lbl, pk, uk) => `<div class="campo-wrap"><label>${lbl}</label><div class="peso-group"><input class="campo-input" type="number" step="0.5" data-key="${pk}" value="${v(pk)}" placeholder="–"><select class="unidad-select" data-key="${uk}"><option value="kg" ${v(uk, 'kg') === 'kg' ? 'selected' : ''}>kg</option><option value="lb" ${v(uk, 'kg') === 'lb' ? 'selected' : ''}>lb</option></select></div></div>`;
+    const r21 = v('reps_21s', '7');
+    const tA  = ex.tempo_activo === '1';
+    const tE  = v('tempo_excentrica', '');
+    const tP  = v('tempo_pausa', '');
+    const tC  = v('tempo_concentrica', '');
+    const rA  = ex.rir_activo === '1';
+    const rM  = v('rir_modo', 'rir');
+    const rV  = v('rir_valor', '');
+
     return `<div class="serie-col" data-serie>
         <select class="metodo-select" onchange="cambiarMetodo(this)">
-            <option value="normal" ${m==='normal'?'selected':''}>Normal</option>
-            <option value="888" ${m==='888'?'selected':''}>Descend.</option>
-            <option value="restpause" ${m==='restpause'?'selected':''}>Rest-pause</option>
-            <option value="21s" ${m==='21s'?'selected':''}>3 Rangos</option>
-            <option value="10_21" ${m==='10_21'?'selected':''}>10+21s</option>
-            <option value="isometria" ${m==='isometria'?'selected':''}>Isometría</option>
-            <option value="forzadas" ${m==='forzadas'?'selected':''}>Forzadas</option>
-            <option value="parciales" ${m==='parciales'?'selected':''}>Parciales</option>
-            <option value="negativas" ${m==='negativas'?'selected':''}>Negativas</option>
+            <option value="normal"    ${m === 'normal'    ? 'selected' : ''}>Normal</option>
+            <option value="888"       ${m === '888'       ? 'selected' : ''}>Descend.</option>
+            <option value="restpause" ${m === 'restpause' ? 'selected' : ''}>Rest-pause</option>
+            <option value="21s"       ${m === '21s'       ? 'selected' : ''}>3 Rangos</option>
+            <option value="10_21"     ${m === '10_21'     ? 'selected' : ''}>10+21s</option>
+            <option value="isometria" ${m === 'isometria' ? 'selected' : ''}>Isometría</option>
+            <option value="forzadas"  ${m === 'forzadas'  ? 'selected' : ''}>Forzadas</option>
+            <option value="parciales" ${m === 'parciales' ? 'selected' : ''}>Parciales</option>
+            <option value="negativas" ${m === 'negativas' ? 'selected' : ''}>Negativas</option>
         </select>
         <div class="metodo-fields ${a('normal')}" data-metodo="normal">
-            <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" data-key="reps" value="${v('reps')}" placeholder="–"></div>${pg('Peso','peso','unidad')}
+            <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" data-key="reps" value="${v('reps')}" placeholder="–"></div>
+            ${pg('Peso', 'peso', 'unidad')}
         </div>
         <div class="metodo-fields ${a('888')}" data-metodo="888">
-            <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" min="1" data-key="reps_888" value="${v('reps_888','8')}" placeholder="8" oninput="actualizar888Nota(this)"></div>
-            ${pg('P1','peso1','unidad1')}${pg('P2','peso2','unidad2')}${pg('P3','peso3','unidad3')}
-            <div class="metodo-nota nota-888">${v('reps_888','8')} c/u·desc.</div>
+            <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" min="1" data-key="reps_888" value="${v('reps_888', '8')}" placeholder="8" oninput="actualizar888Nota(this)"></div>
+            ${pg('P1', 'peso1', 'unidad1')}${pg('P2', 'peso2', 'unidad2')}${pg('P3', 'peso3', 'unidad3')}
+            <div class="metodo-nota nota-888">${v('reps_888', '8')} c/u·desc.</div>
         </div>
         <div class="metodo-fields ${a('restpause')}" data-metodo="restpause">
             <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" data-key="reps_rp" value="${v('reps_rp')}" placeholder="–"></div>
-            ${pg('Peso','peso_rp','unidad_rp')}
-            <div class="campo-wrap"><label>Desc(s)</label><input class="campo-input" type="number" data-key="descanso" value="${v('descanso','15')}" placeholder="15"></div>
+            ${pg('Peso', 'peso_rp', 'unidad_rp')}
+            <div class="campo-wrap"><label>Desc(s)</label><input class="campo-input" type="number" data-key="descanso" value="${v('descanso', '15')}" placeholder="15"></div>
             <div class="metodo-nota">Fallo→pausa</div>
         </div>
         <div class="metodo-fields ${a('21s')}" data-metodo="21s">
             <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" min="1" data-key="reps_21s" value="${r21}" placeholder="7" oninput="actualizar21sNota(this)"></div>
-            ${pg('Peso','peso_21s','unidad_21s')}<div class="metodo-nota nota-21s">${r21}+${r21}+${r21}</div>
+            ${pg('Peso', 'peso_21s', 'unidad_21s')}
+            <div class="metodo-nota nota-21s">${r21}+${r21}+${r21}</div>
         </div>
         <div class="metodo-fields ${a('10_21')}" data-metodo="10_21">
-            <div class="campo-wrap"><label>P×10</label><div class="peso-group"><input class="campo-input" type="number" step="0.5" data-key="peso_10" value="${v('peso_10')}" placeholder="–" oninput="calcular40(this)"><select class="unidad-select" data-key="unidad_10"><option value="kg" ${v('unidad_10','kg')==='kg'?'selected':''}>kg</option><option value="lb">lb</option></select></div></div>
-            <div class="campo-wrap"><label>P×21s</label><div class="peso-group"><input class="campo-input peso-21-result" type="number" step="0.5" data-key="peso_21" value="${v('peso_21')}" placeholder="Auto"><select class="unidad-select" data-key="unidad_21"><option value="kg" ${v('unidad_21','kg')==='kg'?'selected':''}>kg</option><option value="lb">lb</option></select></div></div>
+            <div class="campo-wrap"><label>P×10</label><div class="peso-group"><input class="campo-input" type="number" step="0.5" data-key="peso_10" value="${v('peso_10')}" placeholder="–" oninput="calcular40(this)"><select class="unidad-select" data-key="unidad_10"><option value="kg" ${v('unidad_10', 'kg') === 'kg' ? 'selected' : ''}>kg</option><option value="lb">lb</option></select></div></div>
+            <div class="campo-wrap"><label>P×21s</label><div class="peso-group"><input class="campo-input peso-21-result" type="number" step="0.5" data-key="peso_21" value="${v('peso_21')}" placeholder="Auto"><select class="unidad-select" data-key="unidad_21"><option value="kg" ${v('unidad_21', 'kg') === 'kg' ? 'selected' : ''}>kg</option><option value="lb">lb</option></select></div></div>
             <div class="metodo-nota">−40%→21s</div>
         </div>
         <div class="metodo-fields ${a('isometria')}" data-metodo="isometria">
-            ${pg('Peso','peso_iso','unidad_iso')}
-            <div class="campo-wrap"><label>R/brazo</label><input class="campo-input" type="number" data-key="reps_brazo" value="${v('reps_brazo','4')}" placeholder="4"></div>
-            <div class="campo-wrap"><label>R/ambos</label><input class="campo-input" type="number" data-key="reps_ambos" value="${v('reps_ambos','8')}" placeholder="8"></div>
+            ${pg('Peso', 'peso_iso', 'unidad_iso')}
+            <div class="campo-wrap"><label>R/brazo</label><input class="campo-input" type="number" data-key="reps_brazo" value="${v('reps_brazo', '4')}" placeholder="4"></div>
+            <div class="campo-wrap"><label>R/ambos</label><input class="campo-input" type="number" data-key="reps_ambos" value="${v('reps_ambos', '8')}" placeholder="8"></div>
         </div>
         <div class="metodo-fields ${a('forzadas')}" data-metodo="forzadas">
             <div class="campo-wrap"><label>R.solo</label><input class="campo-input" type="number" data-key="reps_fz" value="${v('reps_fz')}" placeholder="–"></div>
             <div class="campo-wrap"><label>R.asist</label><input class="campo-input" type="number" data-key="reps_asistidas" value="${v('reps_asistidas')}" placeholder="–"></div>
-            ${pg('Peso','peso_fz','unidad_fz')}
+            ${pg('Peso', 'peso_fz', 'unidad_fz')}
         </div>
         <div class="metodo-fields ${a('parciales')}" data-metodo="parciales">
             <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" data-key="reps_pc" value="${v('reps_pc')}" placeholder="–"></div>
-            ${pg('Peso','peso_pc','unidad_pc')}<div class="metodo-nota">Parcial</div>
+            ${pg('Peso', 'peso_pc', 'unidad_pc')}
+            <div class="metodo-nota">Parcial</div>
         </div>
         <div class="metodo-fields ${a('negativas')}" data-metodo="negativas">
             <div class="campo-wrap"><label>Reps</label><input class="campo-input" type="number" data-key="reps_ng" value="${v('reps_ng')}" placeholder="–"></div>
-            ${pg('Peso','peso_ng','unidad_ng')}<div class="metodo-nota">Excéntrica</div>
+            ${pg('Peso', 'peso_ng', 'unidad_ng')}
+            <div class="metodo-nota">Excéntrica</div>
         </div>
         <div class="tempo-wrap">
-            <button type="button" class="tempo-toggle ${tA?'active':''}" onclick="toggleTempo(this)">⏱ <span>${tA?tE+'-'+tP+'-'+tC:'Tempo'}</span></button>
-            <input type="hidden" data-key="tempo_activo" value="${tA?'1':'0'}">
-            <div class="tempo-fields ${tA?'open':''}">
+            <button type="button" class="tempo-toggle ${tA ? 'active' : ''}" onclick="toggleTempo(this)">⏱ <span>${tA ? tE + '-' + tP + '-' + tC : 'Tempo'}</span></button>
+            <input type="hidden" data-key="tempo_activo" value="${tA ? '1' : '0'}">
+            <div class="tempo-fields ${tA ? 'open' : ''}">
                 <div class="tempo-row">
                     <div class="tempo-cell"><div class="tempo-icon">↓</div><div class="tempo-label">Excén<br>trica</div><input class="campo-input tempo-input" type="number" min="0" max="10" data-key="tempo_excentrica" value="${tE}" placeholder="0" oninput="actualizarTempoLabel(this)"><div class="tempo-unit">seg</div></div>
                     <div class="tempo-sep">–</div>
@@ -526,61 +675,82 @@ function htmlSerieCol(ex={}) {
                     <div class="tempo-sep">–</div>
                     <div class="tempo-cell"><div class="tempo-icon">↑</div><div class="tempo-label">Concén<br>trica</div><input class="campo-input tempo-input" type="number" min="0" max="10" data-key="tempo_concentrica" value="${tC}" placeholder="0" oninput="actualizarTempoLabel(this)"><div class="tempo-unit">seg</div></div>
                 </div>
-                <div class="tempo-preview">${tA&&(tE||tP||tC)?tE+' – '+tP+' – '+tC:'↓ – ⏸ – ↑'}</div>
+                <div class="tempo-preview">${tA && (tE || tP || tC) ? tE + ' – ' + tP + ' – ' + tC : '↓ – ⏸ – ↑'}</div>
             </div>
         </div>
         <div class="rir-wrap">
-            <button type="button" class="rir-toggle ${rA?'active':''}" onclick="toggleRir(this)">🎯 <span>${rA&&rV?(rM==='rir'?'RIR ':'RPE ')+rV:'RIR/RPE'}</span></button>
-            <input type="hidden" data-key="rir_activo" value="${rA?'1':'0'}">
-            <div class="rir-fields ${rA?'open':''}">
+            <button type="button" class="rir-toggle ${rA ? 'active' : ''}" onclick="toggleRir(this)">🎯 <span>${rA && rV ? (rM === 'rir' ? 'RIR ' : 'RPE ') + rV : 'RIR/RPE'}</span></button>
+            <input type="hidden" data-key="rir_activo" value="${rA ? '1' : '0'}">
+            <div class="rir-fields ${rA ? 'open' : ''}">
                 <div class="rir-mode-row">
-                    <button type="button" class="rir-mode-btn ${rM==='rir'?'sel':''}" onclick="setRirModo(this,'rir')">RIR</button>
-                    <button type="button" class="rir-mode-btn ${rM==='rpe'?'sel':''}" onclick="setRirModo(this,'rpe')">RPE</button>
+                    <button type="button" class="rir-mode-btn ${rM === 'rir' ? 'sel' : ''}" onclick="setRirModo(this,'rir')">RIR</button>
+                    <button type="button" class="rir-mode-btn ${rM === 'rpe' ? 'sel' : ''}" onclick="setRirModo(this,'rpe')">RPE</button>
                 </div>
                 <input type="hidden" data-key="rir_modo" value="${rM}">
                 <input class="campo-input" type="number" min="0" max="10" step="0.5" data-key="rir_valor" value="${rV}" placeholder="–" oninput="actualizarRirLabel(this)">
-                <div class="rir-scale">${rM==='rir'?'RIR 0 = fallo · RIR 2 = 2 reps reserva':'RPE 10 = fallo · RPE 7 = moderado'}</div>
-                <div class="rir-preview">${rA&&rV?(rM==='rir'?'RIR ':'RPE ')+rV:'–'}</div>
+                <div class="rir-scale">${rM === 'rir' ? 'RIR 0 = fallo · RIR 2 = 2 reps reserva' : 'RPE 10 = fallo · RPE 7 = moderado'}</div>
+                <div class="rir-preview">${rA && rV ? (rM === 'rir' ? 'RIR ' : 'RPE ') + rV : '–'}</div>
             </div>
         </div>
     </div>`;
 }
 
-function generarSeriesBloque(input,grupo,cantidad) {
-    const n=parseInt(input.value)||0; actualizarHeader(grupo,n);
-    for(let i=0;i<cantidad;i++){
-        const container=document.querySelector(`.series-cols[data-grupo="${grupo}"][data-ej="${i}"]`);
-        if(!container) continue;
-        const exArr=[];
-        container.querySelectorAll('[data-serie]').forEach(col=>{const ex={metodo:col.querySelector('.metodo-select')?.value??'normal'};col.querySelectorAll('[data-key]').forEach(el=>{ex[el.dataset.key]=el.value;});exArr.push(ex);});
-        container.innerHTML='';
-        for(let s=0;s<n;s++) container.insertAdjacentHTML('beforeend',htmlSerieCol(exArr[s]??{}));
+/* ── Regenerar series de un bloque ── */
+function generarSeriesBloque(input, grupo, cantidad) {
+    const n = parseInt(input.value) || 0;
+    actualizarHeader(grupo, n);
+    for (let i = 0; i < cantidad; i++) {
+        const container = document.querySelector(`.series-cols[data-grupo="${grupo}"][data-ej="${i}"]`);
+        if (!container) continue;
+        const exArr = [];
+        container.querySelectorAll('[data-serie]').forEach(col => {
+            const ex = { metodo: col.querySelector('.metodo-select')?.value ?? 'normal' };
+            col.querySelectorAll('[data-key]').forEach(el => { ex[el.dataset.key] = el.value; });
+            exArr.push(ex);
+        });
+        container.innerHTML = '';
+        for (let s = 0; s < n; s++) container.insertAdjacentHTML('beforeend', htmlSerieCol(exArr[s] ?? {}));
     }
 }
 
-function agregarBloque(tipo,cantidad,dia,grupo=null,ejercsData=null,descVal='',descUnidad='seg') {
-    const g=grupo??('G'+contador++);
-    const contenedor=document.getElementById(`bloques-dia-${dia}`);
-    if(!contenedor) return;
-    const opts=Object.keys(ejerciciosPorGrupo).map(s=>`<option value="${s}">${s}</option>`).join('');
-    let html=`<div class="bloque" data-grupo="${g}" data-tipo="${tipo}" data-dia="${dia}">
+/* ── Agregar bloque ── */
+function agregarBloque(tipo, cantidad, dia, grupo = null, ejercsData = null, descVal = '', descUnidad = 'seg') {
+    const g = grupo ?? ('G' + contador++);
+    const contenedor = document.getElementById(`bloques-dia-${dia}`);
+    if (!contenedor) return;
+
+    const opts = Object.keys(ejerciciosPorGrupo).map(s => `<option value="${s}">${s}</option>`).join('');
+
+    let html = `<div class="bloque" data-grupo="${g}" data-tipo="${tipo}" data-dia="${dia}">
         <div class="bloque-header">
-            <span class="bloque-tipo tipo-${tipo.toLowerCase()}">${tipo.toUpperCase()}${tipo==='circuito'?`<span style="opacity:.7;font-size:.55rem"> · ${cantidad} ej.</span>`:''}</span>
+            <span class="bloque-tipo tipo-${tipo.toLowerCase()}">${tipo.toUpperCase()}${tipo === 'circuito' ? `<span style="opacity:.7;font-size:.55rem"> · ${cantidad} ej.</span>` : ''}</span>
             <div class="bloque-series-count">Series:<input type="number" min="1" placeholder="–" onchange="generarSeriesBloque(this,'${g}',${cantidad})"></div>
             <button type="button" class="btn-remove" onclick="this.closest('.bloque').remove();actualizarOrden(${dia});">✕</button>
         </div>
         <div class="series-header-row" data-header="${g}"><div class="col-info-header">Ejercicio</div><div class="col-series-headers"></div></div>`;
-    for(let i=0;i<cantidad;i++){
-        const ejId=`ej-${g}-${i}`, lClass=LETRAS[i%LETRAS.length], bgClass=BGS[i%BGS.length];
-        const ej=ejercsData?ejercsData[i]:null;
-        const ejsSegmento=ejerciciosPorGrupo[ej?.segmento]??[];
-        const ejActual=ej?ejsSegmento.find(e=>String(e.id)===String(ej.ejercicio_id)):null;
-        const ejNombre=ejActual?ejActual.nombre:'-- Ejercicio --';
-        const ejImagen=ejActual?.imagen?`https://res.cloudinary.com/ddls3oqbe/image/upload/${ejActual.imagen}`:'';
-        const optsSegmento=ej?Object.keys(ejerciciosPorGrupo).map(s=>`<option value="${s}" ${s===ej.segmento?'selected':''}>${s}</option>`).join(''):opts;
-        const optsEjs=ej?ejsSegmento.map(e=>{const url=e.imagen?`https://res.cloudinary.com/ddls3oqbe/image/upload/${e.imagen}`:'';const sel=String(e.id)===String(ej.ejercicio_id)?'selected':'';return `<div class="ej-select-option ${sel}" data-value="${e.id}" data-nombre="${e.nombre}" data-imagen="${url}" onclick="seleccionarEjercicio(this)">${url?`<img src="${url}" alt="${e.nombre}">`:'<div class="ej-no-img">Sin img</div>'}<span>${e.nombre}</span></div>`;}).join(''):'';
-        html+=`<div class="ejercicio-row ${bgClass}">
-            <div class="ej-letra ${lClass}">${NUMS[i]??(i+1)}</div>
+
+    for (let i = 0; i < cantidad; i++) {
+        const ejId      = `ej-${g}-${i}`;
+        const lClass    = LETRAS[i % LETRAS.length];
+        const bgClass   = BGS[i % BGS.length];
+        const ej        = ejercsData ? ejercsData[i] : null;
+        const ejsSegmento = ejerciciosPorGrupo[ej?.segmento] ?? [];
+        const ejActual  = ej ? ejsSegmento.find(e => String(e.id) === String(ej.ejercicio_id)) : null;
+        const ejNombre  = ejActual ? ejActual.nombre : '-- Ejercicio --';
+        const ejImagen  = imgUrl(ejActual?.imagen);                          // ✅ FIX: usa imgUrl y ejActual
+        const optsSegmento = ej
+            ? Object.keys(ejerciciosPorGrupo).map(s => `<option value="${s}" ${s === ej.segmento ? 'selected' : ''}>${s}</option>`).join('')
+            : opts;
+        const optsEjs = ej
+            ? ejsSegmento.map(e => {
+                const url = imgUrl(e.imagen);                                // ✅ FIX: usa imgUrl
+                const sel = String(e.id) === String(ej.ejercicio_id) ? 'selected' : '';
+                return `<div class="ej-select-option ${sel}" data-value="${e.id}" data-nombre="${e.nombre}" data-imagen="${url}" onclick="seleccionarEjercicio(this)">${url ? `<img src="${url}" alt="${e.nombre}">` : '<div class="ej-no-img">Sin img</div>'}<span>${e.nombre}</span></div>`;
+              }).join('')
+            : '';
+
+        html += `<div class="ejercicio-row ${bgClass}">
+            <div class="ej-letra ${lClass}">${NUMS[i] ?? (i + 1)}</div>
             <div class="col-segmento">
                 <div class="field-label">Segmento</div>
                 <select class="segmento-select" data-ej="${ejId}" onchange="onSegmentoChange(this)">
@@ -589,57 +759,69 @@ function agregarBloque(tipo,cantidad,dia,grupo=null,ejercsData=null,descVal='',d
             </div>
             <div class="col-ejercicio">
                 <div class="field-label">Ejercicio</div>
-                <input type="hidden" id="${ejId}" class="ejercicio-id-input" value="${ej?.ejercicio_id??''}">
+                <input type="hidden" id="${ejId}" class="ejercicio-id-input" value="${ej?.ejercicio_id ?? ''}">
                 <div class="ej-select-wrapper" data-target="${ejId}">
                     <div class="ej-select-trigger" onclick="toggleDropdown(this)">
-                        ${ejImagen?`<img src="${ejImagen}" alt="" style="display:block">`:`<img src="" alt="" style="display:none">`}
-                        <span class="${ejActual?'ej-trigger-nombre':'ej-trigger-placeholder'}">${ejNombre}</span>
+                        ${ejImagen ? `<img src="${ejImagen}" alt="" style="display:block">` : `<img src="" alt="" style="display:none">`}
+                        <span class="${ejActual ? 'ej-trigger-nombre' : 'ej-trigger-placeholder'}">${ejNombre}</span>
                         <span class="ej-trigger-arrow">▼</span>
                     </div>
                     <div class="ej-select-dropdown">${optsEjs}</div>
                 </div>
                 <div class="nota-ej-input-wrap">
                     <i class="ti ti-pencil"></i>
-                    <textarea class="nota-ej-input" placeholder="nota…">${ej?.nota_ej??''}</textarea>
+                    <textarea class="nota-ej-input" placeholder="nota…">${ej?.nota_ej ?? ''}</textarea>
                 </div>
             </div>
             <div class="col-series"><div class="series-cols" data-grupo="${g}" data-ej="${i}"></div></div>
         </div>`;
     }
-    html+=bloqueFooterHTML(g,descVal,descUnidad)+'</div>';
-    contenedor.insertAdjacentHTML('beforeend',html);
-    if(ejercsData){
-        Object.entries(ejercsData).forEach(([i,ej])=>{
-            const container=document.querySelector(`.series-cols[data-grupo="${g}"][data-ej="${i}"]`);
-            if(!container) return;
-            const series=ej.series??[];
-            actualizarHeader(g,series.length);
-            const seriesInput=document.querySelector(`.bloque[data-grupo="${g}"] .bloque-series-count input`);
-            if(seriesInput) seriesInput.value=series.length;
-            series.forEach(serie=>container.insertAdjacentHTML('beforeend',htmlSerieCol(serie)));
+
+    html += bloqueFooterHTML(g, descVal, descUnidad) + '</div>';
+    contenedor.insertAdjacentHTML('beforeend', html);
+
+    if (ejercsData) {
+        Object.entries(ejercsData).forEach(([i, ej]) => {
+            const container = document.querySelector(`.series-cols[data-grupo="${g}"][data-ej="${i}"]`);
+            if (!container) return;
+            const series = ej.series ?? [];
+            actualizarHeader(g, series.length);
+            const seriesInput = document.querySelector(`.bloque[data-grupo="${g}"] .bloque-series-count input`);
+            if (seriesInput) seriesInput.value = series.length;
+            series.forEach(serie => container.insertAdjacentHTML('beforeend', htmlSerieCol(serie)));
         });
     }
-    contenedor.querySelectorAll('.nota-ej-input').forEach(el=>{
+
+    contenedor.querySelectorAll('.nota-ej-input').forEach(el => {
         autoExpandNota(el);
-        if(!el._expandBound){el.addEventListener('input',()=>autoExpandNota(el));el._expandBound=true;}
+        if (!el._expandBound) { el.addEventListener('input', () => autoExpandNota(el)); el._expandBound = true; }
     });
+
     actualizarOrden(dia);
 }
 
-function precargarBloque(grupo,bloque,dia) {
-    agregarBloque(bloque.tipo, Object.keys(bloque.ejercicios??{}).length, dia, grupo, bloque.ejercicios??{}, bloque.descanso_valor??'', bloque.descanso_unidad??'seg');
+function precargarBloque(grupo, bloque, dia) {
+    agregarBloque(
+        bloque.tipo,
+        Object.keys(bloque.ejercicios ?? {}).length,
+        dia,
+        grupo,
+        bloque.ejercicios ?? {},
+        bloque.descanso_valor ?? '',
+        bloque.descanso_unidad ?? 'seg'
+    );
 }
 
 /* ── Inicializar ── */
 const esDiasNuevo = diasExistentes && Object.values(diasExistentes)[0]?.bloques !== undefined;
-if(esDiasNuevo){
-    document.getElementById('numDias').value=Object.keys(diasExistentes).length;
+if (esDiasNuevo) {
+    document.getElementById('numDias').value = Object.keys(diasExistentes).length;
     generarTabs(diasExistentes);
 } else {
-    document.getElementById('numDias').value=1;
+    document.getElementById('numDias').value = 1;
     generarTabs();
-    if(diasExistentes){
-        Object.entries(diasExistentes).forEach(([grupo,bloque])=>precargarBloque(grupo,bloque,1));
+    if (diasExistentes) {
+        Object.entries(diasExistentes).forEach(([grupo, bloque]) => precargarBloque(grupo, bloque, 1));
     }
 }
 </script>

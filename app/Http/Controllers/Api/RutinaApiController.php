@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Rutina;
 use App\Models\User;
 use App\Models\Ejercicio;
+use Illuminate\Http\Request;  // ← esta línea
+
 
 class RutinaApiController extends Controller
 {
@@ -72,4 +74,32 @@ class RutinaApiController extends Controller
             'bloques'     => $bloques,
         ]);
     }
+
+
+   public function guardarPesos(Request $request, $clienteId, $semana, $dia)
+{
+    $bloques = $request->input('bloques', []);
+
+    foreach ($bloques as $bloqueData) {
+        $orden = $bloqueData['orden'];
+
+        foreach ($bloqueData['ejercicios'] ?? [] as $ejData) {
+            $rutina = \App\Models\Rutina::where('user_id', $clienteId)
+                ->where('semana', $semana)
+                ->where('dia', $dia)
+                ->where('orden', $orden)
+                ->where('nombre', $ejData['nombre'])
+                ->first();
+
+            if ($rutina) {
+                $rutina->series = $ejData['series'];
+                $rutina->save();
+            }
+        }
+    }
+
+    return response()->json(['ok' => true]);
+}
+
+
 }

@@ -289,4 +289,52 @@ function confirmarSemanas(semanas) {
 </div>
 
 
+
+{{-- ── Modal sin rutina ── --}}
+@if(session('sin_plan_cliente'))
+<div
+    id="modalSinPlan"
+    onclick="if(event.target===this)this.style.display='none'"
+    style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,.45);
+           z-index:10000; align-items:center; justify-content:center;">
+
+    <div style="background:white; border-radius:16px; width:100%; max-width:360px;
+                padding:28px; margin:1rem; text-align:center;">
+
+        <div style="width:52px; height:52px; background:#fef3c7; border-radius:14px;
+                    display:flex; align-items:center; justify-content:center;
+                    margin:0 auto 16px;">
+            <svg style="width:26px; height:26px;" fill="none"
+                 stroke="#d97706" stroke-width="1.75" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25
+                     h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5
+                     A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5
+                     A2.25 2.25 0 0121 9v7.5"/>
+            </svg>
+        </div>
+
+        <h3 style="font-size:1rem; font-weight:700; color:#111827; margin:0 0 6px;">
+            Sin rutina asignada
+        </h3>
+        <p style="font-size:0.85rem; color:#6b7280; margin:0 0 20px; line-height:1.6;">
+            <strong style="color:#374151;">{{ session('sin_plan_cliente') }}</strong>
+            no tiene un plan de entrenamiento todavía.<br>
+            Asígnale uno con el botón
+            <strong style="color:#374151;">+</strong> en la tabla.
+        </p>
+
+        <button
+            onclick="document.getElementById('modalSinPlan').style.display='none'"
+            style="width:100%; padding:10px; background:#1d4ed8; color:white;
+                   border:none; border-radius:10px; font-size:0.875rem;
+                   font-weight:600; cursor:pointer;">
+            Entendido
+        </button>
+
+    </div>
+</div>
+@endif
+
+
 @endsection

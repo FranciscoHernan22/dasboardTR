@@ -12,6 +12,7 @@ use App\Http\Controllers\EntrenadorClienteController;
 use App\Http\Controllers\HIstorialController;
 use App\Http\Controllers\RutinaPdfController;
 use App\Http\Controllers\PlantillaController;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('principal');
@@ -34,7 +35,10 @@ Route::get('/entrenador/dashboard', function () {
 })->name('entrenador.dashboard');
 
 Route::post('/entrenador/logout', function () {
-    return redirect('/');
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/login');
 })->name('entrenador.logout');
 
 // ── Clientes ──────────────────────────────────────────────────────────────
@@ -124,3 +128,13 @@ Route::post('/entrenador/clientes', [EntrenadorClienteController::class, 'store'
 
 
      
+
+
+     // ── Perfil ────────────────────────────────────────────────────────────────
+Route::get('/entrenador/perfil/editar',
+    [EntrenadorController::class, 'editarPerfil'])
+    ->name('entrenador.perfil.edit');
+
+Route::post('/entrenador/perfil/editar',
+    [EntrenadorController::class, 'actualizarPerfil'])
+    ->name('entrenador.perfil.update');

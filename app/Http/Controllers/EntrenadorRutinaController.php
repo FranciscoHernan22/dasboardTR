@@ -12,18 +12,25 @@ use Illuminate\Support\Facades\Auth;
 
 class EntrenadorRutinaController extends Controller
 {
-    public function menu(User $cliente)
-    {
-        if ($cliente->entrenador_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $plan         = $cliente->plan;
-        $semanaInicio = $plan ? $plan->semana_inicio : 1;
-        $semanaFin    = $plan ? ($plan->semana_inicio + $plan->semanas - 1) : 4;
-
-        return view('rutina.menu', compact('cliente', 'semanaInicio', 'semanaFin'));
+  public function menu(User $cliente)
+{
+    if ($cliente->entrenador_id !== Auth::id()) {
+        abort(403);
     }
+
+    $plan = $cliente->plan;
+
+    // Si no tiene plan → regresa a clientes con modal
+    if (!$plan) {
+        return redirect()->route('entrenador.clientes')
+            ->with('sin_plan_cliente', $cliente->name);
+    }
+
+    $semanaInicio = $plan->semana_inicio;
+    $semanaFin    = $plan->semana_inicio + $plan->semanas - 1;
+
+    return view('rutina.menu', compact('cliente', 'semanaInicio', 'semanaFin'));
+}
 
     public function editar(User $cliente, $semana, $dia)
     {

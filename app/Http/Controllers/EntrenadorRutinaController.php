@@ -33,41 +33,49 @@ class EntrenadorRutinaController extends Controller
 }
 
     public function editar(User $cliente, $semana, $dia)
-    {
-        if ($cliente->entrenador_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $ejercicios = Ejercicio::all()->keyBy('id');
-
-        $ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
-            ->get()
-            ->groupBy('segmento');
-
-        $bloques = Rutina::where('user_id', $cliente->id)
-            ->where('semana', $semana)
-            ->where('dia', $dia)
-            ->orderBy('orden')
-            ->orderBy('id')
-            ->get()
-            ->groupBy('grupo');
-
-        $notaSesion = Rutina::where('user_id', $cliente->id)
-            ->where('semana', $semana)
-            ->where('dia', $dia)
-            ->value('nota_sesion') ?? '';
-
-        $plantillas = \App\Models\Plantilla::where('entrenador_id', Auth::id())
-            ->orderBy('nombre')
-            ->get();
-
-        return view('layouts.editar-rutina', compact(
-            'cliente', 'semana', 'dia', 'bloques',
-            'ejerciciosPorGrupo', 'ejercicios',
-            'notaSesion', 'plantillas'
-        ));
+{
+    if ($cliente->entrenador_id !== Auth::id()) {
+        abort(403);
     }
 
+    $ejercicios = Ejercicio::all()->keyBy('id');
+
+    $ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
+        ->get()
+        ->groupBy('segmento');
+
+    $bloques = Rutina::where('user_id', $cliente->id)
+        ->where('semana', $semana)
+        ->where('dia', $dia)
+        ->orderBy('orden')
+        ->orderBy('id')
+        ->get()
+        ->groupBy('grupo');
+
+    $notaSesion = Rutina::where('user_id', $cliente->id)
+        ->where('semana', $semana)
+        ->where('dia', $dia)
+        ->value('nota_sesion') ?? '';
+
+    $plantillas = \App\Models\Plantilla::where('entrenador_id', Auth::id())
+        ->orderBy('nombre')
+        ->get();
+
+    // ── Navegador: días que ya tienen rutina ──
+    $diasConRutina = Rutina::where('user_id', $cliente->id)
+        ->selectRaw('CONCAT(semana, "-", dia) as clave')
+        ->pluck('clave')
+        ->unique()
+        ->values()
+        ->toArray();
+
+    return view('layouts.editar-rutina', compact(
+        'cliente', 'semana', 'dia', 'bloques',
+        'ejerciciosPorGrupo', 'ejercicios',
+        'notaSesion', 'plantillas',
+        'diasConRutina'
+    ));
+}
     public function guardar(Request $request, User $cliente, $semana, $dia)
     {
         if ($cliente->entrenador_id !== Auth::id()) {

@@ -1,4 +1,7 @@
 <?php
+// DESTINO: app/Http/Controllers/EntrenadorRutinaController.php
+// Esta es tu versión ORIGINAL, antes de los cambios de "Ejercicios por entrenador".
+// Reemplaza tu controlador actual con este.
 
 namespace App\Http\Controllers;
 

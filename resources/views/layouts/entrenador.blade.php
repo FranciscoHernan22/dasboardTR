@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+{{-- DESTINO: resources/views/layouts/entrenador.blade.php
+     Esta es tu versión ORIGINAL, antes de los cambios de "Ejercicios por entrenador".
+     Reemplaza tu layout actual con este. --}}
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -97,65 +100,8 @@
   <div class="flex-1 flex flex-col min-w-0">
 
     {{-- Topbar — botón + usuario a la derecha --}}
-   <header class="h-12 bg-white border-b border-gray-200 flex items-center px-3 flex-shrink-0">
-  {{-- Botón toggle sidebar --}}
-  <button @click="toggle()"
-    class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors duration-100">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" viewBox="0 0 24 24">
-      <line x1="3" y1="6" x2="21" y2="6"/>
-      <line x1="3" y1="12" x2="21" y2="12"/>
-      <line x1="3" y1="18" x2="21" y2="18"/>
-    </svg>
-  </button>
 
-  {{-- Dropdown perfil --}}
-  <div class="ml-auto relative" x-data="{ profileOpen: false }" @click.outside="profileOpen = false">
-    <button @click="profileOpen = !profileOpen"
-      class="flex items-center gap-2.5 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors duration-100">
-      <span class="text-sm text-gray-500">{{ auth()->user()->name ?? 'Francisco' }}</span>
-      <div class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700 flex-shrink-0">
-        {{ strtoupper(substr(auth()->user()->name ?? 'F', 0, 2)) }}
-      </div>
-      <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-      </svg>
-    </button>
-
-    {{-- Menú desplegable --}}
-    <div x-show="profileOpen" x-transition
-      class="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl border border-gray-200 shadow-sm z-50 overflow-hidden">
-
-      {{-- Info usuario --}}
-      <div class="px-4 py-3 border-b border-gray-100">
-        <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name ?? 'Francisco' }}</p>
-        <p class="text-xs text-gray-500">Entrenador</p>
-      </div>
-
-      {{-- Editar perfil --}}
-      <a href="{{ route('entrenador.perfil.edit') }}"
-        class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-100">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
-        </svg>
-        Editar perfil
-      </a>
-
-      <div class="border-t border-gray-100"></div>
-
-      {{-- Cerrar sesión --}}
-      <form method="POST" action="{{ route('entrenador.logout') }}">
-        @csrf
-        <button type="submit"
-          class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors duration-100">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
-          </svg>
-          Cerrar sesión
-        </button>
-      </form>
-    </div>
-  </div>
-</header>
+    
 
     {{-- Contenido --}}
     <main class="flex-1 p-6 overflow-auto">

@@ -12,6 +12,10 @@ use App\Http\Controllers\EntrenadorClienteController;
 use App\Http\Controllers\HIstorialController;
 use App\Http\Controllers\RutinaPdfController;
 use App\Http\Controllers\PlantillaController;
+use App\Http\Controllers\EntrenadorEjercicioController;
+ 
+
+
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
@@ -138,3 +142,25 @@ Route::get('/entrenador/perfil/editar',
 Route::post('/entrenador/perfil/editar',
     [EntrenadorController::class, 'actualizarPerfil'])
     ->name('entrenador.perfil.update');
+
+
+
+
+
+
+
+    Route::get('/entrenador/ejercicios', [EntrenadorEjercicioController::class, 'index'])
+    ->name('entrenador.ejercicios.index');
+
+Route::post('/entrenador/ejercicios', [EntrenadorEjercicioController::class, 'store'])
+    ->name('entrenador.ejercicios.store');
+
+Route::put('/entrenador/ejercicios/{ejercicio}', [EntrenadorEjercicioController::class, 'update'])
+    ->name('entrenador.ejercicios.update');
+
+Route::delete('/entrenador/ejercicios/{ejercicio}', [EntrenadorEjercicioController::class, 'destroy'])
+    ->name('entrenador.ejercicios.destroy');
+
+
+
+  

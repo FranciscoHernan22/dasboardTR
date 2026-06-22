@@ -204,7 +204,9 @@ function confirmarSemanas(semanas) {
 
 // Reabrir el modal si hubo errores de validación
 @if ($errors->any())
+document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('modalNuevoCliente').style.display = 'flex';
+});
 @endif
 </script>
 

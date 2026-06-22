@@ -1,7 +1,5 @@
 <!DOCTYPE html>
-{{-- DESTINO: resources/views/layouts/entrenador.blade.php
-     Esta es tu versión ORIGINAL, antes de los cambios de "Ejercicios por entrenador".
-     Reemplaza tu layout actual con este. --}}
+{{-- DESTINO: resources/views/layouts/entrenador.blade.php --}}
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -11,6 +9,7 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
     .sidebar { transition: width .2s ease; }
+    [x-cloak] { display: none !important; }
   </style>
 </head>
 
@@ -25,7 +24,7 @@
   }"
 >
 
-<div class="flex min-h-screen">
+<div class="flex h-screen overflow-hidden">
 
   {{-- ─── SIDEBAR ─── --}}
   <aside
@@ -43,7 +42,6 @@
     </div>
 
     {{-- Nav --}}
-   {{-- Nav --}}
 <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
   <p class="px-3 py-1 text-[10px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Principal</p>
 
@@ -73,8 +71,9 @@
     <span>Rutinas</span>
   </a>
 
-  <a href="#"
-     class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm whitespace-nowrap text-slate-400 hover:bg-slate-800 hover:text-white transition-colors duration-100">
+  <a href="{{ route('entrenador.ejercicios.index') }}"
+     class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors duration-100
+            {{ request()->routeIs('entrenador.ejercicios.*') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
     <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5l-3.9 19.5m-2.1-19.5l-3.9 19.5"/>
     </svg>
@@ -92,16 +91,72 @@
   </a>
 </nav>
 
-    {{-- Usuario + logout --}}
-    
+    {{-- /Nav --}}
+
   </aside>
 
   {{-- ─── MAIN ─── --}}
   <div class="flex-1 flex flex-col min-w-0">
 
     {{-- Topbar — botón + usuario a la derecha --}}
+    <header class="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+        <button
+            @click="toggle()"
+            title="Mostrar/ocultar menú"
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors duration-100"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/>
+            </svg>
+        </button>
 
-    
+        {{-- Perfil del entrenador --}}
+        <div class="relative" x-data="{ menuAbierto: false }">
+            <button
+                @click="menuAbierto = !menuAbierto"
+                @click.outside="menuAbierto = false"
+                class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-100"
+            >
+                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                    {{ strtoupper(substr(auth()->user()?->nombre ?? 'E', 0, 2)) }}
+                </div>
+                <div class="text-left hidden sm:block">
+                    <div class="text-xs font-medium text-gray-900 leading-tight">{{ auth()->user()?->nombre ?? 'Entrenador' }}</div>
+                    <div class="text-[10px] text-gray-400 leading-tight">{{ auth()->user()?->email ?? '' }}</div>
+                </div>
+                <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-150"
+                     :class="menuAbierto ? '-rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div
+                x-show="menuAbierto"
+                x-cloak
+                x-transition
+                class="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 overflow-hidden"
+            >
+                <a href="{{ route('entrenador.perfil.edit') }}"
+                   class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-75">
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                    </svg>
+                    Editar perfil
+                </a>
+                <form method="POST" action="{{ route('entrenador.logout') }}">
+                    @csrf
+                    <button type="submit"
+                        class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-75">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
+                        </svg>
+                        Cerrar sesión
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
 
     {{-- Contenido --}}
     <main class="flex-1 p-6 overflow-auto">

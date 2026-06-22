@@ -1,4 +1,6 @@
 <?php
+// DESTINO: app/Http/Controllers/PlantillaController.php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -21,9 +23,14 @@ class PlantillaController extends Controller
 
     public function crear()
     {
+        // Clonar catálogo default si es la primera vez que entra este entrenador
+        Ejercicio::asegurarDefaultsPara(Auth::id());
+
         $ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
+            ->where('entrenador_id', Auth::id())
             ->get()
             ->groupBy('segmento');
+
         return view('entrenador.plantillas.crear', compact('ejerciciosPorGrupo'));
     }
 
@@ -44,7 +51,7 @@ class PlantillaController extends Controller
             'entrenador_id' => Auth::id(),
             'nombre'        => $request->nombre,
             'descripcion'   => $request->descripcion,
-            'bloques'       => $datos['dias'], // guardamos dias como bloques
+            'bloques'       => $datos['dias'],
         ]);
 
         return redirect()->route('entrenador.plantillas.index')
@@ -55,7 +62,34 @@ class PlantillaController extends Controller
     {
         if ($plantilla->entrenador_id !== Auth::id()) abort(403);
 
+        Ejercicio::asegurarDefaultsPara(Auth::id());
+
+        $mapaEjercicios = $this->construirMapaEjercicios(Auth::id());
+
+        if (!empty($mapaEjercicios)) {
+            $bloques = $plantilla->bloques ?? [];
+            $bloquesRemapeados = [];
+
+            foreach ($bloques as $diaIdx => $dia) {
+                $bloquesRemapeados[$diaIdx] = $dia;
+                foreach ($dia['bloques'] ?? [] as $grupo => $bloque) {
+                    $ejerciciosRemapeados = [];
+                    foreach ($bloque['ejercicios'] ?? [] as $ejIdx => $ej) {
+                        $idViejo = $ej['ejercicio_id'] ?? null;
+                        if ($idViejo && isset($mapaEjercicios[$idViejo])) {
+                            $ej['ejercicio_id'] = $mapaEjercicios[$idViejo];
+                        }
+                        $ejerciciosRemapeados[$ejIdx] = $ej;
+                    }
+                    $bloquesRemapeados[$diaIdx]['bloques'][$grupo]['ejercicios'] = $ejerciciosRemapeados;
+                }
+            }
+
+            $plantilla->bloques = $bloquesRemapeados;
+        }
+
         $ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
+            ->where('entrenador_id', Auth::id())
             ->get()
             ->groupBy('segmento');
 
@@ -99,18 +133,21 @@ class PlantillaController extends Controller
     {
         if ($plantilla->entrenador_id !== Auth::id()) abort(403);
 
-        $clienteId   = $request->cliente_id;
+        $clienteId    = $request->cliente_id;
         $semanaInicio = (int) $request->semana_inicio;
         $diaInicio    = (int) $request->dia_inicio;
-        $solodia      = $request->solo_dia; // null = todos, número = día específico de la plantilla
+        $solodia      = $request->solo_dia;
 
         $cliente = User::findOrFail($clienteId);
         $plan    = $cliente->plan;
 
+        // Construir mapa de remapeo: id_default → id_clonado para este entrenador
+        // Sirve para plantillas guardadas con IDs viejos (del catálogo default)
+        $mapaEjercicios = $this->construirMapaEjercicios(Auth::id());
+
         $dias = $plantilla->bloques ?? [];
 
         if ($solodia !== null) {
-            // Aplicar solo un día específico de la plantilla
             $diaPlantilla = $dias[$solodia] ?? null;
             if (!$diaPlantilla) return back()->withErrors(['error' => 'Día no encontrado']);
 
@@ -118,9 +155,8 @@ class PlantillaController extends Controller
                 ? Carbon::parse($plan->fecha_inicio)->addWeeks($semanaInicio - 1)->addDays($diaInicio - 1)->toDateString()
                 : now()->toDateString();
 
-            $this->guardarDiaRutina($cliente, $semanaInicio, $diaInicio, $diaPlantilla['bloques'] ?? [], $fecha);
+            $this->guardarDiaRutina($cliente, $semanaInicio, $diaInicio, $diaPlantilla['bloques'] ?? [], $fecha, $mapaEjercicios);
         } else {
-            // Aplicar todos los días consecutivamente
             $semana = $semanaInicio;
             $dia    = $diaInicio;
 
@@ -131,7 +167,7 @@ class PlantillaController extends Controller
                     ? Carbon::parse($plan->fecha_inicio)->addWeeks($semana - 1)->addDays($dia - 1)->toDateString()
                     : now()->toDateString();
 
-                $this->guardarDiaRutina($cliente, $semana, $dia, $diaData['bloques'] ?? [], $fecha);
+                $this->guardarDiaRutina($cliente, $semana, $dia, $diaData['bloques'] ?? [], $fecha, $mapaEjercicios);
                 $dia++;
             }
         }
@@ -140,9 +176,31 @@ class PlantillaController extends Controller
             ->with('success', 'Plantilla aplicada correctamente');
     }
 
-    private function guardarDiaRutina(User $cliente, int $semana, int $dia, array $bloques, string $fecha)
+    /**
+     * Construye un mapa [id_default => id_clonado] para los ejercicios
+     * de este entrenador. Sirve para convertir IDs viejos (del catálogo
+     * default con entrenador_id NULL) a los IDs propios del entrenador.
+     */
+    private function construirMapaEjercicios(int $entrenadorId): array
     {
-        // Borra lo que había ese día
+        $defaults = Ejercicio::whereNull('entrenador_id')->get(['id', 'nombre', 'segmento']);
+        $propios  = Ejercicio::where('entrenador_id', $entrenadorId)->get(['id', 'nombre', 'segmento']);
+
+        $mapa = [];
+        foreach ($defaults as $default) {
+            $clon = $propios->first(
+                fn ($e) => $e->nombre === $default->nombre && $e->segmento === $default->segmento
+            );
+            if ($clon) {
+                $mapa[$default->id] = $clon->id;
+            }
+        }
+
+        return $mapa;
+    }
+
+    private function guardarDiaRutina(User $cliente, int $semana, int $dia, array $bloques, string $fecha, array $mapaEjercicios = [])
+    {
         Rutina::where('user_id', $cliente->id)
             ->where('semana', $semana)
             ->where('dia', $dia)
@@ -152,7 +210,11 @@ class PlantillaController extends Controller
         foreach ($bloques as $grupo => $bloque) {
             foreach ($bloque['ejercicios'] ?? [] as $ej) {
                 if (empty($ej['ejercicio_id'])) continue;
-                $ejercicio = \App\Models\Ejercicio::find($ej['ejercicio_id']);
+
+                // Si el ID viene del catálogo default, lo convertimos al clon del entrenador
+                $ejercicioId = $mapaEjercicios[$ej['ejercicio_id']] ?? $ej['ejercicio_id'];
+
+                $ejercicio = Ejercicio::find($ejercicioId);
                 if (!$ejercicio) continue;
 
                 Rutina::create([

@@ -1,7 +1,8 @@
 <?php
 // DESTINO: app/Http/Controllers/EntrenadorRutinaController.php
-// Esta es tu versión ORIGINAL, antes de los cambios de "Ejercicios por entrenador".
-// Reemplaza tu controlador actual con este.
+// Cambios respecto a tu original: en editar() se asegura el clonado de
+// defaults y se filtran $ejercicios y $ejerciciosPorGrupo por
+// entrenador_id = Auth::id(). El resto del archivo queda igual.
 
 namespace App\Http\Controllers;
 
@@ -41,9 +42,16 @@ class EntrenadorRutinaController extends Controller
         abort(403);
     }
 
-    $ejercicios = Ejercicio::all()->keyBy('id');
+    // Asegura que este entrenador ya tenga su propio set de ejercicios
+    // (la primera vez le clonamos el catálogo default; las siguientes no hace nada)
+    Ejercicio::asegurarDefaultsPara(Auth::id());
+
+    $ejercicios = Ejercicio::where('entrenador_id', Auth::id())
+        ->get()
+        ->keyBy('id');
 
     $ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
+        ->where('entrenador_id', Auth::id())
         ->get()
         ->groupBy('segmento');
 

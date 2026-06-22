@@ -1,5 +1,11 @@
 <?php
-// DESTINO: database/migrations/2026_06_19_120000_add_entrenador_id_to_ejercicios_table.php
+// DESTINO: database/migrations/2026_06_20_120000_add_entrenador_id_to_ejercicios_table.php
+//
+// OJO: si todavía tienes el archivo de migración de la vez pasada
+// (2026_06_19_120000_add_entrenador_id_to_ejercicios_table.php) y solo le
+// hiciste rollback (no lo borraste), NO necesitas este archivo nuevo —
+// con correr "php artisan migrate" otra vez te vuelve a crear las columnas.
+// Usa este archivo SOLO si ya borraste el original.
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -15,18 +21,12 @@ return new class extends Migration
         });
 
         Schema::table('users', function (Blueprint $table) {
-            // Bandera para saber si a este entrenador ya se le clonó
-            // el catálogo "default" de ejercicios. Se usa para que el
-            // clonado ocurra UNA SOLA VEZ, aunque después borre todos
-            // sus ejercicios (no se le vuelven a regenerar solos).
             $table->boolean('ejercicios_default_clonados')->default(false)->after('entrenador_id');
         });
 
-        // IMPORTANTE: los ejercicios que ya existían en tu tabla (los que
-        // metiste a mano por MySQL) se quedan con entrenador_id = NULL.
-        // Esos son ahora el catálogo "default": cada entrenador nuevo
-        // (o que entra por primera vez a /entrenador/ejercicios) recibe
-        // una copia propia y editable de ese catálogo, sin tocar el original.
+        // Los ejercicios que ya tienes cargados quedan con entrenador_id = NULL:
+        // ese es el catálogo "default" que se clona UNA SOLA VEZ a cada
+        // entrenador la primera vez que entra a /entrenador/ejercicios.
     }
 
     public function down(): void

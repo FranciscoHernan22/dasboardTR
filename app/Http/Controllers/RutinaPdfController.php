@@ -79,7 +79,7 @@ class RutinaPdfController extends Controller
             'bloques' => $bloquesData,
         ], JSON_UNESCAPED_UNICODE);
 
-$python = PHP_OS === 'Darwin' ? '/opt/homebrew/bin/python3' : '/usr/bin/python3';        $scriptPath  = base_path('scripts/generar_rutina_pdf.py');
+        $python = PHP_OS === 'Darwin' ? '/opt/homebrew/bin/python3' : '/usr/bin/python3';        $scriptPath  = base_path('scripts/generar_rutina_pdf.py');
         $storagePath = storage_path('app/public');
         $pdfPath     = storage_path("app/rutinas/rutina_{$cliente->id}_s{$semana}_d{$dia}.pdf");
 

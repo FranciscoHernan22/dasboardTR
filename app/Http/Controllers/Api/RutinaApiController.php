@@ -47,9 +47,9 @@ class RutinaApiController extends Controller
                 return [
                     'nombre'   => $r->nombre,
                     'segmento' => $r->segmento,
-                    'imagen'   => $ejercicio && $ejercicio->imagen
-                                    ? asset('storage/' . $ejercicio->imagen)
-                                    : null,
+                    'imagen' => $ejercicio && $ejercicio->imagen
+    ? env('AWS_URL') . '/' . $ejercicio->imagen
+    : null,
                     'nota_ej'  => $r->nota_ej ?? '',   // ← nuevo
                     'series'   => $seriesNormalizadas,
                 ];

@@ -271,7 +271,8 @@ const LETRAS = ['ej-letra-a','ej-letra-b','ej-letra-c','ej-letra-d','ej-letra-e'
 const BGS    = ['ej-bg-a','ej-bg-b','ej-bg-c','ej-bg-d','ej-bg-e','ej-bg-f','ej-bg-g','ej-bg-h','ej-bg-i','ej-bg-j','ej-bg-k','ej-bg-l'];
 
 /* ── Utilidad: URL de imagen ── */
-const imgUrl = img => img ? `/storage/${img}` : '';
+const R2_URL = "{{ env('AWS_URL') }}";
+const imgUrl = img => img ? `${R2_URL}/${img}` : '';
 
 /* ── Modales (generalizados) ── */
 function abrirModal(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }

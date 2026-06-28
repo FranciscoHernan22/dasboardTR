@@ -2,6 +2,8 @@
 @section('titulo', 'Nueva Plantilla')
 @section('contenido')
 
+const R2_URL = "{{ env('AWS_URL') }}";
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
 
@@ -376,7 +378,7 @@ function onSegmentoChange(select) {
     const dropdown=wrapper.querySelector('.ej-select-dropdown'), hidden=document.getElementById(ejId);
     hidden.value=''; img.src=''; img.style.display='none'; label.className='ej-trigger-placeholder'; label.textContent='-- Ejercicio --'; dropdown.innerHTML='';
     (ejerciciosPorGrupo[seg]??[]).forEach(e=>{
-        const url=e.imagen?`https://res.cloudinary.com/ddls3oqbe/image/upload/${e.imagen}`:'', div=document.createElement('div');
+        const url=e.imagen?`${R2_URL}/${e.imagen}`:'', div=document.createElement('div');
         div.className='ej-select-option'; div.dataset.value=e.id; div.dataset.nombre=e.nombre; div.dataset.imagen=url; div.onclick=()=>seleccionarEjercicio(div);
         div.innerHTML=url?`<img src="${url}" alt="${e.nombre}"><span>${e.nombre}</span>`:`<div class="ej-no-img">Sin img</div><span>${e.nombre}</span>`;
         dropdown.appendChild(div);
@@ -568,9 +570,8 @@ function agregarBloque(tipo, cantidad, dia, grupo=null, ejercsData=null) {
         const ejsSegmento=ejerciciosPorGrupo[ej?.segmento]??[];
         const ejActual=ej?ejsSegmento.find(e=>String(e.id)===String(ej.ejercicio_id)):null;
         const ejNombre=ejActual?ejActual.nombre:'-- Ejercicio --';
-        const ejImagen=ejActual?.imagen?`https://res.cloudinary.com/ddls3oqbe/image/upload/${ejActual.imagen}`:'';
-        const optsSegmento=ej?Object.keys(ejerciciosPorGrupo).map(s=>`<option value="${s}" ${s===ej.segmento?'selected':''}>${s}</option>`).join(''):opts;
-        const optsEjs=ej?ejsSegmento.map(e=>{const url=e.imagen?`https://res.cloudinary.com/ddls3oqbe/image/upload/${e.imagen}`:'';const sel=String(e.id)===String(ej.ejercicio_id)?'selected':'';return `<div class="ej-select-option ${sel}" data-value="${e.id}" data-nombre="${e.nombre}" data-imagen="${url}" onclick="seleccionarEjercicio(this)">${url?`<img src="${url}" alt="${e.nombre}">`:'<div class="ej-no-img">Sin img</div>'}<span>${e.nombre}</span></div>`;}).join(''):'';
+const ejImagen=ejActual?.imagen?`${R2_URL}/${ejActual.imagen}`:'';
+        const optsEjs=ej?ejsSegmento.map(e=>{const url=e.imagen?`${R2_URL}/${e.imagen}`:'';const sel=String(e.id)===String(ej.ejercicio_id)?'selected':'';return `<div class="ej-select-option ${sel}" data-value="${e.id}" data-nombre="${e.nombre}" data-imagen="${url}" onclick="seleccionarEjercicio(this)">${url?`<img src="${url}" alt="${e.nombre}">`:'<div class="ej-no-img">Sin img</div>'}<span>${e.nombre}</span></div>`;}).join(''):'';
         html+=`<div class="ejercicio-row ${bgClass}">
             <div class="ej-letra ${lClass}">${NUMS[i]??(i+1)}</div>
             <div class="col-segmento">

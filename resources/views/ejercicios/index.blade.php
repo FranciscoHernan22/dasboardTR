@@ -91,24 +91,17 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .btn-guardar-ej { flex:2; padding:9px; border:none; border-radius:8px; background:var(--accent); color:white; font-size:0.85rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
 .btn-guardar-ej:hover { background:#1d4ed8; }
 
-
-
 @media (max-width: 640px) {
     .page-header { gap:8px; }
     .page-header h2 { font-size:1rem; }
     .btn-nuevo-ej { width:100%; justify-content:center; margin-left:0; }
-
     .ejercicios-grid { grid-template-columns: repeat(2, 1fr); gap:10px; }
-
     .ej-card-nombre { font-size:0.78rem; }
-
     .nav-segmentos { gap:5px; }
     .nav-segmentos .pill { font-size:0.7rem; padding:4px 10px; }
-
     .modal-box { max-height:95vh; border-radius:10px; }
     .modal-body { padding:14px 16px; gap:12px; }
     .modal-footer-ej { padding:0 16px 16px; }
-
     #buscador { font-size:0.82rem; }
 }
 
@@ -117,9 +110,11 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     .ej-card-actions { gap:4px; }
     .ej-btn-editar { font-size:0.65rem; padding:5px; }
 }
-
-
 </style>
+
+@php
+    $r2Url = env('AWS_URL');
+@endphp
 
 <div class="page-header">
     <h2>Ejercicios</h2>
@@ -165,7 +160,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         <div class="ej-card" data-nombre="{{ strtolower($ej->nombre) }}">
             <div class="ej-card-img">
                 @if($ej->imagen)
-                    <img src="{{ asset('storage/'.$ej->imagen) }}" alt="{{ $ej->nombre }}">
+                    <img src="{{ $r2Url . '/' . $ej->imagen }}" alt="{{ $ej->nombre }}">
                 @else
                     <div class="ej-card-noimg"><i class="ti ti-photo"></i></div>
                 @endif
@@ -174,14 +169,14 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
                 <div class="ej-card-nombre">{{ $ej->nombre }}</div>
             </div>
             <div class="ej-card-actions">
-                            <button type="button" class="ej-btn-editar"
-                                data-id="{{ $ej->id }}"
-                                data-nombre="{{ $ej->nombre }}"
-                                data-segmento="{{ $ej->segmento }}"
-                                data-imagen="{{ $ej->imagen ? asset('storage/'.$ej->imagen) : '' }}"
-                                onclick="abrirDesdeBtn(this)">
-                                <i class="ti ti-pencil"></i> Editar
-                            </button>
+                <button type="button" class="ej-btn-editar"
+                    data-id="{{ $ej->id }}"
+                    data-nombre="{{ $ej->nombre }}"
+                    data-segmento="{{ $ej->segmento }}"
+                    data-imagen="{{ $ej->imagen ? $r2Url . '/' . $ej->imagen : '' }}"
+                    onclick="abrirDesdeBtn(this)">
+                    <i class="ti ti-pencil"></i> Editar
+                </button>
                 <form method="POST" action="{{ route('entrenador.ejercicios.destroy',$ej->id) }}"
                       onsubmit="return confirm('¿Eliminar «{{ $ej->nombre }}»? Esta acción no se puede deshacer.')">
                     @csrf
@@ -261,10 +256,10 @@ function asegurarOpcionSegmento(select, valor) {
 
 function abrirModalEjercicio(modo, data = {}) {
     const form           = document.getElementById('formEjercicio');
-    const titulo          = document.getElementById('modalEjTitulo');
-    const metodo            = document.getElementById('metodoEjercicio');
-    const imgPreview          = document.getElementById('imgPreview');
-    const imgPlaceholder        = document.getElementById('imgPreviewPlaceholder');
+    const titulo         = document.getElementById('modalEjTitulo');
+    const metodo         = document.getElementById('metodoEjercicio');
+    const imgPreview     = document.getElementById('imgPreview');
+    const imgPlaceholder = document.getElementById('imgPreviewPlaceholder');
 
     form.reset();
     document.getElementById('inputImagen').value = '';
@@ -322,7 +317,7 @@ function filtrarPorSegmento(btn) {
 }
 
 function filtrarEjercicios() {
-    const texto         = document.getElementById('buscador').value.toLowerCase().trim();
+    const texto          = document.getElementById('buscador').value.toLowerCase().trim();
     const segmentoActivo = document.querySelector('#filtroSegmentos .pill.activa')?.dataset.segmento || '';
 
     let algunaSeccionVisible = false;
@@ -353,7 +348,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModalE
 @if($errors->any())
 document.addEventListener('DOMContentLoaded', () => abrirModalEjercicio('crear'));
 @endif
-
 
 function abrirDesdeBtn(btn) {
     abrirModalEjercicio('editar', {

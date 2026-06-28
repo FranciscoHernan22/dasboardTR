@@ -1,6 +1,8 @@
 @extends('layouts.entrenador')
 @section('titulo','Editar Rutina')
 @section('contenido')
+@php $r2Url = env('AWS_URL'); @endphp
+
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
@@ -443,6 +445,8 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 </div>
 
 <script>
+    const R2_URL = "{{ env('AWS_URL') }}";
+
 function toggleSemDropdown(e){
     e.stopPropagation();
     const dd=document.getElementById('semDropdown'), ch=document.getElementById('semChevron');
@@ -557,7 +561,7 @@ document.addEventListener('click',()=>{
             <input type="hidden" id="ej-{{ $grupo }}-{{ $i }}" class="ejercicio-id-input" value="{{ $rutina->ejercicio_id }}">
             <div class="ej-select-wrapper" data-target="ej-{{ $grupo }}-{{ $i }}">
                 <div class="ej-select-trigger" onclick="toggleDropdown(this)">
-                    @if($imgActual)<img src="{{ asset('storage/'.$imgActual) }}" alt="">@else<img src="" alt="" style="display:none;">@endif
+                    @if($imgActual)<img src="{{ $r2Url.'/'.$imgActual }}" alt="">@else<img src="" alt="" style="display:none;">@endif
                     <div class="{{ $ejActual?'ej-trigger-nombre':'ej-trigger-placeholder' }}">{{ $ejActual->nombre ?? '-- Ejercicio --' }}</div>
                     <span class="ej-trigger-arrow">▼</span>
                 </div>
@@ -565,10 +569,10 @@ document.addEventListener('click',()=>{
                     @foreach($ejerciciosPorGrupo[$rutina->segmento] ?? [] as $ej)
                     <div class="ej-select-option {{ $ej->id==$rutina->ejercicio_id?'selected':'' }}"
                          data-value="{{ $ej->id }}" data-nombre="{{ $ej->nombre }}"
-                         data-imagen="{{ $ej->imagen ? asset('storage/'.$ej->imagen) : '' }}"
+                         data-imagen="{{ $ej->imagen ? $r2Url.'/'.$ej->imagen : '' }}"
                          onclick="seleccionarEjercicio(this)">
-                        @if($ej->imagen)<img src="{{ asset('storage/'.$ej->imagen) }}" alt="{{ $ej->nombre }}">@else<div class="ej-no-img">Sin img</div>@endif
-                        <span>{{ $ej->nombre }}</span>
+
+                    @if($ej->imagen)<img src="{{ $r2Url.'/'.$ej->imagen }}" alt="{{ $ej->nombre }}">@else<div class="ej-no-img">Sin img</div>@endif                         <span>{{ $ej->nombre }}</span>
                     </div>
                     @endforeach
                 </div>
@@ -1025,7 +1029,7 @@ function onSegmentoChange(select) {
     const dropdown=wrapper.querySelector('.ej-select-dropdown'), hidden=document.getElementById(ejId);
     hidden.value=''; img.src=''; img.style.display='none'; label.className='ej-trigger-placeholder'; label.textContent='-- Ejercicio --'; dropdown.innerHTML='';
     (ejerciciosPorGrupo[seg]??[]).forEach(e=>{
-        const url=e.imagen?`/storage/${e.imagen}`:'', div=document.createElement('div');
+        const url=e.imagen?`${R2_URL}/${e.imagen}`:'', div=document.createElement('div');
         div.className='ej-select-option'; div.dataset.value=e.id; div.dataset.nombre=e.nombre; div.dataset.imagen=url; div.onclick=()=>seleccionarEjercicio(div);
         div.innerHTML=url?`<img src="${url}" alt="${e.nombre}"><span>${e.nombre}</span>`:`<div class="ej-no-img">Sin img</div><span>${e.nombre}</span>`;
         dropdown.appendChild(div);

@@ -1,14 +1,9 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
 """
-generar_rutina_pdf.py  v9
-- Nota de sesion arriba de todo
-- Nota por ejercicio debajo del nombre
-- Tempo con tabla visual Excentrica / Pausa / Concentrica
-- RIR / RPE por serie
-- Descanso entre series a nivel de bloque
-- Colores extendidos hasta 12 ejercicios
+generar_rutina_pdf.py  v10
+- Lee imágenes desde Cloudflare R2 si no están en disco local
 """
-import sys, json, argparse, os
+import sys, json, argparse, os, urllib.request, tempfile
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -74,6 +69,12 @@ EJ_BGS = [
     colors.HexColor('#d9dfe8'),
 ]
 
+# URL pública de Cloudflare R2
+R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', 'https://pub-416e30384c374dc3a69cbca46722d5fc.r2.dev')
+
+# Archivos temporales descargados de R2
+_tmp_files = []
+
 
 def st(name, **kw):
     base = dict(fontName='Helvetica', fontSize=8, textColor=C_TEXT, leading=11)
@@ -115,16 +116,49 @@ class CroppedImage(Flowable):
             pass
 
 
+def download_from_r2(imagen_path):
+    """Descarga imagen desde R2 a un archivo temporal y devuelve el path."""
+    try:
+        url = f"{R2_PUBLIC_URL}/{imagen_path}"
+        suffix = os.path.splitext(imagen_path)[1] or '.png'
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        urllib.request.urlretrieve(url, tmp.name)
+        _tmp_files.append(tmp.name)
+        return tmp.name
+    except Exception:
+        return None
+
+
 def load_image(imagen_path, storage_root, w, h):
     if not imagen_path:
         return None
+
+    # Primero intenta desde disco local
     full = os.path.join(storage_root, imagen_path)
-    if not os.path.exists(full):
-        return None
-    try:
-        return CroppedImage(full, w, h)
-    except Exception:
-        return None
+    if os.path.exists(full):
+        try:
+            return CroppedImage(full, w, h)
+        except Exception:
+            pass
+
+    # Si no existe localmente, descarga desde R2
+    tmp_path = download_from_r2(imagen_path)
+    if tmp_path:
+        try:
+            return CroppedImage(tmp_path, w, h)
+        except Exception:
+            pass
+
+    return None
+
+
+def cleanup_tmp():
+    """Elimina archivos temporales descargados."""
+    for f in _tmp_files:
+        try:
+            os.unlink(f)
+        except Exception:
+            pass
 
 
 def formato_serie(serie):
@@ -182,7 +216,6 @@ def build_tempo_table(serie, col_width):
     if tE == '0' and tP == '0' and tC == '0':
         return None
 
-    # Una sola linea compacta: etiqueta + valor e-p-c
     s_lbl = ParagraphStyle('tclbl',
         fontName='Helvetica', fontSize=5.5, textColor=C_MUTED,
         alignment=TA_CENTER, leading=7)
@@ -284,7 +317,6 @@ def build_nota_sesion(texto, page_w):
 
 
 def build_nombre_cell(nombre_p, nota_ej_texto, nombre_w):
-    """Combina nombre del ejercicio + nota en una mini tabla vertical."""
     nota_ej_texto = (nota_ej_texto or '').strip()
     if not nota_ej_texto:
         return nombre_p
@@ -344,7 +376,6 @@ def generar_pdf(data: dict, output_path: str, storage_root: str):
     IMG_W    = 50*mm
     EJ_TOT   = NUM_W + NOMBRE_W + IMG_W
 
-    # ── Nota de sesion ──
     nota_sesion_tbl = build_nota_sesion(
         data.get('nota_sesion', ''), PAGE_W)
     if nota_sesion_tbl:
@@ -368,7 +399,6 @@ def generar_pdf(data: dict, output_path: str, storage_root: str):
         REST_W = PAGE_W - EJ_TOT
         S_W    = REST_W / max_series
 
-        # ── Banner tipo + descanso ──
         banner_text = f'<b>{tipo}</b>'
         if descanso_val:
             banner_text += f'     Descanso entre series: {descanso_val} {descanso_unidad}'
@@ -387,7 +417,6 @@ def generar_pdf(data: dict, output_path: str, storage_root: str):
         ]))
         story.append(banner)
 
-        # ── Encabezado columnas ──
         col_widths = [NUM_W, NOMBRE_W, IMG_W] + [S_W] * max_series
         header = [
             Paragraph('', s_lh),
@@ -411,7 +440,6 @@ def generar_pdf(data: dict, output_path: str, storage_root: str):
 
             nombre_p = Paragraph(f"<b>{ej.get('nombre','')}</b>", s_nombre)
 
-            # ── Nota por ejercicio ──
             nombre_cell = build_nombre_cell(
                 nombre_p,
                 ej.get('nota_ej', ''),
@@ -488,6 +516,7 @@ def generar_pdf(data: dict, output_path: str, storage_root: str):
         story.append(Spacer(1, 10))
 
     doc.build(story)
+    cleanup_tmp()
 
 
 if __name__ == '__main__':

@@ -11,18 +11,6 @@ use Illuminate\Validation\Rule;
 
 class EntrenadorEjercicioController extends Controller
 {
-    /**
-     * Catálogo fijo de segmentos/grupos musculares.
-     *
-     * La CLAVE (key) es el valor que se guarda en la base de datos —
-     * debe coincidir EXACTO con lo que ya usan Plantillas y el editor
-     * de rutinas (mayúsculas, guiones, etc., tal como ya los tenías).
-     *
-     * El VALOR (value) es solo el texto bonito que se muestra en pantalla.
-     *
-     * Si más adelante agregas/quitas un segmento, este es el único
-     * lugar que hay que tocar.
-     */
     public const SEGMENTOS = [
         'ABDOMEN'        => 'Abdomen',
         'ANTEBRAZO'      => 'Antebrazo',
@@ -40,22 +28,17 @@ class EntrenadorEjercicioController extends Controller
     {
         $entrenadorId = Auth::id();
 
-        // Primera vez que este entrenador entra: le clonamos el catálogo default
         Ejercicio::asegurarDefaultsPara($entrenadorId);
 
         $ejercicios = Ejercicio::where('entrenador_id', $entrenadorId)
             ->orderBy('nombre')
             ->get();
 
-        // Agrupados en el ORDEN fijo de segmentos (no alfabético),
-        // usando las claves originales (ABDOMEN, ANTEBRAZO...) para que
-        // coincidan con cómo están guardados, y solo los segmentos que
-        // sí tienen al menos un ejercicio.
         $porSegmento = collect(array_keys(self::SEGMENTOS))
             ->mapWithKeys(fn ($seg) => [$seg => $ejercicios->where('segmento', $seg)->values()])
             ->filter(fn ($items) => $items->isNotEmpty());
 
-        $segmentosFijos  = self::SEGMENTOS; // value => label, para el <select> y los títulos
+        $segmentosFijos  = self::SEGMENTOS;
         $totalEjercicios = $ejercicios->count();
 
         return view('ejercicios.index', compact('porSegmento', 'segmentosFijos', 'totalEjercicios'));
@@ -76,7 +59,7 @@ class EntrenadorEjercicioController extends Controller
         ]);
 
         if ($request->hasFile('imagen')) {
-            $data['imagen'] = $request->file('imagen')->store('ejercicios', 'public');
+            $data['imagen'] = $request->file('imagen')->store('ejercicios', 'r2');
         }
 
         $data['entrenador_id'] = Auth::id();
@@ -107,10 +90,10 @@ class EntrenadorEjercicioController extends Controller
         if ($request->hasFile('imagen')) {
             $imagenAnterior = $ejercicio->imagen;
 
-            $data['imagen'] = $request->file('imagen')->store('ejercicios', 'public');
+            $data['imagen'] = $request->file('imagen')->store('ejercicios', 'r2');
 
             if ($imagenAnterior && !Ejercicio::archivoEnUsoPorOtros($imagenAnterior, $ejercicio->id)) {
-                Storage::disk('public')->delete($imagenAnterior);
+                Storage::disk('r2')->delete($imagenAnterior);
             }
         }
 

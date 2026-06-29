@@ -118,6 +118,47 @@ class CroppedImage(Flowable):
 
 def download_from_r2(imagen_path):
     """Descarga imagen desde R2 a un archivo temporal y devuelve el path."""
+    # Limpia el path: quita dominio si viene incluido y slashes iniciales
+    p = (imagen_path or '').strip()
+    if p.startswith('http://') or p.startswith('https://'):
+        # Si ya trae dominio completo, extrae solo la ruta tras .r2.dev/ o el bucket
+        p = p.split('.r2.dev/', 1)[-1]
+        p = p.split('.r2.cloudflarestorage.com/', 1)[-1]
+    p = p.lstrip('/')
+
+    # Genera variantes de extensión a probar (.PNG / .png / .JPG / .jpg)
+    base, ext = os.path.splitext(p)
+    variantes = [p]
+    if ext:
+        for alt in (ext.upper(), ext.lower(), '.PNG', '.png', '.JPG', '.jpg', '.jpeg'):
+            cand = base + alt
+            if cand not in variantes:
+                variantes.append(cand)
+
+    for cand in variantes:
+        url = f"{R2_PUBLIC_URL}/{cand}"
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={'User-Agent': 'Mozilla/5.0 (compatible; PDFGenerator/1.0)'}
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                if resp.status != 200:
+                    continue
+                suffix = os.path.splitext(cand)[1] or '.png'
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+                tmp.write(resp.read())
+                tmp.close()
+                _tmp_files.append(tmp.name)
+                return tmp.name
+        except Exception as e:
+            print(f"[R2] fallo {url}: {e}", file=sys.stderr)
+            continue
+
+    return None
+
+    
+    """Descarga imagen desde R2 a un archivo temporal y devuelve el path."""
     try:
         url = f"{R2_PUBLIC_URL}/{imagen_path}"
         suffix = os.path.splitext(imagen_path)[1] or '.png'

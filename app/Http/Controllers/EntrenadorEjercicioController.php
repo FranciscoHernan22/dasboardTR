@@ -97,14 +97,14 @@ class EntrenadorEjercicioController extends Controller
         $data = $request->validate([
             'nombre'   => 'required|string|max:120',
             'segmento' => ['required', Rule::in(array_keys(self::SEGMENTOS))],
-            'imagen'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+ 
+            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
         ], [
             'nombre.required'   => 'Ponle un nombre al ejercicio.',
             'segmento.required' => 'Selecciona un segmento.',
             'segmento.in'       => 'Selecciona un segmento válido de la lista.',
             'imagen.image'      => 'El archivo debe ser una imagen.',
-            'imagen.max'        => 'La imagen no puede pesar más de 4MB.',
-        ]);
+'imagen.max' => 'La imagen no puede pesar más de 15MB.',        ]);
 
         if ($request->hasFile('imagen')) {
             $imagenAnterior = $ejercicio->imagen;

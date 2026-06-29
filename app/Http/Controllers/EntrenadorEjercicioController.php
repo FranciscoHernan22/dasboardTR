@@ -11,6 +11,9 @@ use Illuminate\Validation\Rule;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
+use Intervention\Image\Encoders\WebpEncoder;
+
+
 class EntrenadorEjercicioController extends Controller
 {
     public const SEGMENTOS = [
@@ -27,18 +30,20 @@ class EntrenadorEjercicioController extends Controller
     ];
 
     // ─── Comprime y sube la imagen a R2, devuelve la ruta guardada ───
-   private function procesarImagen($archivo): string
+private function procesarImagen($archivo): string
 {
     $manager = new ImageManager(Driver::class);
-$img = $manager->decode($archivo->getRealPath())
+    $encoded = $manager->decode($archivo->getRealPath())
         ->scaleDown(width: 600, height: 600)
-        ->toWebp(quality: 75);
+        ->encode(new WebpEncoder(quality: 75));
 
     $ruta = 'ejercicios/' . uniqid() . '.webp';
-    Storage::disk('r2')->put($ruta, (string) $img);
+    Storage::disk('r2')->put($ruta, (string) $encoded);
 
     return $ruta;
 }
+
+
 
     public function index()
     {

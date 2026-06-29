@@ -35,7 +35,7 @@ private function procesarImagen($archivo): string
     $manager = new ImageManager(Driver::class);
     $encoded = $manager->decode($archivo->getRealPath())
         ->scaleDown(width: 600, height: 600)
-        ->encode(new WebpEncoder(quality: 75));
+        ->encode(new WebpEncoder(quality: 85));
 
     $ruta = 'ejercicios/' . uniqid() . '.webp';
     Storage::disk('r2')->put($ruta, (string) $encoded);

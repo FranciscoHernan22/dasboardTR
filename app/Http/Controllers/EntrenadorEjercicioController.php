@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Intervention\Image\Laravel\Facades\Image;
+ 
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class EntrenadorEjercicioController extends Controller
 {
@@ -25,9 +27,10 @@ class EntrenadorEjercicioController extends Controller
     ];
 
     // ─── Comprime y sube la imagen a R2, devuelve la ruta guardada ───
-  private function procesarImagen($archivo): string
+   private function procesarImagen($archivo): string
 {
-    $img = Image::read($archivo->getRealPath())
+    $manager = new ImageManager(Driver::class);
+    $img = $manager->read($archivo->getRealPath())
         ->scaleDown(width: 600, height: 600)
         ->toWebp(quality: 75);
 

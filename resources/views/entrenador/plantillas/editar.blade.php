@@ -6,6 +6,32 @@
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
 
 <style>
+
+    .bloque { transition:border-color .15s, opacity .15s; }
+.bloque.dragging { opacity:.4; }
+.bloque.drag-over { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-l); }
+.bloque-drag-handle { width:16px; display:flex; align-items:center; justify-content:center; cursor:grab; color:#d1d5db; font-size:1rem; flex-shrink:0; user-select:none; }
+.bloque-drag-handle:active { cursor:grabbing; }
+.bloque-drag-handle:hover { color:#9ca3af; }
+.bloque-toast { position:absolute; top:8px; left:50%; transform:translateX(-50%); font-size:0.68rem; font-weight:700; padding:4px 14px; border-radius:99px; opacity:0; transition:opacity .18s; pointer-events:none; white-space:nowrap; z-index:100; }
+.bloque-toast.blue { background:#1d4ed8; color:white; }
+.bloque-toast.red  { background:#ef4444; color:white; }
+.bloque-toast.show { opacity:1; }
+.btn-copiar-todas-bloque { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border:1px solid #bfdbfe; border-radius:5px; background:white; font-size:0.62rem; font-weight:700; color:#2563eb; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .12s; }
+.btn-copiar-todas-bloque:hover { background:#2563eb; color:white; border-color:#2563eb; }
+.btn-copiar-todas-bloque.done { background:#dcfce7; color:#16a34a; border-color:#86efac; }
+.serie-col-flash-blue { background:#dbeafe !important; border-color:#2563eb !important; }
+.serie-col-flash-red  { background:#fee2e2 !important; border-color:#fca5a5 !important; }
+.serie-header-col { display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+.s-hcol-actions { display:flex; gap:3px; align-items:center; }
+.btn-igualar-serie { padding:2px 6px; border:1px solid #bfdbfe; border-radius:4px; background:white; font-size:0.55rem; font-weight:700; color:#2563eb; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; gap:2px; transition:all .12s; white-space:nowrap; }
+.btn-igualar-serie:hover { background:#2563eb; color:white; border-color:#2563eb; }
+.btn-igualar-serie.done { background:#dcfce7; color:#16a34a; border-color:#86efac; }
+.btn-reset-serie { padding:2px 5px; border:1px solid #fecaca; border-radius:4px; background:white; font-size:0.55rem; font-weight:700; color:#ef4444; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; transition:all .12s; }
+.btn-reset-serie:hover { background:#ef4444; color:white; border-color:#ef4444; }
+
+
+
 :root {
     --bg:#f4f5f7; --surface:#ffffff; --border:#e2e5ea; --border2:#d0d5dd;
     --text:#111827; --muted:#6b7280; --accent:#2563eb; --accent-l:#eff6ff;
@@ -346,6 +372,7 @@ function generarTabs(diasData = null) {
         }
     }
     diaActivo = 1;
+for (let d = 1; d <= totalDias; d++) initDrag(d);
 }
 
 function activarTab(d) {
@@ -571,10 +598,14 @@ function actualizarHeader(grupo, numSeries) {
     const header = document.querySelector(`.series-header-row[data-header="${grupo}"] .col-series-headers`);
     if (!header) return;
     header.innerHTML = '';
+    const cantidad = document.querySelectorAll(`.bloque[data-grupo="${grupo}"] .ejercicio-row`).length || 1;
     for (let s = 0; s < numSeries; s++) {
         const d = document.createElement('div');
-        d.className   = 'serie-header-col';
-        d.textContent = `S${s + 1}`;
+        d.className = 'serie-header-col';
+        const acc = s === 0
+            ? `<span style="font-size:0.5rem;color:#93c5fd;font-weight:600">ref</span><button type="button" class="btn-reset-serie" onclick="resetSerieBloque('${grupo}',${cantidad},0)"><i class="ti ti-x" style="font-size:9px"></i></button>`
+            : `<button type="button" class="btn-igualar-serie" onclick="igualarSerieBloque('${grupo}',${cantidad},${s})"><i class="ti ti-copy" style="font-size:9px"></i> =S1</button><button type="button" class="btn-reset-serie" onclick="resetSerieBloque('${grupo}',${cantidad},${s})"><i class="ti ti-x" style="font-size:9px"></i></button>`;
+        d.innerHTML = `<span>S${s+1}</span><div class="s-hcol-actions">${acc}</div>`;
         header.appendChild(d);
     }
 }
@@ -722,8 +753,16 @@ function agregarBloque(tipo, cantidad, dia, grupo = null, ejercsData = null, des
 
     const opts = Object.keys(ejerciciosPorGrupo).map(s => `<option value="${s}">${s}</option>`).join('');
 
-    let html = `<div class="bloque" data-grupo="${g}" data-tipo="${tipo}" data-dia="${dia}">
+let html = `<div class="bloque" data-grupo="${g}" data-tipo="${tipo}" data-dia="${dia}" style="position:relative;">
+        <div class="bloque-toast blue" id="toast-${g}"></div>
         <div class="bloque-header">
+            <div class="bloque-drag-handle" title="Arrastrar">⠿</div>
+            <span class="bloque-tipo tipo-${tipo.toLowerCase()}">${tipo.toUpperCase()}${tipo === 'circuito' ? `<span style="opacity:.7;font-size:.55rem"> · ${cantidad} ej.</span>` : ''}</span>
+            <div class="bloque-series-count">Series:<input type="number" min="1" placeholder="–" onchange="generarSeriesBloque(this,'${g}',${cantidad})"></div>
+            <button type="button" class="btn-copiar-todas-bloque" onclick="copiarS1ATodas('${g}',${cantidad})"><i class="ti ti-copy" style="font-size:11px"></i> S1 → todas</button>
+            <button type="button" class="btn-remove" onclick="this.closest('.bloque').remove();actualizarOrden(${dia});">✕</button>
+        </div>
+                <div class="bloque-header">
             <span class="bloque-tipo tipo-${tipo.toLowerCase()}">${tipo.toUpperCase()}${tipo === 'circuito' ? `<span style="opacity:.7;font-size:.55rem"> · ${cantidad} ej.</span>` : ''}</span>
             <div class="bloque-series-count">Series:<input type="number" min="1" placeholder="–" onchange="generarSeriesBloque(this,'${g}',${cantidad})"></div>
             <button type="button" class="btn-remove" onclick="this.closest('.bloque').remove();actualizarOrden(${dia});">✕</button>
@@ -812,6 +851,94 @@ function precargarBloque(grupo, bloque, dia) {
         bloque.descanso_unidad ?? 'seg'
     );
 }
+
+
+/* ── Toast & flash ── */
+function showBloqueToast(grupo, msg, color) {
+    const t = document.getElementById(`toast-${grupo}`); if (!t) return;
+    t.textContent = msg; t.className = `bloque-toast ${color} show`;
+    setTimeout(() => t.classList.remove('show'), 1800);
+}
+function flashSerieCol(grupo, ejIdx, serieIdx, color) {
+    const rows = document.querySelectorAll(`.bloque[data-grupo="${grupo}"] .ejercicio-row`), row = rows[ejIdx]; if (!row) return;
+    const col = row.querySelectorAll('[data-serie]')[serieIdx]; if (!col) return;
+    col.classList.add(color === 'blue' ? 'serie-col-flash-blue' : 'serie-col-flash-red');
+    setTimeout(() => col.classList.remove('serie-col-flash-blue', 'serie-col-flash-red'), 350);
+}
+/* ── Copiar S1 / reset ── */
+function copiarS1AColumna(grupo, cantidadEjs, serieIdx) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`); if (!bloque) return;
+    bloque.querySelectorAll('.ejercicio-row').forEach((row, ejIdx) => {
+        const cols = row.querySelectorAll('[data-serie]'), colS1 = cols[0], colDst = cols[serieIdx];
+        if (!colS1 || !colDst) return;
+        const mS1 = colS1.querySelector('.metodo-select')?.value ?? 'normal', mDst = colDst.querySelector('.metodo-select');
+        if (mDst) { mDst.value = mS1; cambiarMetodo(mDst); }
+        colS1.querySelectorAll('[data-key]').forEach(el => { const dest = colDst.querySelector(`[data-key="${el.dataset.key}"]`); if (dest) dest.value = el.value; });
+        flashSerieCol(grupo, ejIdx, serieIdx, 'blue');
+    });
+}
+function resetColumna(grupo, serieIdx) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`); if (!bloque) return;
+    bloque.querySelectorAll('.ejercicio-row').forEach((row, ejIdx) => {
+        const col = row.querySelectorAll('[data-serie]')[serieIdx]; if (!col) return;
+        col.querySelectorAll('[data-key]').forEach(el => { if (el.tagName === 'INPUT') el.value = ''; });
+        const m = col.querySelector('.metodo-select'); if (m) { m.value = 'normal'; cambiarMetodo(m); }
+        flashSerieCol(grupo, ejIdx, serieIdx, 'red');
+    });
+}
+function igualarSerieBloque(grupo, cantidadEjs, serieIdx) {
+    copiarS1AColumna(grupo, cantidadEjs, serieIdx);
+    const hdr = document.querySelector(`.series-header-row[data-header="${grupo}"] .col-series-headers`);
+    const btn = hdr?.querySelectorAll('.serie-header-col')?.[serieIdx]?.querySelector('.btn-igualar-serie');
+    if (btn) { btn.classList.add('done'); btn.innerHTML = '<i class="ti ti-check" style="font-size:9px"></i> ok'; setTimeout(() => { btn.classList.remove('done'); btn.innerHTML = '<i class="ti ti-copy" style="font-size:9px"></i> =S1'; }, 2000); }
+    showBloqueToast(grupo, `S${serieIdx+1} igualada a S1`, 'blue');
+}
+function resetSerieBloque(grupo, cantidadEjs, serieIdx) {
+    resetColumna(grupo, serieIdx); showBloqueToast(grupo, `S${serieIdx+1} limpiada`, 'red');
+}
+function copiarS1ATodas(grupo, cantidadEjs) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`); if (!bloque) return;
+    const numSeries = bloque.querySelectorAll('.ejercicio-row:first-child [data-serie]').length || parseInt(bloque.querySelector('.bloque-series-count input')?.value) || 0;
+    if (numSeries < 2) { showBloqueToast(grupo, 'Agrega al menos 2 series', 'red'); return; }
+    const hdr = document.querySelector(`.series-header-row[data-header="${grupo}"] .col-series-headers`);
+    for (let s = 1; s < numSeries; s++) {
+        copiarS1AColumna(grupo, cantidadEjs, s);
+        const btn = hdr?.querySelectorAll('.serie-header-col')?.[s]?.querySelector('.btn-igualar-serie');
+        if (btn) { btn.classList.add('done'); btn.innerHTML = '<i class="ti ti-check" style="font-size:9px"></i> ok'; setTimeout(() => { btn.classList.remove('done'); btn.innerHTML = '<i class="ti ti-copy" style="font-size:9px"></i> =S1'; }, 2000); }
+    }
+    const bt = bloque.querySelector('.btn-copiar-todas-bloque');
+    if (bt) { bt.classList.add('done'); bt.innerHTML = '<i class="ti ti-check" style="font-size:11px"></i> Copiado'; setTimeout(() => { bt.classList.remove('done'); bt.innerHTML = '<i class="ti ti-copy" style="font-size:11px"></i> S1 → todas'; }, 2000); }
+    showBloqueToast(grupo, 'S1 copiada a todas las series', 'blue');
+}
+/* ── Drag & drop por día ── */
+function initDrag(dia) {
+    const cont = document.getElementById(`bloques-dia-${dia}`); if (!cont || cont._dragInit) return;
+    cont._dragInit = true;
+    let dragged = null, scrollInterval = null;
+    function startScroll(d){ if(scrollInterval) return; scrollInterval=setInterval(()=>window.scrollBy(0,d*10),16); }
+    function stopScroll(){ clearInterval(scrollInterval); scrollInterval=null; }
+    cont.addEventListener('mousedown', e => {
+        const h = e.target.closest('.bloque-drag-handle'); if (!h) return;
+        const b = h.closest('.bloque'); b.setAttribute('draggable','true');
+        b.addEventListener('dragend', () => { b.setAttribute('draggable','false'); b.classList.remove('dragging'); cont.querySelectorAll('.bloque.drag-over').forEach(x=>x.classList.remove('drag-over')); stopScroll(); actualizarOrden(dia); }, {once:true});
+    });
+    cont.addEventListener('dragstart', e => { dragged = e.target.closest('.bloque'); if(!dragged) return; dragged.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+    let lastMove = 0;
+    cont.addEventListener('dragover', e => {
+        e.preventDefault(); const z = 100;
+        if (e.clientY < z) startScroll(-1); else if (e.clientY > window.innerHeight - z) startScroll(1); else stopScroll();
+        const now = Date.now(); if (now - lastMove < 50) return; lastMove = now;
+        const t = e.target.closest('.bloque'); if (!t || t === dragged) return;
+        cont.querySelectorAll('.bloque.drag-over').forEach(x=>x.classList.remove('drag-over'));
+        t.classList.add('drag-over');
+        const r = t.getBoundingClientRect();
+        if (e.clientY < r.top + r.height/2) cont.insertBefore(dragged, t); else cont.insertBefore(dragged, t.nextSibling);
+    });
+    cont.addEventListener('dragleave', e => { const t = e.target.closest('.bloque'); if (t) t.classList.remove('drag-over'); });
+    cont.addEventListener('drop', e => { e.preventDefault(); cont.querySelectorAll('.bloque.drag-over').forEach(x=>x.classList.remove('drag-over')); stopScroll(); });
+}
+
+
 
 /* ── Inicializar ── */
 const esDiasNuevo = diasExistentes && Object.values(diasExistentes)[0]?.bloques !== undefined;

@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Laravel\Facades\Image;
 
 class EntrenadorEjercicioController extends Controller
 {
@@ -26,22 +25,17 @@ class EntrenadorEjercicioController extends Controller
     ];
 
     // ─── Comprime y sube la imagen a R2, devuelve la ruta guardada ───
-    private function procesarImagen($archivo): string
-    {
-        $manager = new ImageManager(new Driver());
-        $img = $manager->read($archivo->getRealPath());
+  private function procesarImagen($archivo): string
+{
+    $img = Image::read($archivo->getRealPath())
+        ->scaleDown(width: 600, height: 600)
+        ->toWebp(quality: 75);
 
-        // Redimensiona a máximo 600x600 manteniendo proporción, sin agrandar
-        $img->scaleDown(width: 600, height: 600);
+    $ruta = 'ejercicios/' . uniqid() . '.webp';
+    Storage::disk('r2')->put($ruta, (string) $img);
 
-        // Convierte a WebP calidad 75 (de ~3MB a ~80-150KB)
-        $encoded = $img->toWebp(quality: 75);
-
-        $ruta = 'ejercicios/' . uniqid() . '.webp';
-        Storage::disk('r2')->put($ruta, (string) $encoded);
-
-        return $ruta;
-    }
+    return $ruta;
+}
 
     public function index()
     {

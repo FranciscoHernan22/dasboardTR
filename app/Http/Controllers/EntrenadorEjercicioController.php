@@ -1,6 +1,5 @@
 <?php
 // DESTINO: app/Http/Controllers/EntrenadorEjercicioController.php
-
 namespace App\Http\Controllers;
 
 use App\Models\Ejercicio;
@@ -8,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class EntrenadorEjercicioController extends Controller
 {
@@ -23,6 +24,24 @@ class EntrenadorEjercicioController extends Controller
         'PECTORAL_MAYOR' => 'Pectoral',
         'TRICEPS_SURAL'  => 'Tríceps sural',
     ];
+
+    // ─── Comprime y sube la imagen a R2, devuelve la ruta guardada ───
+    private function procesarImagen($archivo): string
+    {
+        $manager = new ImageManager(new Driver());
+        $img = $manager->read($archivo->getRealPath());
+
+        // Redimensiona a máximo 600x600 manteniendo proporción, sin agrandar
+        $img->scaleDown(width: 600, height: 600);
+
+        // Convierte a WebP calidad 75 (de ~3MB a ~80-150KB)
+        $encoded = $img->toWebp(quality: 75);
+
+        $ruta = 'ejercicios/' . uniqid() . '.webp';
+        Storage::disk('r2')->put($ruta, (string) $encoded);
+
+        return $ruta;
+    }
 
     public function index()
     {
@@ -59,11 +78,10 @@ class EntrenadorEjercicioController extends Controller
         ]);
 
         if ($request->hasFile('imagen')) {
-            $data['imagen'] = $request->file('imagen')->store('ejercicios', 'r2');
+            $data['imagen'] = $this->procesarImagen($request->file('imagen'));
         }
 
         $data['entrenador_id'] = Auth::id();
-
         Ejercicio::create($data);
 
         return back()->with('success', 'Ejercicio agregado correctamente');
@@ -89,9 +107,9 @@ class EntrenadorEjercicioController extends Controller
 
         if ($request->hasFile('imagen')) {
             $imagenAnterior = $ejercicio->imagen;
+            $data['imagen'] = $this->procesarImagen($request->file('imagen'));
 
-            $data['imagen'] = $request->file('imagen')->store('ejercicios', 'r2');
-
+            // Borra la imagen anterior de R2 si nadie más la usa
             if ($imagenAnterior && !Ejercicio::archivoEnUsoPorOtros($imagenAnterior, $ejercicio->id)) {
                 Storage::disk('r2')->delete($imagenAnterior);
             }

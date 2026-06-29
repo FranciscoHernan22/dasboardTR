@@ -68,7 +68,8 @@ class EntrenadorEjercicioController extends Controller
         $data = $request->validate([
             'nombre'   => 'required|string|max:120',
             'segmento' => ['required', Rule::in(array_keys(self::SEGMENTOS))],
-            'imagen'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+ 
+            'imagen'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
         ], [
             'nombre.required'   => 'Ponle un nombre al ejercicio.',
             'segmento.required' => 'Selecciona un segmento.',

@@ -30,7 +30,7 @@ class EntrenadorEjercicioController extends Controller
    private function procesarImagen($archivo): string
 {
     $manager = new ImageManager(Driver::class);
-    $img = $manager->read($archivo->getRealPath())
+$img = $manager->decode($archivo->getRealPath())
         ->scaleDown(width: 600, height: 600)
         ->toWebp(quality: 75);
 

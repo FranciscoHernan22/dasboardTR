@@ -564,22 +564,49 @@ function agregarBloque(tipo, cantidad, dia, grupo=null, ejercsData=null) {
             <button type="button" class="btn-remove" onclick="this.closest('.bloque').remove();actualizarOrden(${dia});">✕</button>
         </div>
         <div class="series-header-row" data-header="${g}"><div class="col-info-header">Ejercicio</div><div class="col-series-headers"></div></div>`;
+
     for(let i=0;i<cantidad;i++){
         const ejId=`ej-${g}-${i}`, lClass=LETRAS[i%LETRAS.length], bgClass=BGS[i%BGS.length];
         const ej=ejercsData?ejercsData[i]:null;
         const ejsSegmento=ejerciciosPorGrupo[ej?.segmento]??[];
         const ejActual=ej?ejsSegmento.find(e=>String(e.id)===String(ej.ejercicio_id)):null;
         const ejNombre=ejActual?ejActual.nombre:'-- Ejercicio --';
-      const R2_URL = "{{ env('AWS_URL') }}";
-const optsSegmento=ej?Object.keys(ejerciciosPorGrupo).map(s=>`<option value="${s}" ${s===ej.segmento?'selected':''}>${s}</option>`).join(''):opts;
-const ejImagen = ejActual && ejActual.imagen ? R2_URL + ejActual.imagen : '';
-const optsEjs=ej?ejsSegmento.map(e=>{
-    const url = e.imagen ? R2_URL + e.imagen : '';
-    const sel=String(e.id)===String(ej.ejercicio_id)?'selected':'';
-    return `<div class="ej-select-option ${sel}" data-value="${e.id}" data-nombre="${e.nombre}" data-imagen="${url}" onclick="seleccionarEjercicio(this)">${url?`<img src="${url}" alt="${e.nombre}">`:'<div class="ej-no-img">Sin img</div>'}<span>${e.nombre}</span></div>`;
-}).join(''):'';
+        const R2_URL = "{{ env('AWS_URL') }}";
+        const optsSegmento=ej?Object.keys(ejerciciosPorGrupo).map(s=>`<option value="${s}" ${s===ej.segmento?'selected':''}>${s}</option>`).join(''):opts;
+        const ejImagen = ejActual && ejActual.imagen ? R2_URL + ejActual.imagen : '';
+        const optsEjs=ej?ejsSegmento.map(e=>{
+            const url = e.imagen ? R2_URL + e.imagen : '';
+            const sel=String(e.id)===String(ej.ejercicio_id)?'selected':'';
+            return `<div class="ej-select-option ${sel}" data-value="${e.id}" data-nombre="${e.nombre}" data-imagen="${url}" onclick="seleccionarEjercicio(this)">${url?`<img src="${url}" alt="${e.nombre}">`:'<div class="ej-no-img">Sin img</div>'}<span>${e.nombre}</span></div>`;
+        }).join(''):'';
 
-
+        html+=`<div class="ejercicio-row ${bgClass}">
+            <div class="ej-letra ${lClass}">${NUMS[i]??(i+1)}</div>
+            <div class="col-segmento">
+                <div class="field-label">Segmento</div>
+                <select class="segmento-select" data-ej="${ejId}" onchange="onSegmentoChange(this)">
+                    <option value="">-- Segmento --</option>${optsSegmento}
+                </select>
+            </div>
+            <div class="col-ejercicio">
+                <div class="field-label">Ejercicio</div>
+                <input type="hidden" id="${ejId}" class="ejercicio-id-input" value="${ej?.ejercicio_id??''}">
+                <div class="ej-select-wrapper" data-target="${ejId}">
+                    <div class="ej-select-trigger" onclick="toggleDropdown(this)">
+                        ${ejImagen?`<img src="${ejImagen}" alt="" style="display:block">`:`<img src="" alt="" style="display:none">`}
+                        <span class="${ejActual?'ej-trigger-nombre':'ej-trigger-placeholder'}">${ejNombre}</span>
+                        <span class="ej-trigger-arrow">▼</span>
+                    </div>
+                    <div class="ej-select-dropdown">${optsEjs}</div>
+                </div>
+                <div class="nota-ej-input-wrap">
+                    <i class="ti ti-pencil"></i>
+                    <textarea class="nota-ej-input" placeholder="nota…">${ej?.nota_ej??''}</textarea>
+                </div>
+            </div>
+            <div class="col-series"><div class="series-cols" data-grupo="${g}" data-ej="${i}"></div></div>
+        </div>`;
+    }
 
     html+=bloqueFooterHTML(g)+'</div>';
     contenedor.insertAdjacentHTML('beforeend',html);
@@ -601,5 +628,7 @@ const optsEjs=ej?ejsSegmento.map(e=>{
     actualizarOrden(dia);
 }
 </script>
+
+
 
 @endsection

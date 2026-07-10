@@ -62,4 +62,25 @@ class EntrenadorClienteController extends Controller
         return redirect()->route('entrenador.clientes')
                  ->with('success', 'Cliente registrado correctamente.');
     }
+
+
+      public function toggleEstado($clienteId)
+    {
+        $cliente = User::findOrFail($clienteId);
+
+        // Seguridad: que el cliente pertenezca a este entrenador
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $cliente->status = $cliente->status === 'activo' ? 'inactivo' : 'activo';
+        $cliente->save();
+
+        return back()->with('success', $cliente->status === 'activo'
+            ? "{$cliente->name} fue activado."
+            : "{$cliente->name} fue desactivado.");
+    }
+
+
+    
 }

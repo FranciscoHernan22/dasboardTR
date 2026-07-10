@@ -162,5 +162,10 @@ Route::delete('/entrenador/ejercicios/{ejercicio}', [EntrenadorEjercicioControll
     ->name('entrenador.ejercicios.destroy');
 
 
-
+Route::patch('/entrenador/clientes/{cliente}/toggle-estado', [EntrenadorClienteController::class, 'toggleEstado'])
+    ->name('entrenador.clientes.toggleEstado');
   
+
+
+    Route::patch('/entrenador/clientes/bulk-estado', [EntrenadorClienteController::class, 'bulkEstado'])
+    ->name('entrenador.clientes.bulkEstado');

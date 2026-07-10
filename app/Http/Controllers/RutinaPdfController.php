@@ -180,4 +180,7 @@ class RutinaPdfController extends Controller
             'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ])->deleteFileAfterSend(false);
     }
+
+
+ 
 }

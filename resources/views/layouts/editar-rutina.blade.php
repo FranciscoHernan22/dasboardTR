@@ -1272,10 +1272,18 @@ function generarSeriesBloque(input, grupo, cantidad) {
             col.querySelectorAll('[data-key]').forEach(el => { ex[el.dataset.key] = el.value; });
             exArr.push(ex);
         });
-        container.innerHTML = '';
-        for (let s = 0; s < n; s++) container.insertAdjacentHTML('beforeend', htmlSerieCol(exArr[s] ?? {}));
+      container.innerHTML = '';
+for (let s = 0; s < n; s++) container.insertAdjacentHTML('beforeend', htmlSerieCol(exArr[s] ?? {}));
     }
-    regenerarDescansoRow(grupo, n);
+    // Capturar descansos ya ingresados antes de reconstruir la fila
+    const bloqueEl = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    const valoresDescPrevios = [];
+    bloqueEl?.querySelectorAll('.descanso-serie-cell').forEach((cell, s) => {
+        const m   = parseInt(cell.querySelector(`[data-desc-min="${grupo}-${s}"]`)?.value) || 0;
+        const seg = parseInt(cell.querySelector(`[data-desc-seg="${grupo}-${s}"]`)?.value) || 0;
+        valoresDescPrevios.push({ valor: m * 60 + seg });
+    });
+    regenerarDescansoRow(grupo, n, valoresDescPrevios);
 }
 
 function agregarBloque(tipo, cantidad) {

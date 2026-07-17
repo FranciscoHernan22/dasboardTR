@@ -15,6 +15,7 @@ class EntrenadorClienteController extends Controller
     {
         $entrenador = Auth::user();
         $clientes   = $entrenador->users()->with('plan')->get();
+
         return view('layouts.listado-clientes', compact('clientes'));
     }
 
@@ -63,8 +64,7 @@ class EntrenadorClienteController extends Controller
                  ->with('success', 'Cliente registrado correctamente.');
     }
 
-
-      public function toggleEstado($clienteId)
+    public function toggleEstado($clienteId)
     {
         $cliente = User::findOrFail($clienteId);
 
@@ -81,6 +81,30 @@ class EntrenadorClienteController extends Controller
             : "{$cliente->name} fue desactivado.");
     }
 
+    public function update(Request $request, $clienteId)
+    {
+        $cliente = User::findOrFail($clienteId);
 
-    
+        // Seguridad: que el cliente pertenezca a este entrenador
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validateWithBag('editarCliente', [
+            'name'     => 'required|string|max:150',
+            'email'    => 'required|email|unique:users,email,' . $cliente->id,
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        $cliente->name  = $request->name;
+        $cliente->email = $request->email;
+
+        if ($request->filled('password')) {
+            $cliente->password = Hash::make($request->password);
+        }
+
+        $cliente->save();
+
+        return back()->with('success', "Datos de {$cliente->name} actualizados correctamente.");
+    }
 }

@@ -88,7 +88,6 @@
     <table class="w-full border-collapse">
         <thead>
             <tr class="bg-gray-50 border-b border-gray-200">
-               
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Cliente</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Estado</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Acciones</th>
@@ -103,7 +102,6 @@
                 data-email="{{ strtolower($cliente->email) }}"
                 data-estado="{{ $cliente->status }}"
                 data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}">
-              
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full {{ $avatarColor($cliente->id)[0] }} {{ $avatarColor($cliente->id)[1] }} flex items-center justify-center text-xs font-bold flex-shrink-0">
@@ -133,6 +131,14 @@
                 </td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-1.5">
+                        <button type="button"
+                            onclick="abrirModalEditar({{ $cliente->id }}, @js($cliente->name), @js($cliente->email))"
+                            title="Editar datos"
+                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                            </svg>
+                        </button>
                         <a href="{{ route('entrenador.historial.anio', $cliente->id) }}" title="Historial"
                             class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
@@ -155,6 +161,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
                             </svg>
                         </button>
+                        <a href="{{ route('entrenador.progreso.index', $cliente->id) }}" title="Progreso"
+                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+                            </svg>
+                        </a>
                         <button title="Mensajes"
                             class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
@@ -186,7 +198,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="4" class="px-4 py-14 text-center">
+                <td colspan="3" class="px-4 py-14 text-center">
                     <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.7M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
                     </svg>
@@ -195,7 +207,7 @@
             </tr>
         @endforelse
         <tr id="filaSinResultados" class="hidden">
-            <td colspan="4" class="px-4 py-14 text-center">
+            <td colspan="3" class="px-4 py-14 text-center">
                 <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
                 </svg>
@@ -218,6 +230,14 @@
      data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}">
         {{-- Acciones detrás (se revelan con swipe) --}}
         <div class="swipe-actions absolute inset-y-0 right-0 flex items-stretch">
+            <button type="button"
+                onclick="abrirModalEditar({{ $cliente->id }}, @js($cliente->name), @js($cliente->email))"
+                class="w-16 flex flex-col items-center justify-center bg-sky-500 text-white text-xs font-semibold gap-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                </svg>
+                Editar
+            </button>
             <a href="{{ route('entrenador.historial.anio', $cliente->id) }}"
                 class="w-16 flex flex-col items-center justify-center bg-indigo-500 text-white text-xs font-semibold gap-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
@@ -242,6 +262,13 @@
                 </svg>
                 Plan
             </button>
+            <a href="{{ route('entrenador.progreso.index', $cliente->id) }}"
+                class="w-16 flex flex-col items-center justify-center bg-violet-500 text-white text-xs font-semibold gap-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+                </svg>
+                Progreso
+            </a>
             <form action="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}" method="POST"
                   class="form-toggle-estado w-16"
                   data-nombre="{{ $cliente->name }}"
@@ -262,15 +289,6 @@
         {{-- Card del cliente (la que se desliza) --}}
         <div class="swipe-card absolute inset-0 flex items-center gap-3 px-4 bg-white"
              style="transition: transform 0.2s ease; will-change: transform;">
-            <label class="relative inline-flex items-center justify-center w-5 h-5 cursor-pointer flex-shrink-0"
-                onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">
-                <input type="checkbox" class="peer sr-only cliente-checkbox"
-                    data-id="{{ $cliente->id }}" onchange="onCheckboxChange(this)">
-                <span class="w-5 h-5 rounded-md border-2 border-gray-300 bg-white peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-colors"></span>
-                <svg class="w-3 h-3 text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                </svg>
-            </label>
             <div class="w-10 h-10 rounded-full {{ $avatarColor($cliente->id)[0] }} {{ $avatarColor($cliente->id)[1] }} flex items-center justify-center text-sm font-bold flex-shrink-0">
                 {{ strtoupper(substr($cliente->name, 0, 2)) }}
             </div>
@@ -378,6 +396,65 @@
     </div>
 </div>
 
+{{-- ── Modal editar cliente ── --}}
+<div id="modalEditarCliente"
+    onclick="if(event.target===this)cerrarModalEditar()"
+    style="display:none;"
+    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+            <div>
+                <h3 class="text-base font-bold text-gray-900">Editar cliente</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Actualiza sus datos</p>
+            </div>
+            <button onclick="cerrarModalEditar()"
+                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-400 text-sm transition-colors">✕</button>
+        </div>
+        <form id="formEditarCliente" method="POST" action="#" class="p-5 flex flex-col gap-4">
+            @csrf
+            @method('PUT')
+            <input type="hidden" id="editClienteIdHidden" name="cliente_id_edit" value="{{ old('cliente_id_edit') }}">
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre completo</label>
+                <input name="name" id="editNombre" type="text" required
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    value="{{ old('name') }}">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Correo electrónico</label>
+                <input name="email" id="editEmail" type="email" required
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    value="{{ old('email') }}">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Nueva contraseña <span class="normal-case font-normal text-gray-400">(opcional)</span>
+                </label>
+                <input name="password" type="password" placeholder="Dejar en blanco para no cambiarla"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            @if($errors->editarCliente->any())
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                @foreach($errors->editarCliente->all() as $error)
+                    <p class="text-xs text-red-600 mb-0.5">• {{ $error }}</p>
+                @endforeach
+            </div>
+            @endif
+            <div class="flex gap-2 pt-1">
+                <button type="button"
+                    onclick="cerrarModalEditar()"
+                    class="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit"
+                    class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold text-white transition-colors">
+                    Guardar cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {{-- ── Modal semanas ── --}}
 <div id="modalSemanas"
     onclick="if(event.target===this)cerrarModalSemanas()"
@@ -406,45 +483,6 @@
 <form id="formPlan" method="POST" class="hidden">
     @csrf
     <input type="hidden" name="semanas" id="inputSemanas">
-</form>
-
-{{-- ── Barra flotante de acciones masivas ── --}}
-<div id="barraAccionesMasivas"
-    class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[9000] bg-white border border-gray-200 rounded-2xl shadow-2xl px-3 py-2.5 flex items-center gap-2">
-    <div class="flex items-center gap-2 pl-1 pr-2">
-        <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-            <span id="contadorSeleccionados">0</span>
-        </span>
-        <span class="text-sm font-medium text-gray-700 whitespace-nowrap">seleccionado(s)</span>
-    </div>
-    <div class="w-px h-6 bg-gray-200"></div>
-    <button type="button" onclick="confirmarAccionMasiva('activar')"
-        class="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-        </svg>
-        Activar
-    </button>
-    <button type="button" onclick="confirmarAccionMasiva('desactivar')"
-        class="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-        </svg>
-        Desactivar
-    </button>
-    <button type="button" onclick="cancelarSeleccion()" title="Cancelar selección"
-        class="w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 flex items-center justify-center transition-colors flex-shrink-0">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-    </button>
-</div>
-
-<form id="formBulkEstado" method="POST" action="{{ route('entrenador.clientes.bulkEstado') }}" class="hidden">
-    @csrf
-    @method('PATCH')
-    <input type="hidden" name="estado" id="bulkEstadoInput">
-    <div id="bulkIdsContainer"></div>
 </form>
 
 {{-- ── Modal confirmar activar/desactivar ── --}}
@@ -529,7 +567,6 @@ document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
         card.style.transform  = open ? `translateX(-${actionsWidth()}px)` : 'translateX(0)';
     }
 
-    // Cerrar otros al abrir este
     function closeOthers() {
         document.querySelectorAll('.swipe-card').forEach(c => {
             if (c !== card) {
@@ -569,13 +606,12 @@ document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
         }
     });
 
-    // Click fuera cierra
     document.addEventListener('touchstart', e => {
         if (opened && !wrapper.contains(e.target)) snapTo(false);
     }, { passive: true });
 });
 
-// ── Modales ────────────────────────────────────────────
+// ── Modal semanas ────────────────────────────────────────
 let _clienteIdPendiente = null;
 
 function abrirModalSemanas(clienteId, semanaActual) {
@@ -598,7 +634,30 @@ function cerrarModalSemanas() {
     _clienteIdPendiente = null;
 }
 
-// ── Confirmación activar/desactivar (individual y masiva) ──
+function confirmarSemanas(semanas) {
+    if (!_clienteIdPendiente) return;
+    const form = document.getElementById('formPlan');
+    form.action = '/entrenador/plan/' + _clienteIdPendiente;
+    document.getElementById('inputSemanas').value = semanas;
+    form.submit();
+}
+
+// ── Modal editar cliente ─────────────────────────────────
+function abrirModalEditar(id, nombre, email) {
+    const form = document.getElementById('formEditarCliente');
+    form.action = '/entrenador/clientes/' + id;
+    document.getElementById('editClienteIdHidden').value = id;
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editEmail').value = email;
+    form.querySelector('input[name="password"]').value = '';
+    document.getElementById('modalEditarCliente').style.display = 'flex';
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modalEditarCliente').style.display = 'none';
+}
+
+// ── Confirmación activar/desactivar ─────────────────────
 let _accionConfirmada = null;
 
 function interceptarToggle(event, form) {
@@ -636,102 +695,21 @@ function ejecutarAccionConfirmada() {
     cerrarModalConfirmar();
 }
 
-// ── Selección múltiple ──────────────────────────────────
-let seleccionados = new Set();
-
-function onCheckboxChange(checkbox) {
-    seleccionarCliente(checkbox.dataset.id, checkbox.checked);
-    actualizarBarraAcciones();
-}
-
-function seleccionarCliente(id, checked) {
-    document.querySelectorAll(`.cliente-checkbox[data-id="${id}"]`).forEach(cb => cb.checked = checked);
-    if (checked) {
-        seleccionados.add(id);
-    } else {
-        seleccionados.delete(id);
-    }
-}
-
-function toggleSeleccionarTodos(checked) {
-    document.querySelectorAll('tbody tr[data-cliente]').forEach(row => {
-        if (row.style.display === 'none') return; // respeta el filtro actual
-        seleccionarCliente(row.dataset.id, checked);
-    });
-    actualizarBarraAcciones();
-}
-
-function cancelarSeleccion() {
-    seleccionados.clear();
-    document.querySelectorAll('.cliente-checkbox').forEach(cb => cb.checked = false);
-    actualizarBarraAcciones();
-}
-
-function actualizarBarraAcciones() {
-    const barra = document.getElementById('barraAccionesMasivas');
-    document.getElementById('contadorSeleccionados').textContent = seleccionados.size;
-    barra.classList.toggle('hidden', seleccionados.size === 0);
-
-    const checkAll = document.getElementById('checkAllDesktop');
-    if (checkAll) {
-        const visibles = Array.from(document.querySelectorAll('tbody tr[data-cliente]'))
-            .filter(r => r.style.display !== 'none');
-        checkAll.checked = visibles.length > 0 && visibles.every(r => seleccionados.has(r.dataset.id));
-    }
-}
-
-function confirmarAccionMasiva(accion) {
-    const cantidad = seleccionados.size;
-    if (cantidad === 0) return;
-
-    const esActivar = accion === 'activar';
-
-    document.getElementById('tituloConfirmarEstado').textContent =
-        esActivar ? 'Activar clientes' : 'Desactivar clientes';
-    document.getElementById('textoConfirmarEstado').innerHTML =
-        `¿Seguro que deseas <strong class="text-gray-700">${accion}</strong> a <strong class="text-gray-700">${cantidad}</strong> cliente(s) seleccionado(s)?`;
-
-    document.getElementById('iconoActivar').classList.toggle('hidden', !esActivar);
-    document.getElementById('iconoDesactivar').classList.toggle('hidden', esActivar);
-    document.getElementById('btnActivar').classList.toggle('hidden', !esActivar);
-    document.getElementById('btnDesactivar').classList.toggle('hidden', esActivar);
-
-    _accionConfirmada = () => enviarBulk(accion);
-
-    document.getElementById('modalConfirmarEstado').style.display = 'flex';
-}
-
-function enviarBulk(accion) {
-    const estado = accion === 'activar' ? 'activo' : 'inactivo';
-    document.getElementById('bulkEstadoInput').value = estado;
-
-    const contenedor = document.getElementById('bulkIdsContainer');
-    contenedor.innerHTML = '';
-    seleccionados.forEach(id => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'ids[]';
-        input.value = id;
-        contenedor.appendChild(input);
-    });
-
-    document.getElementById('formBulkEstado').submit();
-}
-
-function confirmarSemanas(semanas) {
-    if (!_clienteIdPendiente) return;
-    const form = document.getElementById('formPlan');
-    form.action = '/entrenador/plan/' + _clienteIdPendiente;
-    document.getElementById('inputSemanas').value = semanas;
-    form.submit();
-}
-
 @if($errors->any())
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modalNuevoCliente').style.display = 'flex';
 });
 @endif
 
+@if($errors->editarCliente->any())
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('formEditarCliente');
+    form.action = '/entrenador/clientes/' + document.getElementById('editClienteIdHidden').value;
+    document.getElementById('modalEditarCliente').style.display = 'flex';
+});
+@endif
+
+// ── Filtros + persistencia ──────────────────────────────
 const FILTROS_STORAGE_KEY = 'clientes_filtros';
 
 function guardarFiltros(texto, estado, plan) {
@@ -795,9 +773,6 @@ function filtrarClientes() {
     if (mensajeSinResultadosMovil) {
         mensajeSinResultadosMovil.classList.toggle('hidden', visiblesMovil !== 0 || document.querySelectorAll('.swipe-wrapper').length === 0);
     }
-
-    // Mantiene el checkbox "seleccionar todos" y la barra en sync con lo visible
-    if (typeof actualizarBarraAcciones === 'function') actualizarBarraAcciones();
 }
 
 // Restaurar filtros guardados al cargar la página

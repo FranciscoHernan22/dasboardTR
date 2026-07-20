@@ -56,13 +56,17 @@ class RutinaApiController extends Controller
 
             })->values();
 
-            return [
-                'tipo'            => strtoupper($grupo->first()->tipo),
-                'orden'           => $grupo->first()->orden,
-                'descanso_valor'  => $grupo->first()->descanso_valor  ?? '',
-                'descanso_unidad' => $grupo->first()->descanso_unidad ?? 'seg',
-                'ejercicios'      => $ejercicios,
-            ];
+            $descansosSerie = $grupo->first()->descansos_serie ?? [];
+if (is_string($descansosSerie)) {
+    $descansosSerie = json_decode($descansosSerie, true) ?? [];
+}
+
+return [
+    'tipo'            => strtoupper($grupo->first()->tipo),
+    'orden'           => $grupo->first()->orden,
+    'descansos_serie' => $descansosSerie,
+    'ejercicios'      => $ejercicios,
+];
 
         })->values();
 

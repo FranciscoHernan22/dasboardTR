@@ -228,8 +228,8 @@ class EntrenadorRutinaController extends Controller
                     'segmento'        => $ejercicio->segmento,
                     'nombre'          => $ejercicio->nombre,
                     'series'          => $series,
-                    'descanso_valor'  => $descanso_valor,
-                    'descanso_unidad' => $descanso_unidad,
+                    'descansos_serie' => $descansos_serie,
+
                     'nota_sesion'     => $nota_sesion,
                     'nota_ej'         => trim($ej['nota_ej'] ?? ''),
                 ]);

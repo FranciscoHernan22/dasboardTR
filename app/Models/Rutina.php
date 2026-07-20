@@ -24,6 +24,8 @@ class Rutina extends Model
     'orden',
     'descanso_valor',
     'descanso_unidad',
+        'descansos_serie',   // ⭐ AGREGAR ESTA LÍNEA
+
     'nota_sesion',
     'nota_ej',
     'fecha',        // ← agregar esta línea
@@ -31,6 +33,8 @@ class Rutina extends Model
 
     protected $casts = [
         'series' => 'array',
+            'descansos_serie' => 'array',   // ⭐ AGREGAR
+
     ];
 
     public function user()

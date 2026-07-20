@@ -121,8 +121,8 @@ class EntrenadorRutinaController extends Controller
 
         foreach ($datos['bloques'] as $grupo => $bloque) {
 
-            $descanso_valor  = $bloque['descanso_valor']  ?? '';
-            $descanso_unidad = $bloque['descanso_unidad'] ?? 'seg';
+       $descansos_serie = $bloque['descansos_serie'] ?? [];
+
 
             foreach ($bloque['ejercicios'] ?? [] as $ej) {
 

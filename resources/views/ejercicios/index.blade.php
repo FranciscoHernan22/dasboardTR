@@ -639,18 +639,31 @@ async function aplicarTrim() {
 
         await ffmpeg.writeFile(nombreEntrada, await fetchFile(trimOriginalFile));
 
-        status.textContent = 'Recortando video…';
+        status.textContent = 'Comprimiendo y recortando video…';
         let blob;
         try {
-            await ffmpeg.exec(['-i', nombreEntrada, '-ss', ss, '-t', dur, '-c', 'copy', '-avoid_negative_ts', 'make_zero', nombreSalida]);
+            // Recodificamos (no solo copiamos) para que el video quede liviano y
+            // listo para verse bien en el celular: máx. 1280px de ancho, calidad
+            // razonable. Esto también evita que un clip de 4K/alta calidad pese
+            // demasiado aunque sea corto.
+            await ffmpeg.exec([
+                '-i', nombreEntrada,
+                '-ss', ss, '-t', dur,
+                '-vf', "scale='min(1280,iw)':-2",
+                '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+                '-c:a', 'aac', '-b:a', '128k',
+                '-movflags', '+faststart',
+                nombreSalida
+            ]);
             const data = await ffmpeg.readFile(nombreSalida);
             if (!data || !data.length) throw new Error('salida vacía');
             blob = new Blob([data.buffer], { type: 'video/mp4' });
-        } catch (errCopia) {
-            // Algunos formatos (ej. webm de grabación web) no se pueden recortar por copia directa.
-            status.textContent = 'Ajustando formato del video, puede tardar un poco más…';
+        } catch (errCompresion) {
+            // Respaldo: si por algún motivo la recodificación falla, intentamos
+            // una copia directa sin recomprimir (puede pesar más).
+            status.textContent = 'No se pudo comprimir, probando un método alterno…';
             await ffmpeg.deleteFile(nombreSalida).catch(() => {});
-            await ffmpeg.exec(['-i', nombreEntrada, '-ss', ss, '-t', dur, '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', '-movflags', '+faststart', nombreSalida]);
+            await ffmpeg.exec(['-i', nombreEntrada, '-ss', ss, '-t', dur, '-c', 'copy', '-avoid_negative_ts', 'make_zero', nombreSalida]);
             const data = await ffmpeg.readFile(nombreSalida);
             blob = new Blob([data.buffer], { type: 'video/mp4' });
         }

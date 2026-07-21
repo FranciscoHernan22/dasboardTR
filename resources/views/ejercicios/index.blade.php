@@ -337,10 +337,12 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 </div>
 
 <script type="module">
-// Cargamos la librería de recorte de video (ffmpeg.wasm) para poder usarla luego desde el script normal
-import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
-import { toBlobURL, fetchFile } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
-window.__FFmpegLib = { FFmpeg, toBlobURL, fetchFile };
+// Cargamos la librería de recorte de video (ffmpeg.wasm) desde nuestro propio dominio
+// (NO desde un CDN externo: el worker interno importa archivos relativos que no
+// se pueden resolver correctamente si se cargan desde otro origen).
+import { FFmpeg } from "{{ asset('vendor/ffmpeg-wasm/ffmpeg/index.js') }}";
+import { fetchFile } from "{{ asset('vendor/ffmpeg-wasm/util/index.js') }}";
+window.__FFmpegLib = { FFmpeg, fetchFile };
 </script>
 
 <script>
@@ -593,18 +595,14 @@ async function cargarFFmpeg(onProgreso) {
     if (ffmpegCargando) return ffmpegCargando;
     ffmpegCargando = (async () => {
         if (!window.__FFmpegLib) {
-            throw new Error('La librería de recorte (ffmpeg.wasm) no cargó. Revisa la consola del navegador (F12) y si tu sitio bloquea scripts externos (CSP) hacia cdn.jsdelivr.net.');
+            throw new Error('La librería de recorte (ffmpeg.wasm) no cargó. Revisa la consola del navegador (F12) y confirma que los archivos existen en /vendor/ffmpeg-wasm/.');
         }
-        const { FFmpeg, toBlobURL } = window.__FFmpegLib;
+        const { FFmpeg } = window.__FFmpegLib;
         const ffmpeg = new FFmpeg();
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
-        const ffmpegPkgURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm';
         await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-            // El worker principal también hay que traerlo como blob (mismo origen),
-            // si no el navegador bloquea el Worker con SecurityError por ser de otro dominio.
-            classWorkerURL: await toBlobURL(`${ffmpegPkgURL}/worker.js`, 'text/javascript'),
+            coreURL: "{{ asset('vendor/ffmpeg-wasm/core/ffmpeg-core.js') }}",
+            wasmURL: "{{ asset('vendor/ffmpeg-wasm/core/ffmpeg-core.wasm') }}",
+            classWorkerURL: "{{ asset('vendor/ffmpeg-wasm/ffmpeg/worker.js') }}",
         });
         ffmpegInstance = ffmpeg;
         return ffmpeg;

@@ -7,7 +7,7 @@
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
 
 <style>
-    
+
 :root {
     --bg:#f4f5f7; --surface:#ffffff; --border:#e2e5ea; --border2:#d0d5dd;
     --text:#111827; --muted:#6b7280; --accent:#2563eb; --accent-l:#eff6ff;
@@ -47,7 +47,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .ejercicios-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:14px; }
 .ej-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.05); display:flex; flex-direction:column; transition:box-shadow .15s, border-color .15s; }
 .ej-card:hover { border-color:var(--border2); box-shadow:0 4px 14px rgba(0,0,0,.08); }
-.ej-card-img { width:100%; aspect-ratio:1/1; background:#f1f3f6; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.ej-card-img { position:relative; width:100%; aspect-ratio:1/1; background:#f1f3f6; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 .ej-card-img img { width:100%; height:100%; object-fit:cover; }
 .ej-card-noimg { color:#c4cad3; font-size:1.8rem; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
 .ej-card-body { padding:10px 12px 4px; flex:1; }
@@ -57,6 +57,10 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .ej-btn-editar:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-l); }
 .ej-btn-eliminar { display:flex; align-items:center; justify-content:center; width:30px; border:1px solid #fecaca; border-radius:6px; background:white; color:var(--danger); cursor:pointer; transition:all .12s; }
 .ej-btn-eliminar:hover { background:var(--danger); color:white; border-color:var(--danger); }
+
+/* Badge de video sobre la tarjeta */
+.ej-video-badge { position:absolute; top:6px; right:6px; width:26px; height:26px; border-radius:50%; background:rgba(17,24,39,.65); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; cursor:pointer; border:none; backdrop-filter:blur(2px); transition:background .12s, transform .12s; z-index:2; }
+.ej-video-badge:hover { background:var(--accent); transform:scale(1.08); }
 
 .ej-empty { text-align:center; padding:50px 20px; color:var(--muted); font-size:0.88rem; background:white; border:1.5px dashed var(--border2); border-radius:var(--radius); }
 
@@ -71,12 +75,16 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .modal-close:hover { background:#fee2e2; color:var(--danger); }
 .modal-body { padding:18px 20px; display:flex; flex-direction:column; gap:14px; }
 
-.ej-form-imgwrap { display:flex; justify-content:center; }
-.ej-form-imgpreview { width:120px; height:120px; border-radius:12px; border:1.5px dashed var(--border2); background:#f8f9fb; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; transition:border-color .12s; }
-.ej-form-imgpreview:hover { border-color:var(--accent); }
-.ej-form-imgpreview img { width:100%; height:100%; object-fit:cover; }
-#imgPreviewPlaceholder { display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:0.68rem; font-weight:600; text-align:center; }
-#imgPreviewPlaceholder i { font-size:1.4rem; }
+.ej-form-media { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+
+.ej-form-imgwrap, .ej-form-videowrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.ej-form-imgpreview, .ej-form-videopreview { width:120px; height:120px; border-radius:12px; border:1.5px dashed var(--border2); background:#f8f9fb; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; transition:border-color .12s; position:relative; }
+.ej-form-imgpreview:hover, .ej-form-videopreview:hover { border-color:var(--accent); }
+.ej-form-imgpreview img, .ej-form-videopreview video { width:100%; height:100%; object-fit:cover; }
+#imgPreviewPlaceholder, #videoPreviewPlaceholder { display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:0.68rem; font-weight:600; text-align:center; }
+#imgPreviewPlaceholder i, #videoPreviewPlaceholder i { font-size:1.4rem; }
+.media-label { font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.video-play-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.25); color:#fff; font-size:1.3rem; pointer-events:none; }
 
 .campo-form { display:flex; flex-direction:column; gap:5px; }
 .campo-form label { font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
@@ -91,6 +99,11 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .btn-guardar-ej { flex:2; padding:9px; border:none; border-radius:8px; background:var(--accent); color:white; font-size:0.85rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
 .btn-guardar-ej:hover { background:#1d4ed8; }
 
+/* Modal lightbox de video */
+.modal-video-box { max-width:520px; }
+.modal-video-body { padding:16px 18px 18px; }
+#videoVerPlayer { width:100%; max-height:70vh; border-radius:8px; background:#000; display:block; }
+
 @media (max-width: 640px) {
     .page-header { gap:8px; }
     .page-header h2 { font-size:1rem; }
@@ -103,6 +116,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     .modal-body { padding:14px 16px; gap:12px; }
     .modal-footer-ej { padding:0 16px 16px; }
     #buscador { font-size:0.82rem; }
+    .ej-form-imgpreview, .ej-form-videopreview { width:100px; height:100px; }
 }
 
 @media (max-width: 360px) {
@@ -159,6 +173,11 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         @foreach($items as $ej)
         <div class="ej-card" data-nombre="{{ strtolower($ej->nombre) }}">
             <div class="ej-card-img">
+                @if($ej->video)
+                    <button type="button" class="ej-video-badge" title="Ver video" onclick="verVideoEjercicio('{{ $r2Url . '/' . $ej->video }}')">
+                        <i class="ti ti-player-play-filled"></i>
+                    </button>
+                @endif
                 @if($ej->imagen)
                     <img src="{{ $r2Url . '/' . $ej->imagen }}" alt="{{ $ej->nombre }}">
                 @else
@@ -174,6 +193,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
                     data-nombre="{{ $ej->nombre }}"
                     data-segmento="{{ $ej->segmento }}"
                     data-imagen="{{ $ej->imagen ? $r2Url . '/' . $ej->imagen : '' }}"
+                    data-video="{{ $ej->video ? $r2Url . '/' . $ej->video : '' }}"
                     onclick="abrirDesdeBtn(this)">
                     <i class="ti ti-pencil"></i> Editar
                 </button>
@@ -207,12 +227,24 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
             <input type="hidden" name="_method" id="metodoEjercicio" value="POST">
 
             <div class="modal-body">
-                <div class="ej-form-imgwrap">
-                    <label for="inputImagen" class="ej-form-imgpreview" id="imgPreviewWrap">
-                        <img id="imgPreview" src="" alt="" style="display:none;">
-                        <span id="imgPreviewPlaceholder"><i class="ti ti-camera-plus"></i>Imagen</span>
-                    </label>
-                    <input type="file" id="inputImagen" name="imagen" accept="image/*" style="display:none;" onchange="previewImagen(this)">
+                <div class="ej-form-media">
+                    <div class="ej-form-imgwrap">
+                        <span class="media-label">Imagen</span>
+                        <label for="inputImagen" class="ej-form-imgpreview" id="imgPreviewWrap">
+                            <img id="imgPreview" src="" alt="" style="display:none;">
+                            <span id="imgPreviewPlaceholder"><i class="ti ti-camera-plus"></i>Imagen</span>
+                        </label>
+                        <input type="file" id="inputImagen" name="imagen" accept="image/*" style="display:none;" onchange="previewImagen(this)">
+                    </div>
+
+                    <div class="ej-form-videowrap">
+                        <span class="media-label">Video</span>
+                        <label for="inputVideo" class="ej-form-videopreview" id="videoPreviewWrap">
+                            <video id="videoPreview" muted playsinline preload="metadata" style="display:none;"></video>
+                            <span id="videoPreviewPlaceholder"><i class="ti ti-video-plus"></i>Video</span>
+                        </label>
+                        <input type="file" id="inputVideo" name="video" accept="video/*" style="display:none;" onchange="previewVideo(this)">
+                    </div>
                 </div>
 
                 <div class="campo-form">
@@ -239,9 +271,24 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     </div>
 </div>
 
+{{-- MODAL VER VIDEO (lightbox) --}}
+<div class="modal-overlay" id="modalVerVideo" onclick="if(event.target===this) cerrarVerVideo()">
+    <div class="modal-box modal-video-box">
+        <div class="modal-header">
+            <h3>🎬 Video del ejercicio</h3>
+            <button type="button" class="modal-close" onclick="cerrarVerVideo()">✕</button>
+        </div>
+        <div class="modal-video-body">
+            <video id="videoVerPlayer" controls playsinline></video>
+        </div>
+    </div>
+</div>
+
 <script>
 const EJ_UPDATE_URL = "{{ route('entrenador.ejercicios.update', ['ejercicio' => 'EJID']) }}";
 const EJ_STORE_URL  = "{{ route('entrenador.ejercicios.store') }}";
+
+let videoObjectUrl = null; // para liberar memoria del preview de video en el form
 
 function asegurarOpcionSegmento(select, valor) {
     if (!valor) return;
@@ -254,15 +301,30 @@ function asegurarOpcionSegmento(select, valor) {
     }
 }
 
+function resetPreviewVideo() {
+    const videoPreview = document.getElementById('videoPreview');
+    const placeholder  = document.getElementById('videoPreviewPlaceholder');
+    if (videoObjectUrl) { URL.revokeObjectURL(videoObjectUrl); videoObjectUrl = null; }
+    videoPreview.pause();
+    videoPreview.removeAttribute('src');
+    videoPreview.load();
+    videoPreview.style.display = 'none';
+    placeholder.style.display = 'flex';
+}
+
 function abrirModalEjercicio(modo, data = {}) {
     const form           = document.getElementById('formEjercicio');
     const titulo         = document.getElementById('modalEjTitulo');
     const metodo         = document.getElementById('metodoEjercicio');
     const imgPreview     = document.getElementById('imgPreview');
     const imgPlaceholder = document.getElementById('imgPreviewPlaceholder');
+    const videoPreview   = document.getElementById('videoPreview');
+    const videoPlaceholder = document.getElementById('videoPreviewPlaceholder');
 
     form.reset();
     document.getElementById('inputImagen').value = '';
+    document.getElementById('inputVideo').value = '';
+    resetPreviewVideo();
 
     if (modo === 'crear') {
         titulo.textContent = '＋ Nuevo ejercicio';
@@ -286,6 +348,11 @@ function abrirModalEjercicio(modo, data = {}) {
             imgPreview.style.display = 'none';
             imgPlaceholder.style.display = 'flex';
         }
+        if (data.video) {
+            videoPreview.src = data.video;
+            videoPreview.style.display = 'block';
+            videoPlaceholder.style.display = 'none';
+        }
     }
 
     document.getElementById('modalEjercicio').classList.add('open');
@@ -295,6 +362,7 @@ function abrirModalEjercicio(modo, data = {}) {
 function cerrarModalEjercicio() {
     document.getElementById('modalEjercicio').classList.remove('open');
     document.body.style.overflow = '';
+    resetPreviewVideo();
 }
 
 function previewImagen(input) {
@@ -308,6 +376,34 @@ function previewImagen(input) {
         document.getElementById('imgPreviewPlaceholder').style.display = 'none';
     };
     reader.readAsDataURL(file);
+}
+
+function previewVideo(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
+    videoObjectUrl = URL.createObjectURL(file);
+    const video = document.getElementById('videoPreview');
+    video.src = videoObjectUrl;
+    video.style.display = 'block';
+    document.getElementById('videoPreviewPlaceholder').style.display = 'none';
+}
+
+function verVideoEjercicio(url) {
+    const player = document.getElementById('videoVerPlayer');
+    player.src = url;
+    document.getElementById('modalVerVideo').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    player.play().catch(() => {});
+}
+
+function cerrarVerVideo() {
+    const player = document.getElementById('videoVerPlayer');
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+    document.getElementById('modalVerVideo').classList.remove('open');
+    document.body.style.overflow = '';
 }
 
 function filtrarPorSegmento(btn) {
@@ -343,7 +439,12 @@ function filtrarEjercicios() {
     document.getElementById('sinResultados').classList.toggle('visible', !algunaSeccionVisible);
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModalEjercicio(); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        cerrarModalEjercicio();
+        cerrarVerVideo();
+    }
+});
 
 @if($errors->any())
 document.addEventListener('DOMContentLoaded', () => abrirModalEjercicio('crear'));
@@ -354,7 +455,8 @@ function abrirDesdeBtn(btn) {
         id:       btn.dataset.id,
         nombre:   btn.dataset.nombre,
         segmento: btn.dataset.segmento,
-        imagen:   btn.dataset.imagen
+        imagen:   btn.dataset.imagen,
+        video:    btn.dataset.video
     });
 }
 </script>

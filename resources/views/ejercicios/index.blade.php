@@ -592,17 +592,29 @@ async function cargarFFmpeg(onProgreso) {
     if (ffmpegInstance) return ffmpegInstance;
     if (ffmpegCargando) return ffmpegCargando;
     ffmpegCargando = (async () => {
+        if (!window.__FFmpegLib) {
+            throw new Error('La librería de recorte (ffmpeg.wasm) no cargó. Revisa la consola del navegador (F12) y si tu sitio bloquea scripts externos (CSP) hacia cdn.jsdelivr.net.');
+        }
         const { FFmpeg, toBlobURL } = window.__FFmpegLib;
         const ffmpeg = new FFmpeg();
-        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
+        const ffmpegPkgURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm';
         await ffmpeg.load({
             coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
             wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+            // El worker principal también hay que traerlo como blob (mismo origen),
+            // si no el navegador bloquea el Worker con SecurityError por ser de otro dominio.
+            classWorkerURL: await toBlobURL(`${ffmpegPkgURL}/worker.js`, 'text/javascript'),
         });
         ffmpegInstance = ffmpeg;
         return ffmpeg;
     })();
-    return ffmpegCargando;
+    try {
+        return await ffmpegCargando;
+    } catch (e) {
+        ffmpegCargando = null; // permite reintentar si falló
+        throw e;
+    }
 }
 
 function extensionDe(nombre) {
@@ -652,8 +664,8 @@ async function aplicarTrim() {
         document.getElementById('trimPanel').classList.remove('visible');
         status.textContent = '';
     } catch (err) {
-        console.error(err);
-        status.textContent = 'No se pudo recortar el video. Intenta de nuevo o usa el video completo.';
+        console.error('[recorte de video] error:', err);
+        status.textContent = 'Error: ' + (err?.message || 'no se pudo recortar. Revisa la consola (F12).');
     } finally {
         btn.disabled = false;
         document.getElementById('btnGuardarEj').disabled = false;

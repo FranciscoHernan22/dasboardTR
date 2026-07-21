@@ -29,21 +29,38 @@ class EntrenadorEjercicioController extends Controller
         'TRICEPS_SURAL'  => 'Tríceps sural',
     ];
 
+    // Reglas de validación del video, reutilizadas en store() y update()
+    private const REGLAS_VIDEO = 'nullable|file|mimetypes:video/mp4,video/quicktime,video/webm,video/x-msvideo|max:51200';
+    private const MENSAJES_VIDEO = [
+        'video.file'       => 'El video no se pudo leer, intenta subirlo de nuevo.',
+        'video.mimetypes'  => 'El video debe ser MP4, MOV, WEBM o AVI.',
+        'video.max'        => 'El video no puede pesar más de 50MB.',
+    ];
+
     // ─── Comprime y sube la imagen a R2, devuelve la ruta guardada ───
-private function procesarImagen($archivo): string
-{
-    $manager = new ImageManager(Driver::class);
-    $encoded = $manager->decode($archivo->getRealPath())
-        ->scaleDown(width: 800, height: 800)
-        ->encode(new WebpEncoder(quality: 92));
+    private function procesarImagen($archivo): string
+    {
+        $manager = new ImageManager(Driver::class);
+        $encoded = $manager->decode($archivo->getRealPath())
+            ->scaleDown(width: 800, height: 800)
+            ->encode(new WebpEncoder(quality: 92));
 
-    $ruta = 'ejercicios/' . uniqid() . '.webp';
-    Storage::disk('r2')->put($ruta, (string) $encoded);
+        $ruta = 'ejercicios/' . uniqid() . '.webp';
+        Storage::disk('r2')->put($ruta, (string) $encoded);
 
-    return $ruta;
-}
+        return $ruta;
+    }
 
+    // ─── Sube el video (ya recortado desde el navegador) a R2, devuelve la ruta guardada ───
+    private function procesarVideo($archivo): string
+    {
+        $extension = strtolower($archivo->getClientOriginalExtension()) ?: 'mp4';
+        $nombre    = uniqid() . '.' . $extension;
 
+        Storage::disk('r2')->putFileAs('ejercicios/videos', $archivo, $nombre);
+
+        return 'ejercicios/videos/' . $nombre;
+    }
 
     public function index()
     {
@@ -70,18 +87,23 @@ private function procesarImagen($archivo): string
         $data = $request->validate([
             'nombre'   => 'required|string|max:120',
             'segmento' => ['required', Rule::in(array_keys(self::SEGMENTOS))],
-            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
-
+            'imagen'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
+            'video'    => self::REGLAS_VIDEO,
          ], [
             'nombre.required'   => 'Ponle un nombre al ejercicio.',
             'segmento.required' => 'Selecciona un segmento.',
             'segmento.in'       => 'Selecciona un segmento válido de la lista.',
             'imagen.image'      => 'El archivo debe ser una imagen.',
             'imagen.max'        => 'La imagen no puede pesar más de 4MB.',
+            ...self::MENSAJES_VIDEO,
         ]);
 
         if ($request->hasFile('imagen')) {
             $data['imagen'] = $this->procesarImagen($request->file('imagen'));
+        }
+
+        if ($request->hasFile('video')) {
+            $data['video'] = $this->procesarVideo($request->file('video'));
         }
 
         $data['entrenador_id'] = Auth::id();
@@ -99,14 +121,16 @@ private function procesarImagen($archivo): string
         $data = $request->validate([
             'nombre'   => 'required|string|max:120',
             'segmento' => ['required', Rule::in(array_keys(self::SEGMENTOS))],
- 
-            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
+            'imagen'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
+            'video'    => self::REGLAS_VIDEO,
         ], [
             'nombre.required'   => 'Ponle un nombre al ejercicio.',
             'segmento.required' => 'Selecciona un segmento.',
             'segmento.in'       => 'Selecciona un segmento válido de la lista.',
             'imagen.image'      => 'El archivo debe ser una imagen.',
-'imagen.max' => 'La imagen no puede pesar más de 15MB.',        ]);
+            'imagen.max'        => 'La imagen no puede pesar más de 15MB.',
+            ...self::MENSAJES_VIDEO,
+        ]);
 
         if ($request->hasFile('imagen')) {
             $imagenAnterior = $ejercicio->imagen;
@@ -115,6 +139,16 @@ private function procesarImagen($archivo): string
             // Borra la imagen anterior de R2 si nadie más la usa
             if ($imagenAnterior && !Ejercicio::archivoEnUsoPorOtros($imagenAnterior, $ejercicio->id)) {
                 Storage::disk('r2')->delete($imagenAnterior);
+            }
+        }
+
+        if ($request->hasFile('video')) {
+            $videoAnterior = $ejercicio->video;
+            $data['video'] = $this->procesarVideo($request->file('video'));
+
+            // Borra el video anterior de R2 (si existía)
+            if ($videoAnterior) {
+                Storage::disk('r2')->delete($videoAnterior);
             }
         }
 

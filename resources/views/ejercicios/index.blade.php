@@ -104,6 +104,29 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .modal-video-body { padding:16px 18px 18px; }
 #videoVerPlayer { width:100%; max-height:70vh; border-radius:8px; background:#000; display:block; }
 
+/* Panel de recorte de video (estilo Instagram) */
+.trim-panel { display:none; flex-direction:column; gap:10px; border:1px solid var(--border2); border-radius:10px; padding:12px; background:#fafbfc; }
+.trim-panel.visible { display:flex; }
+.trim-panel-video { width:100%; max-height:220px; border-radius:8px; background:#000; display:block; }
+.trim-times { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); font-weight:600; font-family:'DM Mono',monospace; }
+.trim-track-wrap { position:relative; height:52px; padding:0 2px; }
+.trim-track { position:relative; height:52px; border-radius:8px; overflow:hidden; background:#e5e7eb; display:flex; }
+.trim-track img { height:100%; flex:1 1 0; min-width:0; object-fit:cover; display:block; pointer-events:none; user-select:none; }
+.trim-dim-left, .trim-dim-right { position:absolute; top:0; bottom:0; background:rgba(17,24,39,.55); z-index:2; pointer-events:none; }
+.trim-selection-border { position:absolute; top:0; bottom:0; border-top:2px solid var(--accent); border-bottom:2px solid var(--accent); z-index:2; pointer-events:none; box-sizing:border-box; }
+.trim-handle { position:absolute; top:0; bottom:0; width:16px; background:var(--accent); z-index:3; cursor:ew-resize; display:flex; align-items:center; justify-content:center; touch-action:none; }
+.trim-handle::after { content:''; width:3px; height:18px; background:rgba(255,255,255,.85); border-radius:2px; }
+.trim-handle-start { border-radius:6px 2px 2px 6px; }
+.trim-handle-end { border-radius:2px 6px 6px 2px; }
+.trim-playhead { position:absolute; top:-4px; bottom:-4px; width:2px; background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.3); z-index:4; pointer-events:none; }
+.trim-actions { display:flex; gap:8px; }
+.btn-trim-aplicar { flex:1; padding:8px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:6px; }
+.btn-trim-aplicar:disabled { opacity:.6; cursor:wait; }
+.btn-trim-completo { padding:8px 12px; border:1px solid var(--border2); border-radius:8px; background:white; color:var(--muted); font-size:0.78rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.trim-status { font-size:0.7rem; color:var(--accent); font-weight:600; text-align:center; min-height:14px; }
+.video-trimmed-info { display:none; align-items:center; justify-content:center; gap:6px; font-size:0.68rem; color:#059669; font-weight:700; }
+.video-trimmed-info button { border:none; background:none; color:var(--accent); font-weight:700; cursor:pointer; font-size:0.68rem; text-decoration:underline; padding:0; font-family:'DM Sans',sans-serif; }
+
 @media (max-width: 640px) {
     .page-header { gap:8px; }
     .page-header h2 { font-size:1rem; }
@@ -117,6 +140,8 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     .modal-footer-ej { padding:0 16px 16px; }
     #buscador { font-size:0.82rem; }
     .ej-form-imgpreview, .ej-form-videopreview { width:100px; height:100px; }
+    .trim-panel-video { max-height:170px; }
+    .trim-handle { width:22px; }
 }
 
 @media (max-width: 360px) {
@@ -244,6 +269,33 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
                             <span id="videoPreviewPlaceholder"><i class="ti ti-video-plus"></i>Video</span>
                         </label>
                         <input type="file" id="inputVideo" name="video" accept="video/*" style="display:none;" onchange="previewVideo(this)">
+                        <div class="video-trimmed-info" id="videoTrimmedInfo">
+                            <span>✓ Recortado (<span id="videoTrimmedDuracion"></span>)</span>
+                            <button type="button" onclick="reabrirTrim()">editar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trim-panel" id="trimPanel">
+                    <video id="trimPreviewPlayer" class="trim-panel-video" muted playsinline></video>
+                    <div class="trim-times">
+                        <span id="trimInicioLabel">0:00</span>
+                        <span id="trimDuracionLabel">Duración: 0:00</span>
+                        <span id="trimFinLabel">0:00</span>
+                    </div>
+                    <div class="trim-track-wrap">
+                        <div class="trim-track" id="trimTrack"></div>
+                        <div class="trim-dim-left" id="trimDimLeft"></div>
+                        <div class="trim-dim-right" id="trimDimRight"></div>
+                        <div class="trim-selection-border" id="trimSelectionBorder"></div>
+                        <div class="trim-playhead" id="trimPlayhead"></div>
+                        <div class="trim-handle trim-handle-start" id="trimHandleStart"></div>
+                        <div class="trim-handle trim-handle-end" id="trimHandleEnd"></div>
+                    </div>
+                    <div class="trim-status" id="trimStatus"></div>
+                    <div class="trim-actions">
+                        <button type="button" class="btn-trim-completo" onclick="cancelarTrim()">Usar video completo</button>
+                        <button type="button" class="btn-trim-aplicar" id="btnAplicarTrim" onclick="aplicarTrim()"><i class="ti ti-crop"></i> Recortar</button>
                     </div>
                 </div>
 
@@ -284,11 +336,29 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     </div>
 </div>
 
+<script type="module">
+// Cargamos la librería de recorte de video (ffmpeg.wasm) para poder usarla luego desde el script normal
+import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+import { toBlobURL, fetchFile } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
+window.__FFmpegLib = { FFmpeg, toBlobURL, fetchFile };
+</script>
+
 <script>
 const EJ_UPDATE_URL = "{{ route('entrenador.ejercicios.update', ['ejercicio' => 'EJID']) }}";
 const EJ_STORE_URL  = "{{ route('entrenador.ejercicios.store') }}";
 
-let videoObjectUrl = null; // para liberar memoria del preview de video en el form
+let videoObjectUrl = null; // para liberar memoria del preview de video en el form (miniatura final)
+
+// --- Estado del recorte de video ---
+let ffmpegInstance   = null;
+let ffmpegCargando   = null;
+let trimOriginalFile = null; // archivo original seleccionado por el usuario
+let trimVideoURL     = null; // object URL del original, para el reproductor del panel de recorte
+let trimDuration     = 0;
+let trimStart        = 0;
+let trimEnd           = 0;
+let trimDragging     = null; // 'start' | 'end' | null
+const TRIM_MIN_DUR   = 0.5;  // duración mínima del clip en segundos
 
 function asegurarOpcionSegmento(select, valor) {
     if (!valor) return;
@@ -305,11 +375,17 @@ function resetPreviewVideo() {
     const videoPreview = document.getElementById('videoPreview');
     const placeholder  = document.getElementById('videoPreviewPlaceholder');
     if (videoObjectUrl) { URL.revokeObjectURL(videoObjectUrl); videoObjectUrl = null; }
+    if (trimVideoURL)   { URL.revokeObjectURL(trimVideoURL); trimVideoURL = null; }
+    trimOriginalFile = null;
+    trimDuration = 0; trimStart = 0; trimEnd = 0;
     videoPreview.pause();
     videoPreview.removeAttribute('src');
     videoPreview.load();
     videoPreview.style.display = 'none';
     placeholder.style.display = 'flex';
+    document.getElementById('trimPanel').classList.remove('visible');
+    document.getElementById('videoTrimmedInfo').style.display = 'none';
+    document.getElementById('trimStatus').textContent = '';
 }
 
 function abrirModalEjercicio(modo, data = {}) {
@@ -381,12 +457,238 @@ function previewImagen(input) {
 function previewVideo(input) {
     const file = input.files[0];
     if (!file) return;
+    trimOriginalFile = file;
+    document.getElementById('videoTrimmedInfo').style.display = 'none';
+    abrirPanelTrim(file);
+}
+
+function reabrirTrim() {
+    if (!trimOriginalFile) return;
+    document.getElementById('videoTrimmedInfo').style.display = 'none';
+    abrirPanelTrim(trimOriginalFile);
+}
+
+function abrirPanelTrim(file) {
+    if (trimVideoURL) URL.revokeObjectURL(trimVideoURL);
+    trimVideoURL = URL.createObjectURL(file);
+
+    const player = document.getElementById('trimPreviewPlayer');
+    player.src = trimVideoURL;
+    document.getElementById('trimPanel').classList.add('visible');
+    document.getElementById('trimStatus').textContent = 'Cargando video…';
+
+    player.onloadedmetadata = () => {
+        trimDuration = player.duration;
+        trimStart = 0;
+        trimEnd = trimDuration;
+        document.getElementById('trimStatus').textContent = '';
+        actualizarUISeleccion();
+        generarMiniaturas(file, trimDuration);
+        player.currentTime = 0;
+        player.play().catch(() => {});
+    };
+
+    player.ontimeupdate = () => {
+        if (player.currentTime >= trimEnd) {
+            player.currentTime = trimStart;
+        }
+        actualizarPlayhead();
+    };
+}
+
+async function generarMiniaturas(file, duration) {
+    const track = document.getElementById('trimTrack');
+    track.innerHTML = '';
+    const N = 8;
+    const tempVideo = document.createElement('video');
+    tempVideo.muted = true;
+    tempVideo.src = URL.createObjectURL(file);
+    await new Promise(res => { tempVideo.onloadedmetadata = res; });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 80; canvas.height = 80;
+    const ctx = canvas.getContext('2d');
+
+    for (let i = 0; i < N; i++) {
+        const t = Math.min(duration - 0.05, (duration / N) * i + 0.05);
+        await new Promise(res => {
+            tempVideo.currentTime = Math.max(0, t);
+            tempVideo.onseeked = () => {
+                const size = Math.min(tempVideo.videoWidth, tempVideo.videoHeight) || 80;
+                const sx = (tempVideo.videoWidth - size) / 2;
+                const sy = (tempVideo.videoHeight - size) / 2;
+                ctx.drawImage(tempVideo, sx, sy, size, size, 0, 0, 80, 80);
+                const img = document.createElement('img');
+                img.src = canvas.toDataURL('image/jpeg', 0.6);
+                track.appendChild(img);
+                res();
+            };
+        });
+    }
+    URL.revokeObjectURL(tempVideo.src);
+}
+
+function formatTiempo(s) {
+    s = Math.max(0, s || 0);
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+}
+
+function actualizarUISeleccion() {
+    const pctStart = trimDuration ? (trimStart / trimDuration) * 100 : 0;
+    const pctEnd   = trimDuration ? (trimEnd / trimDuration) * 100 : 100;
+
+    document.getElementById('trimHandleStart').style.left  = `${pctStart}%`;
+    document.getElementById('trimHandleEnd').style.left    = `calc(${pctEnd}% - 16px)`;
+    document.getElementById('trimDimLeft').style.left      = '0';
+    document.getElementById('trimDimLeft').style.width     = `${pctStart}%`;
+    document.getElementById('trimDimRight').style.left     = `${pctEnd}%`;
+    document.getElementById('trimDimRight').style.width    = `${100 - pctEnd}%`;
+    document.getElementById('trimSelectionBorder').style.left  = `${pctStart}%`;
+    document.getElementById('trimSelectionBorder').style.width = `${pctEnd - pctStart}%`;
+
+    document.getElementById('trimInicioLabel').textContent = formatTiempo(trimStart);
+    document.getElementById('trimFinLabel').textContent    = formatTiempo(trimEnd);
+    document.getElementById('trimDuracionLabel').textContent = 'Duración: ' + formatTiempo(trimEnd - trimStart);
+}
+
+function actualizarPlayhead() {
+    const player = document.getElementById('trimPreviewPlayer');
+    const pct = trimDuration ? (player.currentTime / trimDuration) * 100 : 0;
+    document.getElementById('trimPlayhead').style.left = `${pct}%`;
+}
+
+function iniciarArrastreHandle(e, tipo) {
+    e.preventDefault();
+    trimDragging = tipo;
+    e.target.setPointerCapture(e.pointerId);
+}
+
+document.getElementById('trimHandleStart').addEventListener('pointerdown', e => iniciarArrastreHandle(e, 'start'));
+document.getElementById('trimHandleEnd').addEventListener('pointerdown', e => iniciarArrastreHandle(e, 'end'));
+
+document.addEventListener('pointermove', e => {
+    if (!trimDragging || !trimDuration) return;
+    const rect = document.getElementById('trimTrack').getBoundingClientRect();
+    let pct = (e.clientX - rect.left) / rect.width;
+    pct = Math.min(1, Math.max(0, pct));
+    const tiempo = pct * trimDuration;
+    const player = document.getElementById('trimPreviewPlayer');
+
+    if (trimDragging === 'start') {
+        trimStart = Math.max(0, Math.min(tiempo, trimEnd - TRIM_MIN_DUR));
+        player.currentTime = trimStart;
+    } else {
+        trimEnd = Math.min(trimDuration, Math.max(tiempo, trimStart + TRIM_MIN_DUR));
+        player.currentTime = trimEnd;
+    }
+    actualizarUISeleccion();
+});
+
+document.addEventListener('pointerup', () => { trimDragging = null; });
+
+async function cargarFFmpeg(onProgreso) {
+    if (ffmpegInstance) return ffmpegInstance;
+    if (ffmpegCargando) return ffmpegCargando;
+    ffmpegCargando = (async () => {
+        const { FFmpeg, toBlobURL } = window.__FFmpegLib;
+        const ffmpeg = new FFmpeg();
+        const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+        await ffmpeg.load({
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+        ffmpegInstance = ffmpeg;
+        return ffmpeg;
+    })();
+    return ffmpegCargando;
+}
+
+function extensionDe(nombre) {
+    const m = (nombre || '').match(/\.[0-9a-z]+$/i);
+    return m ? m[0] : '.mp4';
+}
+
+async function aplicarTrim() {
+    if (!trimOriginalFile || !trimDuration) return;
+    const btn    = document.getElementById('btnAplicarTrim');
+    const status = document.getElementById('trimStatus');
+    btn.disabled = true;
+    document.getElementById('btnGuardarEj').disabled = true;
+
+    const nombreEntrada = 'entrada_' + Date.now() + extensionDe(trimOriginalFile.name);
+    const nombreSalida  = 'salida_' + Date.now() + '.mp4';
+    const ss = trimStart.toFixed(2);
+    const dur = (trimEnd - trimStart).toFixed(2);
+
+    try {
+        status.textContent = 'Cargando editor de video… (solo la primera vez)';
+        const ffmpeg = await cargarFFmpeg();
+        const { fetchFile } = window.__FFmpegLib;
+
+        await ffmpeg.writeFile(nombreEntrada, await fetchFile(trimOriginalFile));
+
+        status.textContent = 'Recortando video…';
+        let blob;
+        try {
+            await ffmpeg.exec(['-i', nombreEntrada, '-ss', ss, '-t', dur, '-c', 'copy', '-avoid_negative_ts', 'make_zero', nombreSalida]);
+            const data = await ffmpeg.readFile(nombreSalida);
+            if (!data || !data.length) throw new Error('salida vacía');
+            blob = new Blob([data.buffer], { type: 'video/mp4' });
+        } catch (errCopia) {
+            // Algunos formatos (ej. webm de grabación web) no se pueden recortar por copia directa.
+            status.textContent = 'Ajustando formato del video, puede tardar un poco más…';
+            await ffmpeg.deleteFile(nombreSalida).catch(() => {});
+            await ffmpeg.exec(['-i', nombreEntrada, '-ss', ss, '-t', dur, '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', '-movflags', '+faststart', nombreSalida]);
+            const data = await ffmpeg.readFile(nombreSalida);
+            blob = new Blob([data.buffer], { type: 'video/mp4' });
+        }
+
+        await ffmpeg.deleteFile(nombreEntrada).catch(() => {});
+        await ffmpeg.deleteFile(nombreSalida).catch(() => {});
+
+        aplicarVideoFinal(blob, trimEnd - trimStart);
+        document.getElementById('trimPanel').classList.remove('visible');
+        status.textContent = '';
+    } catch (err) {
+        console.error(err);
+        status.textContent = 'No se pudo recortar el video. Intenta de nuevo o usa el video completo.';
+    } finally {
+        btn.disabled = false;
+        document.getElementById('btnGuardarEj').disabled = false;
+    }
+}
+
+function aplicarVideoFinal(blob, duracionSeg, esOriginal = false) {
+    const inputVideo = document.getElementById('inputVideo');
+    const archivoFinal = esOriginal
+        ? blob // ya es el File original, con su nombre/tipo real
+        : new File([blob], 'ejercicio-recortado.mp4', { type: 'video/mp4' });
+    const dt = new DataTransfer();
+    dt.items.add(archivoFinal);
+    inputVideo.files = dt.files;
+
     if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
-    videoObjectUrl = URL.createObjectURL(file);
-    const video = document.getElementById('videoPreview');
-    video.src = videoObjectUrl;
-    video.style.display = 'block';
+    videoObjectUrl = URL.createObjectURL(blob);
+    const videoPreview = document.getElementById('videoPreview');
+    videoPreview.src = videoObjectUrl;
+    videoPreview.style.display = 'block';
     document.getElementById('videoPreviewPlaceholder').style.display = 'none';
+
+    if (esOriginal) {
+        document.getElementById('videoTrimmedInfo').style.display = 'none';
+    } else {
+        document.getElementById('videoTrimmedDuracion').textContent = formatTiempo(duracionSeg);
+        document.getElementById('videoTrimmedInfo').style.display = 'flex';
+    }
+}
+
+function cancelarTrim() {
+    if (trimOriginalFile) {
+        aplicarVideoFinal(trimOriginalFile, trimDuration, true);
+    }
+    document.getElementById('trimPanel').classList.remove('visible');
 }
 
 function verVideoEjercicio(url) {

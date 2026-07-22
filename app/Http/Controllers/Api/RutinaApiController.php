@@ -11,9 +11,9 @@ use Illuminate\Http\Request;  // ← esta línea
 
 class RutinaApiController extends Controller
 {
-    public function ver($cliente, $semana, $dia)
+public function ver($cliente, $semana, $dia)
     {
-        $rutinas = Rutina::where('user_id', $cliente)
+$rutinas = Rutina::where('user_id', $cliente)
             ->where('semana', $semana)
             ->where('dia', $dia)
             ->orderBy('orden')
@@ -21,88 +21,91 @@ class RutinaApiController extends Controller
             ->get()
             ->groupBy('grupo');
 
-        // ── Nota de sesión ──
-        $notaSesion = Rutina::where('user_id', $cliente)
+// ── Nota de sesión ──
+$notaSesion = Rutina::where('user_id', $cliente)
             ->where('semana', $semana)
             ->where('dia', $dia)
             ->value('nota_sesion') ?? '';
 
-        $bloques = $rutinas->map(function ($grupo) {
+$bloques = $rutinas->map(function ($grupo) {
 
-            $ejercicios = $grupo->map(function ($r) {
+$ejercicios = $grupo->map(function ($r) {
 
-                $ejercicio = Ejercicio::find($r->ejercicio_id);
+$ejercicio = Ejercicio::find($r->ejercicio_id);
 
-                $series = $r->series ?? [];
-                if (is_string($series)) {
-                    $series = json_decode($series, true) ?? [];
+$series = $r->series ?? [];
+if (is_string($series)) {
+$series = json_decode($series, true) ?? [];
                 }
 
-                // Pasar todos los campos guardados tal cual
-                $seriesNormalizadas = collect($series)
+// Pasar todos los campos guardados tal cual
+$seriesNormalizadas = collect($series)
                     ->map(fn($s) => $s)
                     ->values()
                     ->toArray();
 
-                return [
-                    'nombre'   => $r->nombre,
-                    'segmento' => $r->segmento,
-                    'imagen' => $ejercicio && $ejercicio->imagen
+return [
+'nombre'   => $r->nombre,
+'segmento' => $r->segmento,
+'imagen' => $ejercicio && $ejercicio->imagen
     ? env('AWS_URL') . '/' . $ejercicio->imagen
     : null,
-                    'nota_ej'  => $r->nota_ej ?? '',   // ← nuevo
-                    'series'   => $seriesNormalizadas,
+'video' => $ejercicio && $ejercicio->video
+    ? env('AWS_URL') . '/' . $ejercicio->video
+    : null,
+'nota_ej'  => $r->nota_ej ?? '',   // ← nuevo
+'series'   => $seriesNormalizadas,
                 ];
 
             })->values();
 
-            $descansosSerie = $grupo->first()->descansos_serie ?? [];
+$descansosSerie = $grupo->first()->descansos_serie ?? [];
 if (is_string($descansosSerie)) {
-    $descansosSerie = json_decode($descansosSerie, true) ?? [];
+$descansosSerie = json_decode($descansosSerie, true) ?? [];
 }
 
 return [
-    'tipo'            => strtoupper($grupo->first()->tipo),
-    'orden'           => $grupo->first()->orden,
-    'descansos_serie' => $descansosSerie,
-    'ejercicios'      => $ejercicios,
+'tipo'            => strtoupper($grupo->first()->tipo),
+'orden'           => $grupo->first()->orden,
+'descansos_serie' => $descansosSerie,
+'ejercicios'      => $ejercicios,
 ];
 
         })->values();
 
-        return response()->json([
-            'cliente'     => optional(User::find($cliente))->name ?? 'Desconocido',
-            'semana'      => $semana,
-            'dia'         => $dia,
-            'nota_sesion' => $notaSesion,   // ← nuevo
-            'bloques'     => $bloques,
+return response()->json([
+'cliente'     => optional(User::find($cliente))->name ?? 'Desconocido',
+'semana'      => $semana,
+'dia'         => $dia,
+'nota_sesion' => $notaSesion,   // ← nuevo
+'bloques'     => $bloques,
         ]);
     }
 
 
-   public function guardarPesos(Request $request, $clienteId, $semana, $dia)
+public function guardarPesos(Request $request, $clienteId, $semana, $dia)
 {
-    $bloques = $request->input('bloques', []);
+$bloques = $request->input('bloques', []);
 
-    foreach ($bloques as $bloqueData) {
-        $orden = $bloqueData['orden'];
+foreach ($bloques as $bloqueData) {
+$orden = $bloqueData['orden'];
 
-        foreach ($bloqueData['ejercicios'] ?? [] as $ejData) {
-            $rutina = \App\Models\Rutina::where('user_id', $clienteId)
+foreach ($bloqueData['ejercicios'] ?? [] as $ejData) {
+$rutina = \App\Models\Rutina::where('user_id', $clienteId)
                 ->where('semana', $semana)
                 ->where('dia', $dia)
                 ->where('orden', $orden)
                 ->where('nombre', $ejData['nombre'])
                 ->first();
 
-            if ($rutina) {
-                $rutina->series = $ejData['series'];
-                $rutina->save();
+if ($rutina) {
+$rutina->series = $ejData['series'];
+$rutina->save();
             }
         }
     }
 
-    return response()->json(['ok' => true]);
+return response()->json(['ok' => true]);
 }
 
 

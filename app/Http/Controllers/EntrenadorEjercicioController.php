@@ -146,8 +146,8 @@ class EntrenadorEjercicioController extends Controller
             $videoAnterior = $ejercicio->video;
             $data['video'] = $this->procesarVideo($request->file('video'));
 
-            // Borra el video anterior de R2 (si existía)
-            if ($videoAnterior) {
+            // Borra el video anterior de R2 si nadie más lo usa (ej. ejercicios default clonados)
+            if ($videoAnterior && !Ejercicio::archivoEnUsoPorOtros($videoAnterior, $ejercicio->id, 'video')) {
                 Storage::disk('r2')->delete($videoAnterior);
             }
         }

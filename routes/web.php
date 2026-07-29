@@ -168,3 +168,17 @@ Route::middleware('auth')->group(function () {
         ->name('entrenador.progreso.nota.store');
 
 });
+
+
+
+
+
+Route::get('ejercicios/importar', [EjercicioController::class, 'importarForm'])
+    ->name('entrenador.ejercicios.importar');
+ 
+Route::post('ejercicios/subir-video-temporal', [EjercicioController::class, 'subirVideoTemporal'])
+    ->name('entrenador.ejercicios.subirVideoTemporal');
+ 
+Route::post('ejercicios/importar-lote', [EjercicioController::class, 'importarLote'])
+    ->name('entrenador.ejercicios.importarLote');
+ 

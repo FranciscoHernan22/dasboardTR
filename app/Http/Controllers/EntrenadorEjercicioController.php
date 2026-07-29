@@ -167,4 +167,84 @@ class EntrenadorEjercicioController extends Controller
 
         return back()->with('success', 'Ejercicio eliminado');
     }
+
+
+    /**
+ * Muestra la pantalla de importación masiva.
+ */
+public function importarForm()
+{
+    // Reusa el mismo arreglo de segmentos fijos que usas en index()
+    $segmentosFijos = $this->segmentosFijos ?? [
+        // 'pecho' => 'Pecho', 'espalda' => 'Espalda', ...  <-- copia el real
+    ];
+
+    return view('ejercicios.importar', compact('segmentosFijos'));
+}
+
+/**
+ * Sube UN video de forma asíncrona (se llama por AJAX apenas el usuario
+ * elige el archivo en una fila, sin esperar a que llene el resto).
+ * Devuelve el path relativo para guardarlo en el input oculto de la fila.
+ */
+public function subirVideoTemporal(Request $request)
+{
+    $request->validate([
+        'video' => ['required', 'file', 'mimetypes:video/mp4,video/quicktime,video/webm', 'max:204800'], // 200MB
+    ]);
+
+    $nombreArchivo = 'ejercicios/videos/' . Str::random(20) . '.' . $request->file('video')->extension();
+
+    Storage::disk('r2')->put($nombreArchivo, file_get_contents($request->file('video')->getRealPath()));
+
+    return response()->json([
+        'ok'   => true,
+        'path' => $nombreArchivo,
+    ]);
+}
+
+/**
+ * Guarda TODOS los ejercicios del lote en una sola petición.
+ * Las imágenes llegan como archivos (filas[i][imagen]); los videos
+ * llegan como texto (filas[i][video_path]) porque ya se subieron antes
+ * vía subirVideoTemporal().
+ */
+public function importarLote(Request $request)
+{
+    $data = $request->validate([
+        'filas'                    => ['required', 'array', 'min:1'],
+        'filas.*.nombre'           => ['required', 'string', 'max:120'],
+        'filas.*.segmento'         => ['required', 'string'],
+        'filas.*.imagen'           => ['nullable', 'image', 'max:8192'],
+        'filas.*.video_path'       => ['nullable', 'string'],
+    ]);
+
+    $creados = 0;
+
+    DB::transaction(function () use ($request, $data, &$creados) {
+        foreach ($data['filas'] as $i => $fila) {
+
+            $rutaImagen = null;
+            if ($request->hasFile("filas.$i.imagen")) {
+                $archivoImagen = $request->file("filas.$i.imagen");
+                $rutaImagen = 'ejercicios/imagenes/' . Str::random(20) . '.' . $archivoImagen->extension();
+                Storage::disk('r2')->put($rutaImagen, file_get_contents($archivoImagen->getRealPath()));
+            }
+
+            Ejercicio::create([
+                'nombre'   => $fila['nombre'],
+                'segmento' => $fila['segmento'],
+                'imagen'   => $rutaImagen,
+                'video'    => $fila['video_path'] ?? null,
+                // agrega aquí otros campos que tenga tu tabla (entrenador_id, etc.)
+            ]);
+
+            $creados++;
+        }
+    });
+
+    return redirect()
+        ->route('entrenador.ejercicios.index')
+        ->with('success', "Se importaron {$creados} ejercicios correctamente.");
+}
 }

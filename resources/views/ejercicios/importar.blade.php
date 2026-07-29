@@ -156,24 +156,20 @@ function segmentoOptionsHTML() {
  * Agrega una fila. Si "datos" viene con id, es una fila de un ejercicio
  * ya existente (precargada); si no, es una fila nueva vacía.
  */
-function agregarFila(datos, resetearFiltro) {
+function agregarFila(datos) {
     datos = datos || null;
-    // Si se agrega manualmente (no en la carga inicial) y hay un filtro de
-    // segmento activo, lo quitamos para que la fila nueva sea visible.
-    if (resetearFiltro !== false) {
-        const pillActiva = document.querySelector('#impFiltroSegmentos .pill.activa');
-        if (pillActiva && pillActiva.dataset.segmento !== '') {
-            document.querySelectorAll('#impFiltroSegmentos .pill').forEach(function (p) { p.classList.remove('activa'); });
-            document.querySelector('#impFiltroSegmentos .pill[data-segmento=""]').classList.add('activa');
-        }
-    }
     const idx = filaIndex++;
     const esExistente = !!(datos && datos.id);
     const tbody = document.getElementById('tbodyFilas');
     const tr = document.createElement('tr');
     tr.dataset.fila = idx;
 
+    // Si es una fila NUEVA (sin datos) y hay un filtro de segmento activo,
+    // la fila nace con ese segmento ya seleccionado.
+    const segmentoFiltroActivo = document.querySelector('#impFiltroSegmentos .pill.activa')?.dataset.segmento || '';
+
     const nombreVal   = (datos && datos.nombre) ? datos.nombre : '';
+    const segmentoVal = (datos && datos.segmento) ? datos.segmento : (!esExistente ? segmentoFiltroActivo : '');
     const segmentoVal = (datos && datos.segmento) ? datos.segmento : '';
     const imagenUrl   = (datos && datos.imagen) ? (R2_URL + '/' + datos.imagen) : '';
     const videoUrl     = (datos && datos.video) ? (R2_URL + '/' + datos.video) : '';
@@ -407,8 +403,8 @@ async function guardarLote() {
 
 // Carga primero los ejercicios existentes, luego 3 filas nuevas vacías
 document.addEventListener('DOMContentLoaded', function () {
-    EJERCICIOS_EXISTENTES.forEach(function (ej) { agregarFila(ej, false); });
-    for (let i = 0; i < 3; i++) agregarFila(null, false);
+    EJERCICIOS_EXISTENTES.forEach(function (ej) { agregarFila(ej); });
+    for (let i = 0; i < 3; i++) agregarFila();
 });
 </script>
 

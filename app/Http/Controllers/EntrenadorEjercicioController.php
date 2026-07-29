@@ -13,6 +13,11 @@ use Intervention\Image\Drivers\Gd\Driver;
 
 use Intervention\Image\Encoders\WebpEncoder;
 
+use Illuminate\Support\Str;
+   use Illuminate\Support\Facades\DB;
+
+   
+
 
 class EntrenadorEjercicioController extends Controller
 {
@@ -169,19 +174,19 @@ class EntrenadorEjercicioController extends Controller
     }
 
 
+  
+ 
+
     /**
  * Muestra la pantalla de importación masiva.
  */
 public function importarForm()
 {
-    // Reusa el mismo arreglo de segmentos fijos que usas en index()
-    $segmentosFijos = $this->segmentosFijos ?? [
-        // 'pecho' => 'Pecho', 'espalda' => 'Espalda', ...  <-- copia el real
-    ];
-
+    $segmentosFijos = self::SEGMENTOS;
+ 
     return view('ejercicios.importar', compact('segmentosFijos'));
 }
-
+ 
 /**
  * Sube UN video de forma asíncrona (se llama por AJAX apenas el usuario
  * elige el archivo en una fila, sin esperar a que llene el resto).
@@ -190,19 +195,21 @@ public function importarForm()
 public function subirVideoTemporal(Request $request)
 {
     $request->validate([
-        'video' => ['required', 'file', 'mimetypes:video/mp4,video/quicktime,video/webm', 'max:204800'], // 200MB
-    ]);
-
-    $nombreArchivo = 'ejercicios/videos/' . Str::random(20) . '.' . $request->file('video')->extension();
-
-    Storage::disk('r2')->put($nombreArchivo, file_get_contents($request->file('video')->getRealPath()));
-
+        'video' => self::REGLAS_VIDEO,
+    ], self::MENSAJES_VIDEO);
+ 
+    if (!$request->hasFile('video')) {
+        return response()->json(['ok' => false, 'message' => 'No se recibió el video.'], 422);
+    }
+ 
+    $ruta = $this->procesarVideo($request->file('video'));
+ 
     return response()->json([
         'ok'   => true,
-        'path' => $nombreArchivo,
+        'path' => $ruta,
     ]);
 }
-
+ 
 /**
  * Guarda TODOS los ejercicios del lote en una sola petición.
  * Las imágenes llegan como archivos (filas[i][imagen]); los videos
@@ -212,39 +219,49 @@ public function subirVideoTemporal(Request $request)
 public function importarLote(Request $request)
 {
     $data = $request->validate([
-        'filas'                    => ['required', 'array', 'min:1'],
-        'filas.*.nombre'           => ['required', 'string', 'max:120'],
-        'filas.*.segmento'         => ['required', 'string'],
-        'filas.*.imagen'           => ['nullable', 'image', 'max:8192'],
-        'filas.*.video_path'       => ['nullable', 'string'],
+        'filas'              => ['required', 'array', 'min:1'],
+        'filas.*.nombre'     => ['required', 'string', 'max:120'],
+        'filas.*.segmento'   => ['required', Rule::in(array_keys(self::SEGMENTOS))],
+        'filas.*.imagen'     => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
+        'filas.*.video_path' => ['nullable', 'string'],
+    ], [
+        'filas.*.nombre.required'   => 'Todas las filas necesitan un nombre.',
+        'filas.*.segmento.required' => 'Todas las filas necesitan un segmento.',
+        'filas.*.segmento.in'       => 'Selecciona un segmento válido de la lista.',
+        'filas.*.imagen.image'      => 'El archivo debe ser una imagen.',
+        'filas.*.imagen.max'        => 'La imagen no puede pesar más de 15MB.',
     ]);
-
+ 
+    $entrenadorId = Auth::id();
     $creados = 0;
-
-    DB::transaction(function () use ($request, $data, &$creados) {
+ 
+    DB::transaction(function () use ($request, $data, $entrenadorId, &$creados) {
         foreach ($data['filas'] as $i => $fila) {
-
+ 
             $rutaImagen = null;
             if ($request->hasFile("filas.$i.imagen")) {
-                $archivoImagen = $request->file("filas.$i.imagen");
-                $rutaImagen = 'ejercicios/imagenes/' . Str::random(20) . '.' . $archivoImagen->extension();
-                Storage::disk('r2')->put($rutaImagen, file_get_contents($archivoImagen->getRealPath()));
+                $rutaImagen = $this->procesarImagen($request->file("filas.$i.imagen"));
             }
-
+ 
             Ejercicio::create([
-                'nombre'   => $fila['nombre'],
-                'segmento' => $fila['segmento'],
-                'imagen'   => $rutaImagen,
-                'video'    => $fila['video_path'] ?? null,
-                // agrega aquí otros campos que tenga tu tabla (entrenador_id, etc.)
+                'nombre'        => $fila['nombre'],
+                'segmento'      => $fila['segmento'],
+                'imagen'        => $rutaImagen,
+                'video'         => $fila['video_path'] ?? null,
+                'entrenador_id' => $entrenadorId,
             ]);
-
+ 
             $creados++;
         }
     });
-
+ 
     return redirect()
         ->route('entrenador.ejercicios.index')
         ->with('success', "Se importaron {$creados} ejercicios correctamente.");
 }
+
+
 }
+
+
+

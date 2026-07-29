@@ -12,7 +12,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\recibirguardarController;
 use App\Http\Controllers\EntrenadorRutinaController;
 use App\Http\Controllers\EntrenadorClienteController;
-use App\Http\Controllers\HIstorialController;
+use App\Http\Controllers\HistorialController;
 use App\Http\Controllers\RutinaPdfController;
 use App\Http\Controllers\PlantillaController;
 use App\Http\Controllers\EntrenadorEjercicioController;
@@ -103,13 +103,13 @@ Route::middleware('auth')->group(function () {
         ->name('entrenador.plantillas.pdf');
 
     // ── Historial ──
-    Route::get('/clientes/{cliente}/historial', [HIstorialController::class, 'anio'])
+    Route::get('/clientes/{cliente}/historial', [HistorialController::class, 'anio'])
         ->name('entrenador.historial.anio');
 
-    Route::get('/clientes/{cliente}/historial/{anio}/{mes}', [HIstorialController::class, 'mes'])
+    Route::get('/clientes/{cliente}/historial/{anio}/{mes}', [HistorialController::class, 'mes'])
         ->name('entrenador.historial.mes');
 
-    Route::get('/clientes/{cliente}/historial/{anio}/{mes}/{sem}/{dia}', [HIstorialController::class, 'dia'])
+    Route::get('/clientes/{cliente}/historial/{anio}/{mes}/{sem}/{dia}', [HistorialController::class, 'dia'])
         ->name('entrenador.historial.dia');
 
     // ── Plantillas ──
@@ -167,21 +167,24 @@ Route::middleware('auth')->group(function () {
     Route::post('/entrenador/clientes/{cliente}/progreso/nota', [EntrenadorProgresoController::class, 'storeNota'])
         ->name('entrenador.progreso.nota.store');
 
+
+
+
+
+        // ── Ejercicios ──
+Route::get('/entrenador/ejercicios/importar', [EntrenadorEjercicioController::class, 'importarForm'])
+    ->name('entrenador.ejercicios.importar');
+
+Route::post('/entrenador/ejercicios/subir-video-temporal', [EntrenadorEjercicioController::class, 'subirVideoTemporal'])
+    ->name('entrenador.ejercicios.subirVideoTemporal');
+
+Route::post('/entrenador/ejercicios/importar-lote', [EntrenadorEjercicioController::class, 'importarLote'])
+    ->name('entrenador.ejercicios.importarLote');
+ 
+
 });
 
 
 
 
- 
-    // 1. Primero las rutas específicas/literales
-Route::get('ejercicios/importar', [EjercicioController::class, 'importarForm'])
-    ->name('entrenador.ejercicios.importar');
-
-Route::post('ejercicios/subir-video-temporal', [EjercicioController::class, 'subirVideoTemporal'])
-    ->name('entrenador.ejercicios.subirVideoTemporal');
-
-Route::post('ejercicios/importar-lote', [EjercicioController::class, 'importarLote'])
-    ->name('entrenador.ejercicios.importarLote');
-
-// 2. DESPUÉS el resource (o tus rutas con {ejercicio})
-Route::resource('ejercicios', EjercicioController::class);
+  

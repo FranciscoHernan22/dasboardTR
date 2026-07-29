@@ -33,7 +33,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .imp-tabla th { text-align:left; background:#fafbfc; padding:9px 10px; font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--border); }
 .imp-tabla td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
 .imp-tabla tr:last-child td { border-bottom:none; }
-.imp-tabla tr.fila-existente { background:#fafbfe; }
 .imp-tabla input[type="text"], .imp-tabla select { width:100%; border:1px solid var(--border2); border-radius:7px; padding:6px 8px; font-size:0.8rem; font-family:'DM Sans',sans-serif; }
 .imp-tabla input[type="text"]:focus, .imp-tabla select:focus { outline:none; border-color:var(--accent); }
 
@@ -44,8 +43,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .imp-file-btn.error { border-color:#fecaca; color:var(--danger); background:#fef2f2; }
 .imp-file-btn.tiene-actual { border-color:#bfdbfe; background:var(--accent-l); color:var(--accent); }
 .imp-file-btn img { width:20px; height:20px; border-radius:4px; object-fit:cover; }
-
-.badge-existente { font-size:0.6rem; font-weight:700; color:var(--accent); background:var(--accent-l); border:1px solid #bfdbfe; padding:1px 6px; border-radius:99px; text-transform:uppercase; margin-left:6px; }
 
 .imp-btn-quitar { width:26px; height:26px; border:1px solid #fecaca; border-radius:6px; background:white; color:var(--danger); cursor:pointer; }
 .imp-btn-quitar:hover { background:var(--danger); color:white; }
@@ -159,14 +156,22 @@ function segmentoOptionsHTML() {
  * Agrega una fila. Si "datos" viene con id, es una fila de un ejercicio
  * ya existente (precargada); si no, es una fila nueva vacía.
  */
-function agregarFila(datos) {
+function agregarFila(datos, resetearFiltro) {
     datos = datos || null;
+    // Si se agrega manualmente (no en la carga inicial) y hay un filtro de
+    // segmento activo, lo quitamos para que la fila nueva sea visible.
+    if (resetearFiltro !== false) {
+        const pillActiva = document.querySelector('#impFiltroSegmentos .pill.activa');
+        if (pillActiva && pillActiva.dataset.segmento !== '') {
+            document.querySelectorAll('#impFiltroSegmentos .pill').forEach(function (p) { p.classList.remove('activa'); });
+            document.querySelector('#impFiltroSegmentos .pill[data-segmento=""]').classList.add('activa');
+        }
+    }
     const idx = filaIndex++;
     const esExistente = !!(datos && datos.id);
     const tbody = document.getElementById('tbodyFilas');
     const tr = document.createElement('tr');
     tr.dataset.fila = idx;
-    if (esExistente) tr.classList.add('fila-existente');
 
     const nombreVal   = (datos && datos.nombre) ? datos.nombre : '';
     const segmentoVal = (datos && datos.segmento) ? datos.segmento : '';
@@ -181,7 +186,6 @@ function agregarFila(datos) {
     tr.innerHTML =
         '<td>' +
             '<input type="text" name="filas[' + idx + '][nombre]" value="' + nombreVal.replace(/"/g, '&quot;') + '" placeholder="Nombre del ejercicio" required oninput="filtrarFilas()">' +
-            (esExistente ? '<span class="badge-existente">guardado</span>' : '') +
         '</td>' +
         '<td>' +
             '<select name="filas[' + idx + '][segmento]" required onchange="filtrarFilas()">' + opciones + '</select>' +
@@ -403,8 +407,8 @@ async function guardarLote() {
 
 // Carga primero los ejercicios existentes, luego 3 filas nuevas vacías
 document.addEventListener('DOMContentLoaded', function () {
-    EJERCICIOS_EXISTENTES.forEach(function (ej) { agregarFila(ej); });
-    for (let i = 0; i < 3; i++) agregarFila();
+    EJERCICIOS_EXISTENTES.forEach(function (ej) { agregarFila(ej, false); });
+    for (let i = 0; i < 3; i++) agregarFila(null, false);
 });
 </script>
 

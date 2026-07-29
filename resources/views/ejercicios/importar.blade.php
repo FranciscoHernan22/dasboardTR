@@ -795,10 +795,24 @@ async function guardarLote() {
     });
 
     try {
-        const res = await fetch(IMPORTAR_LOTE_URL, { method: 'POST', body: fd });
+        const res = await fetch(IMPORTAR_LOTE_URL, {
+            method: 'POST',
+            body: fd,
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (res.url.includes('/login')) {
+            throw new Error('Tu sesión expiró. Recarga la página y vuelve a intentar (revisa qué filas no se guardaron).');
+        }
         if (res.redirected) {
+            // Guardado exitoso: el controlador redirige al listado normal
             window.location.href = res.url;
             return;
+        }
+        if (res.status === 422) {
+            const errores = await res.json();
+            const listaErrores = Object.values(errores.errors || {}).map(function (arr) { return arr[0]; });
+            throw new Error(listaErrores.length ? listaErrores.slice(0, 3).join(' | ') : 'Revisa los datos de las filas.');
         }
         if (!res.ok) {
             const data = await res.json().catch(function () { return {}; });

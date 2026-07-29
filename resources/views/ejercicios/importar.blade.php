@@ -328,14 +328,64 @@ function agregarVariasFilas() {
     for (let i = 0; i < n; i++) agregarFila();
 }
 
-function marcarImagenLista(idx, input) {
+async function marcarImagenLista(idx, input) {
+    const file = input.files[0];
+    if (!file) return;
     const btn = document.getElementById('btnImg_' + idx);
-    if (input.files[0]) {
-        btn.classList.add('ok');
-        btn.classList.remove('tiene-actual');
-        btn.innerHTML = '<i class="ti ti-check"></i> ' + input.files[0].name.slice(0, 14);
-        btn.appendChild(input);
+    btn.classList.add('subiendo');
+    btn.classList.remove('ok', 'error', 'tiene-actual');
+    btn.innerHTML = '<i class="ti ti-loader-2"></i> Optimizando…';
+
+    let archivoFinal = file;
+    try {
+        archivoFinal = await comprimirImagenCliente(file);
+        const dt = new DataTransfer();
+        dt.items.add(archivoFinal);
+        input.files = dt.files;
+    } catch (err) {
+        console.warn('[imagen] no se pudo comprimir en el navegador, se sube el original:', err);
     }
+
+    btn.classList.remove('subiendo');
+    btn.classList.add('ok');
+    btn.innerHTML = '<i class="ti ti-check"></i> ' + archivoFinal.name.slice(0, 14);
+    btn.appendChild(input);
+}
+
+/**
+ * Reduce tamaño/peso de una imagen en el navegador antes de subirla —
+ * fotos de celular fácilmente pesan 3-8MB, esto las deja en unos
+ * cientos de KB, que es de sobra para verse bien en una tarjeta chica.
+ */
+function comprimirImagenCliente(file) {
+    return new Promise(function (resolve, reject) {
+        const MAX_DIM = 1600;
+        const CALIDAD = 0.82;
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        img.onload = function () {
+            let w = img.width, h = img.height;
+            if (w > MAX_DIM || h > MAX_DIM) {
+                if (w > h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+                else { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(function (blob) {
+                URL.revokeObjectURL(url);
+                if (!blob) { reject(new Error('no se pudo generar la imagen comprimida')); return; }
+                resolve(new File([blob], 'imagen.jpg', { type: 'image/jpeg' }));
+            }, 'image/jpeg', CALIDAD);
+        };
+        img.onerror = function () {
+            URL.revokeObjectURL(url);
+            reject(new Error('no se pudo leer la imagen'));
+        };
+        img.src = url;
+    });
 }
 
 /* ─────────── FILTRO por nombre + segmento ─────────── */
@@ -741,6 +791,7 @@ async function ejecutarSubidaVideo(item) {
         const data = await res.json();
 
         document.getElementById('videoPath_' + idx).value = data.path;
+        try { input.value = ''; } catch (e) {} // libera el archivo de memoria, ya se subió
         btn.classList.remove('subiendo');
         btn.classList.add('ok');
         btn.innerHTML = '<i class="ti ti-check"></i> ' + file.name.slice(0, 14);
@@ -810,7 +861,7 @@ async function guardarLote() {
 
     // Lotes chicos para no toparnos con el límite de tamaño del servidor
     // (413 Request Entity Too Large) cuando hay muchas imágenes juntas.
-    const TAMANO_LOTE = 8;
+    const TAMANO_LOTE = 15;
     const lotes = [];
     for (let i = 0; i < filasConDatos.length; i += TAMANO_LOTE) {
         lotes.push(filasConDatos.slice(i, i + TAMANO_LOTE));
@@ -828,7 +879,11 @@ async function guardarLote() {
         lotes[l].forEach(function (tr) {
             tr.querySelectorAll('input, select').forEach(function (el) {
                 if (el.type === 'file') {
-                    if (el.files[0]) fd.append(el.name, el.files[0]);
+                    // El input de video NO tiene "name" a propósito (el
+                    // video ya se subió aparte y viaja como texto en
+                    // video_path) — si lo mandáramos aquí, se adjuntaría
+                    // el archivo original sin comprimir en cada guardado.
+                    if (el.name && el.files[0]) fd.append(el.name, el.files[0]);
                 } else if (el.name) {
                     fd.append(el.name, el.value);
                 }

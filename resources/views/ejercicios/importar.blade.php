@@ -329,7 +329,20 @@ async function ejecutarSubidaVideo(item) {
         fd.append('video', file);
         fd.append('_token', CSRF_TOKEN);
 
-        const res = await fetch(SUBIR_VIDEO_URL, { method: 'POST', body: fd });
+        const res = await fetch(SUBIR_VIDEO_URL, {
+            method: 'POST',
+            body: fd,
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (res.redirected || res.url.includes('/login')) {
+            throw new Error('Tu sesión expiró. Recarga la página (guarda antes lo que puedas) y vuelve a intentar.');
+        }
+        if (res.status === 422) {
+            const errores = await res.json();
+            const primerError = Object.values(errores.errors || {})[0]?.[0] || 'Video inválido.';
+            throw new Error(primerError);
+        }
         if (!res.ok) throw new Error('fallo del servidor');
         const data = await res.json();
 

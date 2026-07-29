@@ -524,19 +524,17 @@ function usarVideoCompletoDesdeTrim() {
 }
 
 /**
- * "Recortar y subir": corta el clip Y comprime en el mismo paso de ffmpeg,
- * luego lo manda directo a la cola de subida (ya no pasa por la cola de
- * compresión genérica, porque este ya salió comprimido de aquí).
+ * "Recortar y subir": en vez de comprimir aquí mismo, se ENCOLA junto con
+ * cualquier otro video pendiente. Así el modal se cierra al instante y
+ * puedes seguir eligiendo/recortando videos de otras filas mientras el
+ * anterior termina — solo el trabajo real de ffmpeg se hace de a uno
+ * (es una sola instancia, no puede procesar dos videos a la vez).
  */
-async function aplicarTrimYSubir() {
+function aplicarTrimYSubir() {
     if (!trimOriginalFile || !trimDuration) return;
 
     const idx = trimIdx, input = trimInputRef, file = trimOriginalFile;
     const inicio = trimStart, duracion = trimEnd - trimStart;
-    const btnModal = document.getElementById('btnAplicarTrim');
-    const status = document.getElementById('trimStatus');
-    btnModal.disabled = true;
-    status.textContent = 'Cargando editor de video… (solo la primera vez)';
 
     videosSubiendo++;
     videosTotalLote++;
@@ -545,29 +543,15 @@ async function aplicarTrimYSubir() {
     const btnFila = document.getElementById('btnVideo_' + idx);
     btnFila.classList.add('subiendo');
     btnFila.classList.remove('ok', 'error', 'tiene-actual');
-    btnFila.innerHTML = '<i class="ti ti-loader-2"></i> Recortando…';
+    btnFila.innerHTML = '<i class="ti ti-loader-2"></i> En cola…';
 
     cerrarTrimModalSinLimpiar();
     trimIdx = null;
     trimInputRef = null;
     trimOriginalFile = null;
 
-    try {
-        const archivoFinal = await comprimirVideo(file, { inicio: inicio, duracion: duracion });
-        colaSubida.push({ idx: idx, file: archivoFinal, input: input });
-        procesarColaSubida();
-    } catch (err) {
-        console.error('[recorte de video]', err);
-        btnFila.classList.remove('subiendo');
-        btnFila.classList.add('error');
-        btnFila.innerHTML = '<i class="ti ti-alert-triangle"></i> Reintentar';
-        btnFila.appendChild(input);
-        videosSubiendo--;
-        actualizarBarraProgreso();
-    } finally {
-        btnModal.disabled = false;
-        status.textContent = '';
-    }
+    colaCompresion.push({ idx: idx, file: file, input: input, rango: { inicio: inicio, duracion: duracion } });
+    procesarColaCompresion();
 }
 
 /* ─────────── Subida de video en segundo plano ─────────── */
@@ -609,26 +593,31 @@ async function procesarColaCompresion() {
     procesarColaCompresion();
 }
 
-// Si el video ya pesa poco, no vale la pena comprimirlo (ahorra tiempo real)
+// Si el video ya pesa poco Y no se está recortando, no vale la pena
+// comprimirlo (ahorra tiempo real). Si hay recorte, siempre se comprime
+// (ya se está reduciendo el clip, aprovechamos el mismo paso de ffmpeg).
 const UMBRAL_SIN_COMPRIMIR = 12 * 1024 * 1024; // 12MB
 
 async function comprimirYEncolarSubida(item) {
-    const idx = item.idx, file = item.file, input = item.input;
+    const idx = item.idx, file = item.file, input = item.input, rango = item.rango;
     const btn = document.getElementById('btnVideo_' + idx);
     btn.classList.add('subiendo');
     btn.classList.remove('ok', 'error', 'tiene-actual');
 
     let archivoFinal = file;
+    const necesitaComprimir = !!rango || file.size > UMBRAL_SIN_COMPRIMIR;
 
-    if (file.size <= UMBRAL_SIN_COMPRIMIR) {
-        // Ya es liviano, se sube tal cual sin pasar por ffmpeg
+    if (!necesitaComprimir) {
+        // Ya es liviano y no hay recorte pendiente, se sube tal cual
         btn.innerHTML = '<i class="ti ti-loader-2"></i> Subiendo…';
     } else {
-        btn.innerHTML = '<i class="ti ti-loader-2"></i> Comprimiendo…';
+        btn.innerHTML = '<i class="ti ti-loader-2"></i> ' + (rango ? 'Recortando…' : 'Comprimiendo…');
         try {
-            archivoFinal = await comprimirVideo(file);
+            archivoFinal = await comprimirVideo(file, rango);
         } catch (err) {
-            console.warn('[compresión de video] fallo, se sube el original sin comprimir:', err);
+            // Si falla, seguimos con el original completo sin recortar/comprimir
+            // — mejor subir algo pesado que perder la fila por completo.
+            console.warn('[compresión de video] fallo, se sube el original:', err);
         }
     }
 

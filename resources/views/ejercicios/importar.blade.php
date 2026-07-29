@@ -132,6 +132,15 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     });
 @endphp
 
+<script type="module">
+// Misma librería que usa el editor individual (index.blade.php), cargada
+// desde nuestro propio dominio por la misma razón: el worker interno de
+// ffmpeg.wasm importa archivos relativos que no resuelven bien desde un CDN.
+import { FFmpeg } from "{{ asset('vendor/ffmpeg-wasm/ffmpeg/index.js') }}";
+import { fetchFile } from "{{ asset('vendor/ffmpeg-wasm/util/index.js') }}";
+window.__FFmpegLib = { FFmpeg, fetchFile };
+</script>
+
 <script>
 const SUBIR_VIDEO_URL   = "{{ route('entrenador.ejercicios.subirVideoTemporal') }}";
 const IMPORTAR_LOTE_URL = "{{ route('entrenador.ejercicios.importarLote') }}";
@@ -147,6 +156,13 @@ let videosTotalLote = 0;
 let colaSubida = [];
 const MAX_CONCURRENTES = 3;
 let subidasActivas = 0;
+
+// --- Estado de compresión (ffmpeg.wasm es UNA sola instancia, por eso la
+// compresión va en fila de a un video a la vez; la SUBIDA sí va en paralelo) ---
+let ffmpegInstance    = null;
+let ffmpegCargando    = null;
+let colaCompresion    = [];
+let comprimiendoActivo = false;
 
 function segmentoOptionsHTML() {
     return document.getElementById('tplSegmentoOptions').innerHTML;
@@ -289,8 +305,8 @@ function actualizarBarraProgreso() {
     barra.style.display = 'flex';
     const completados = videosTotalLote - pendientes;
     texto.textContent = pendientes > 0
-        ? ('Subiendo videos… ' + completados + ' de ' + videosTotalLote)
-        : ('✓ ' + videosTotalLote + ' video(s) subido(s)');
+        ? ('Comprimiendo y subiendo videos… ' + completados + ' de ' + videosTotalLote)
+        : ('✓ ' + videosTotalLote + ' video(s) listo(s)');
     fill.style.width = ((completados / videosTotalLote) * 100) + '%';
 
     document.getElementById('btnGuardarLote').disabled = pendientes > 0;
@@ -299,11 +315,103 @@ function actualizarBarraProgreso() {
 function subirVideoFila(idx, input) {
     const file = input.files[0];
     if (!file) return;
-    colaSubida.push({ idx: idx, file: file, input: input });
     videosSubiendo++;
     videosTotalLote++;
     actualizarBarraProgreso();
+    colaCompresion.push({ idx: idx, file: file, input: input });
+    procesarColaCompresion();
+}
+
+async function procesarColaCompresion() {
+    if (comprimiendoActivo || colaCompresion.length === 0) return;
+    comprimiendoActivo = true;
+    const item = colaCompresion.shift();
+    await comprimirYEncolarSubida(item);
+    comprimiendoActivo = false;
+    procesarColaCompresion();
+}
+
+async function comprimirYEncolarSubida(item) {
+    const idx = item.idx, file = item.file, input = item.input;
+    const btn = document.getElementById('btnVideo_' + idx);
+    btn.classList.add('subiendo');
+    btn.classList.remove('ok', 'error', 'tiene-actual');
+    btn.innerHTML = '<i class="ti ti-loader-2"></i> Comprimiendo…';
+
+    let archivoFinal = file;
+    try {
+        archivoFinal = await comprimirVideo(file);
+    } catch (err) {
+        // Si falla la compresión (ej. archivo raro), seguimos con el
+        // original tal cual — mejor subir algo pesado que no subir nada.
+        console.warn('[compresión de video] fallo, se sube el original sin comprimir:', err);
+    }
+
+    colaSubida.push({ idx: idx, file: archivoFinal, input: input });
     procesarColaSubida();
+}
+
+async function comprimirVideo(file) {
+    const ffmpeg = await cargarFFmpeg();
+    const { fetchFile } = window.__FFmpegLib;
+
+    const nombreEntrada = 'entrada_' + Date.now() + '_' + Math.random().toString(36).slice(2) + extensionDe(file.name);
+    const nombreSalida  = 'salida_' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.mp4';
+
+    await ffmpeg.writeFile(nombreEntrada, await fetchFile(file));
+
+    let blob;
+    try {
+        // Mismos parámetros que ya usa el editor individual: máx. 1280px
+        // de ancho, calidad razonable — reduce videos de celular de
+        // 200-300MB a 10-20MB en la mayoría de los casos.
+        await ffmpeg.exec([
+            '-i', nombreEntrada,
+            '-vf', "scale='min(1280,iw)':-2",
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-movflags', '+faststart',
+            nombreSalida
+        ]);
+        const data = await ffmpeg.readFile(nombreSalida);
+        if (!data || !data.length) throw new Error('salida vacía');
+        blob = new Blob([data.buffer], { type: 'video/mp4' });
+    } finally {
+        await ffmpeg.deleteFile(nombreEntrada).catch(function () {});
+        await ffmpeg.deleteFile(nombreSalida).catch(function () {});
+    }
+
+    return new File([blob], 'video-comprimido.mp4', { type: 'video/mp4' });
+}
+
+function extensionDe(nombre) {
+    const m = (nombre || '').match(/\.[0-9a-z]+$/i);
+    return m ? m[0] : '.mp4';
+}
+
+async function cargarFFmpeg() {
+    if (ffmpegInstance) return ffmpegInstance;
+    if (ffmpegCargando) return ffmpegCargando;
+    ffmpegCargando = (async function () {
+        if (!window.__FFmpegLib) {
+            throw new Error('La librería de compresión (ffmpeg.wasm) no cargó. Revisa la consola (F12) y confirma que los archivos existen en /vendor/ffmpeg-wasm/.');
+        }
+        const { FFmpeg } = window.__FFmpegLib;
+        const ffmpeg = new FFmpeg();
+        await ffmpeg.load({
+            coreURL: "{{ asset('vendor/ffmpeg-wasm/core/ffmpeg-core.js') }}",
+            wasmURL: "{{ asset('vendor/ffmpeg-wasm/core/ffmpeg-core.wasm') }}",
+            classWorkerURL: "{{ asset('vendor/ffmpeg-wasm/ffmpeg/worker.js') }}",
+        });
+        ffmpegInstance = ffmpeg;
+        return ffmpeg;
+    })();
+    try {
+        return await ffmpegCargando;
+    } catch (e) {
+        ffmpegCargando = null;
+        throw e;
+    }
 }
 
 function procesarColaSubida() {

@@ -170,7 +170,6 @@ function agregarFila(datos) {
 
     const nombreVal   = (datos && datos.nombre) ? datos.nombre : '';
     const segmentoVal = (datos && datos.segmento) ? datos.segmento : (!esExistente ? segmentoFiltroActivo : '');
-    const segmentoVal = (datos && datos.segmento) ? datos.segmento : '';
     const imagenUrl   = (datos && datos.imagen) ? (R2_URL + '/' + datos.imagen) : '';
     const videoUrl     = (datos && datos.video) ? (R2_URL + '/' + datos.video) : '';
 

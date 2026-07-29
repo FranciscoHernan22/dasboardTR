@@ -99,6 +99,18 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     @endforeach
 </template>
 
+@php
+    $ejerciciosParaJs = $ejercicios->map(function ($e) {
+        return [
+            'id'       => $e->id,
+            'nombre'   => $e->nombre,
+            'segmento' => $e->segmento,
+            'imagen'   => $e->imagen,
+            'video'    => $e->video,
+        ];
+    });
+@endphp
+
 <script>
 const SUBIR_VIDEO_URL   = "{{ route('entrenador.ejercicios.subirVideoTemporal') }}";
 const IMPORTAR_LOTE_URL = "{{ route('entrenador.ejercicios.importarLote') }}";
@@ -106,13 +118,7 @@ const CSRF_TOKEN = "{{ csrf_token() }}";
 const R2_URL = "{{ $r2Url }}";
 
 // Ejercicios existentes, mandados desde el controlador
-const EJERCICIOS_EXISTENTES = @json($ejercicios->map(fn($e) => [
-    'id'       => $e->id,
-    'nombre'   => $e->nombre,
-    'segmento' => $e->segmento,
-    'imagen'   => $e->imagen,
-    'video'    => $e->video,
-]));
+const EJERCICIOS_EXISTENTES = @json($ejerciciosParaJs);
 
 let filaIndex = 0;
 let videosSubiendo = 0;
@@ -129,7 +135,8 @@ function segmentoOptionsHTML() {
  * Agrega una fila. Si "datos" viene con id, es una fila de un ejercicio
  * ya existente (precargada); si no, es una fila nueva vacía.
  */
-function agregarFila(datos = null) {
+function agregarFila(datos) {
+    datos = datos || null;
     const idx = filaIndex++;
     const esExistente = !!(datos && datos.id);
     const tbody = document.getElementById('tbodyFilas');
@@ -137,51 +144,51 @@ function agregarFila(datos = null) {
     tr.dataset.fila = idx;
     if (esExistente) tr.classList.add('fila-existente');
 
-    const nombreVal   = datos?.nombre ?? '';
-    const segmentoVal = datos?.segmento ?? '';
-    const imagenUrl   = datos?.imagen ? `${R2_URL}/${datos.imagen}` : '';
-    const videoUrl    = datos?.video ? `${R2_URL}/${datos.video}` : '';
+    const nombreVal   = (datos && datos.nombre) ? datos.nombre : '';
+    const segmentoVal = (datos && datos.segmento) ? datos.segmento : '';
+    const imagenUrl   = (datos && datos.imagen) ? (R2_URL + '/' + datos.imagen) : '';
+    const videoUrl     = (datos && datos.video) ? (R2_URL + '/' + datos.video) : '';
 
-    const opciones = segmentoOptionsHTML().replace(
-        `value="${segmentoVal}"`, `value="${segmentoVal}" selected`
-    );
+    let opciones = segmentoOptionsHTML();
+    if (segmentoVal) {
+        opciones = opciones.replace('value="' + segmentoVal + '"', 'value="' + segmentoVal + '" selected');
+    }
 
-    tr.innerHTML = `
-        <td>
-            <input type="text" name="filas[${idx}][nombre]" value="${nombreVal.replace(/"/g,'&quot;')}" placeholder="Nombre del ejercicio" required>
-            ${esExistente ? '<span class="badge-existente">guardado</span>' : ''}
-        </td>
-        <td>
-            <select name="filas[${idx}][segmento]" required>${opciones}</select>
-        </td>
-        <td>
-            <label class="imp-file-btn ${imagenUrl ? 'tiene-actual' : ''}" id="btnImg_${idx}">
-                ${imagenUrl ? `<img src="${imagenUrl}" alt="">` : '<i class="ti ti-camera-plus"></i>'}
-                ${imagenUrl ? 'Cambiar' : 'Imagen'}
-                <input type="file" name="filas[${idx}][imagen]" accept="image/*" style="display:none;" onchange="marcarImagenLista(${idx}, this)">
-            </label>
-            <input type="hidden" name="filas[${idx}][imagen_original]" value="${datos?.imagen ?? ''}">
-        </td>
-        <td>
-            <label class="imp-file-btn ${videoUrl ? 'tiene-actual' : ''}" id="btnVideo_${idx}">
-                <i class="ti ${videoUrl ? 'ti-player-play-filled' : 'ti-video-plus'}"></i>
-                ${videoUrl ? 'Cambiar' : 'Video'}
-                <input type="file" accept="video/*" style="display:none;" onchange="subirVideoFila(${idx}, this)">
-            </label>
-            <input type="hidden" name="filas[${idx}][video_path]" id="videoPath_${idx}">
-            <input type="hidden" name="filas[${idx}][video_original]" value="${datos?.video ?? ''}">
-        </td>
-        <td>
-            <button type="button" class="imp-btn-quitar" onclick="quitarFila(this, ${esExistente})" ${esExistente ? 'title="Los ejercicios guardados se eliminan desde el listado"' : ''}>
-                <i class="ti ti-x"></i>
-            </button>
-        </td>
-    `;
+    tr.innerHTML =
+        '<td>' +
+            '<input type="text" name="filas[' + idx + '][nombre]" value="' + nombreVal.replace(/"/g, '&quot;') + '" placeholder="Nombre del ejercicio" required>' +
+            (esExistente ? '<span class="badge-existente">guardado</span>' : '') +
+        '</td>' +
+        '<td>' +
+            '<select name="filas[' + idx + '][segmento]" required>' + opciones + '</select>' +
+        '</td>' +
+        '<td>' +
+            '<label class="imp-file-btn ' + (imagenUrl ? 'tiene-actual' : '') + '" id="btnImg_' + idx + '">' +
+                (imagenUrl ? '<img src="' + imagenUrl + '" alt="">' : '<i class="ti ti-camera-plus"></i>') +
+                (imagenUrl ? 'Cambiar' : 'Imagen') +
+                '<input type="file" name="filas[' + idx + '][imagen]" accept="image/*" style="display:none;" onchange="marcarImagenLista(' + idx + ', this)">' +
+            '</label>' +
+            '<input type="hidden" name="filas[' + idx + '][imagen_original]" value="' + ((datos && datos.imagen) ? datos.imagen : '') + '">' +
+        '</td>' +
+        '<td>' +
+            '<label class="imp-file-btn ' + (videoUrl ? 'tiene-actual' : '') + '" id="btnVideo_' + idx + '">' +
+                '<i class="ti ' + (videoUrl ? 'ti-player-play-filled' : 'ti-video-plus') + '"></i>' +
+                (videoUrl ? 'Cambiar' : 'Video') +
+                '<input type="file" accept="video/*" style="display:none;" onchange="subirVideoFila(' + idx + ', this)">' +
+            '</label>' +
+            '<input type="hidden" name="filas[' + idx + '][video_path]" id="videoPath_' + idx + '">' +
+            '<input type="hidden" name="filas[' + idx + '][video_original]" value="' + ((datos && datos.video) ? datos.video : '') + '">' +
+        '</td>' +
+        '<td>' +
+            '<button type="button" class="imp-btn-quitar" onclick="quitarFila(this, ' + esExistente + ')" ' + (esExistente ? 'title="Los ejercicios guardados se eliminan desde el listado"' : '') + '>' +
+                '<i class="ti ti-x"></i>' +
+            '</button>' +
+        '</td>';
 
     if (esExistente) {
         const idInput = document.createElement('input');
         idInput.type = 'hidden';
-        idInput.name = `filas[${idx}][id]`;
+        idInput.name = 'filas[' + idx + '][id]';
         idInput.value = datos.id;
         tr.appendChild(idInput);
     }
@@ -203,11 +210,11 @@ function agregarVariasFilas() {
 }
 
 function marcarImagenLista(idx, input) {
-    const btn = document.getElementById(`btnImg_${idx}`);
+    const btn = document.getElementById('btnImg_' + idx);
     if (input.files[0]) {
         btn.classList.add('ok');
         btn.classList.remove('tiene-actual');
-        btn.innerHTML = `<i class="ti ti-check"></i> ${input.files[0].name.slice(0,14)}`;
+        btn.innerHTML = '<i class="ti ti-check"></i> ' + input.files[0].name.slice(0, 14);
         btn.appendChild(input);
     }
 }
@@ -223,9 +230,9 @@ function actualizarBarraProgreso() {
     barra.style.display = 'flex';
     const completados = videosTotalLote - pendientes;
     texto.textContent = pendientes > 0
-        ? `Subiendo videos… ${completados} de ${videosTotalLote}`
-        : `✓ ${videosTotalLote} video(s) subido(s)`;
-    fill.style.width = `${(completados / videosTotalLote) * 100}%`;
+        ? ('Subiendo videos… ' + completados + ' de ' + videosTotalLote)
+        : ('✓ ' + videosTotalLote + ' video(s) subido(s)');
+    fill.style.width = ((completados / videosTotalLote) * 100) + '%';
 
     document.getElementById('btnGuardarLote').disabled = pendientes > 0;
 }
@@ -233,7 +240,7 @@ function actualizarBarraProgreso() {
 function subirVideoFila(idx, input) {
     const file = input.files[0];
     if (!file) return;
-    colaSubida.push({ idx, file, input });
+    colaSubida.push({ idx: idx, file: file, input: input });
     videosSubiendo++;
     videosTotalLote++;
     actualizarBarraProgreso();
@@ -244,18 +251,19 @@ function procesarColaSubida() {
     while (subidasActivas < MAX_CONCURRENTES && colaSubida.length > 0) {
         const item = colaSubida.shift();
         subidasActivas++;
-        ejecutarSubidaVideo(item).finally(() => {
+        ejecutarSubidaVideo(item).finally(function () {
             subidasActivas--;
             procesarColaSubida();
         });
     }
 }
 
-async function ejecutarSubidaVideo({ idx, file, input }) {
-    const btn = document.getElementById(`btnVideo_${idx}`);
+async function ejecutarSubidaVideo(item) {
+    const idx = item.idx, file = item.file, input = item.input;
+    const btn = document.getElementById('btnVideo_' + idx);
     btn.classList.add('subiendo');
     btn.classList.remove('ok', 'error', 'tiene-actual');
-    btn.innerHTML = `<i class="ti ti-loader-2"></i> Subiendo…`;
+    btn.innerHTML = '<i class="ti ti-loader-2"></i> Subiendo…';
 
     try {
         const fd = new FormData();
@@ -266,16 +274,16 @@ async function ejecutarSubidaVideo({ idx, file, input }) {
         if (!res.ok) throw new Error('fallo del servidor');
         const data = await res.json();
 
-        document.getElementById(`videoPath_${idx}`).value = data.path;
+        document.getElementById('videoPath_' + idx).value = data.path;
         btn.classList.remove('subiendo');
         btn.classList.add('ok');
-        btn.innerHTML = `<i class="ti ti-check"></i> ${file.name.slice(0,14)}`;
+        btn.innerHTML = '<i class="ti ti-check"></i> ' + file.name.slice(0, 14);
         btn.appendChild(input);
     } catch (err) {
         console.error('[subir video]', err);
         btn.classList.remove('subiendo');
         btn.classList.add('error');
-        btn.innerHTML = `<i class="ti ti-alert-triangle"></i> Reintentar`;
+        btn.innerHTML = '<i class="ti ti-alert-triangle"></i> Reintentar';
         btn.appendChild(input);
     } finally {
         videosSubiendo--;
@@ -305,7 +313,7 @@ async function guardarLote() {
 
     const fd = new FormData();
     fd.append('_token', CSRF_TOKEN);
-    document.querySelectorAll('#tbodyFilas input, #tbodyFilas select').forEach(el => {
+    document.querySelectorAll('#tbodyFilas input, #tbodyFilas select').forEach(function (el) {
         if (el.type === 'file') {
             if (el.files[0]) fd.append(el.name, el.files[0]);
         } else if (el.name) {
@@ -320,7 +328,7 @@ async function guardarLote() {
             return;
         }
         if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
+            const data = await res.json().catch(function () { return {}; });
             throw new Error(data.message || 'error al guardar');
         }
         window.location.href = "{{ route('entrenador.ejercicios.index') }}";
@@ -333,8 +341,8 @@ async function guardarLote() {
 }
 
 // Carga primero los ejercicios existentes, luego 3 filas nuevas vacías
-document.addEventListener('DOMContentLoaded', () => {
-    EJERCICIOS_EXISTENTES.forEach(ej => agregarFila(ej));
+document.addEventListener('DOMContentLoaded', function () {
+    EJERCICIOS_EXISTENTES.forEach(function (ej) { agregarFila(ej); });
     for (let i = 0; i < 3; i++) agregarFila();
 });
 </script>

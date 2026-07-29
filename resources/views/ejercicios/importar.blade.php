@@ -65,6 +65,35 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .imp-status { font-size:0.8rem; margin-top:10px; text-align:right; }
 .imp-status.error { color:var(--danger); }
 .imp-status.ok { color:var(--ok); }
+
+/* ── Modal de recorte de video ── */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10000; align-items:center; justify-content:center; padding:16px; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:white; border-radius:14px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 12px; border-bottom:1px solid var(--border); }
+.modal-header h3 { font-size:0.95rem; font-weight:700; margin:0; }
+.modal-close { width:28px; height:28px; border-radius:7px; background:#f3f4f6; border:none; cursor:pointer; font-size:1rem; color:var(--muted); display:flex; align-items:center; justify-content:center; }
+.modal-close:hover { background:#fee2e2; color:var(--danger); }
+.modal-body { padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+.modal-footer-trim { display:flex; gap:8px; padding:0 18px 18px; }
+
+.trim-panel-video { width:100%; max-height:240px; border-radius:8px; background:#000; display:block; }
+.trim-times { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); font-weight:600; font-family:monospace; }
+.trim-track-wrap { position:relative; height:52px; padding:0 2px; }
+.trim-track { position:relative; height:52px; border-radius:8px; overflow:hidden; background:#e5e7eb; display:flex; }
+.trim-track img { height:100%; flex:1 1 0; min-width:0; object-fit:cover; display:block; pointer-events:none; user-select:none; }
+.trim-dim-left, .trim-dim-right { position:absolute; top:0; bottom:0; background:rgba(17,24,39,.55); z-index:2; pointer-events:none; }
+.trim-selection-border { position:absolute; top:0; bottom:0; border-top:2px solid var(--accent); border-bottom:2px solid var(--accent); z-index:2; pointer-events:none; box-sizing:border-box; }
+.trim-handle { position:absolute; top:0; bottom:0; width:16px; background:var(--accent); z-index:3; cursor:ew-resize; display:flex; align-items:center; justify-content:center; touch-action:none; }
+.trim-handle::after { content:''; width:3px; height:18px; background:rgba(255,255,255,.85); border-radius:2px; }
+.trim-handle-start { border-radius:6px 2px 2px 6px; }
+.trim-handle-end { border-radius:2px 6px 6px 2px; }
+.trim-playhead { position:absolute; top:-4px; bottom:-4px; width:2px; background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.3); z-index:4; pointer-events:none; }
+.trim-status { font-size:0.7rem; color:var(--accent); font-weight:600; text-align:center; min-height:14px; }
+.btn-trim-aplicar { flex:1; padding:9px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:0.82rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:6px; }
+.btn-trim-aplicar:disabled { opacity:.6; cursor:wait; }
+.btn-trim-completo { padding:9px 12px; border:1px solid var(--border2); border-radius:8px; background:white; color:var(--muted); font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.btn-trim-cancelar { padding:9px 12px; border:1px solid var(--border2); border-radius:8px; background:white; color:var(--danger); font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
 </style>
 
 <div class="imp-header">
@@ -112,6 +141,39 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     <button type="button" class="btn-guardar-lote" id="btnGuardarLote" onclick="guardarLote()">Guardar cambios</button>
 </div>
 <div class="imp-status" id="impStatus"></div>
+
+{{-- MODAL DE RECORTE — se reutiliza para el video de cualquier fila --}}
+<div class="modal-overlay" id="modalTrim">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>✂️ Recortar video</h3>
+            <button type="button" class="modal-close" onclick="cancelarTrimModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <video id="trimPreviewPlayer" class="trim-panel-video" muted playsinline></video>
+            <div class="trim-times">
+                <span id="trimInicioLabel">0:00</span>
+                <span id="trimDuracionLabel">Duración: 0:00</span>
+                <span id="trimFinLabel">0:00</span>
+            </div>
+            <div class="trim-track-wrap">
+                <div class="trim-track" id="trimTrack"></div>
+                <div class="trim-dim-left" id="trimDimLeft"></div>
+                <div class="trim-dim-right" id="trimDimRight"></div>
+                <div class="trim-selection-border" id="trimSelectionBorder"></div>
+                <div class="trim-playhead" id="trimPlayhead"></div>
+                <div class="trim-handle trim-handle-start" id="trimHandleStart"></div>
+                <div class="trim-handle trim-handle-end" id="trimHandleEnd"></div>
+            </div>
+            <div class="trim-status" id="trimStatus"></div>
+        </div>
+        <div class="modal-footer-trim">
+            <button type="button" class="btn-trim-cancelar" onclick="cancelarTrimModal()">Cancelar</button>
+            <button type="button" class="btn-trim-completo" onclick="usarVideoCompletoDesdeTrim()">Video completo</button>
+            <button type="button" class="btn-trim-aplicar" id="btnAplicarTrim" onclick="aplicarTrimYSubir()"><i class="ti ti-crop"></i> Recortar y subir</button>
+        </div>
+    </div>
+</div>
 
 <template id="tplSegmentoOptions">
     <option value="">-- Segmento --</option>
@@ -164,6 +226,17 @@ let ffmpegCargando    = null;
 let colaCompresion    = [];
 let comprimiendoActivo = false;
 
+// --- Estado del modal de recorte (uno solo, se reutiliza para cualquier fila) ---
+let trimIdx        = null;
+let trimInputRef    = null;
+let trimOriginalFile = null;
+let trimVideoURL    = null;
+let trimDuration    = 0;
+let trimStart       = 0;
+let trimEnd          = 0;
+let trimDragging    = null;
+const TRIM_MIN_DUR  = 0.5;
+
 function segmentoOptionsHTML() {
     return document.getElementById('tplSegmentoOptions').innerHTML;
 }
@@ -213,7 +286,7 @@ function agregarFila(datos) {
             '<label class="imp-file-btn ' + (videoUrl ? 'tiene-actual' : '') + '" id="btnVideo_' + idx + '">' +
                 '<i class="ti ' + (videoUrl ? 'ti-player-play-filled' : 'ti-video-plus') + '"></i>' +
                 (videoUrl ? 'Cambiar' : 'Video') +
-                '<input type="file" accept="video/*" style="display:none;" onchange="subirVideoFila(' + idx + ', this)">' +
+                '<input type="file" accept="video/*" style="display:none;" onchange="abrirTrimModal(' + idx + ', this)">' +
             '</label>' +
             '<input type="hidden" name="filas[' + idx + '][video_path]" id="videoPath_' + idx + '">' +
             '<input type="hidden" name="filas[' + idx + '][video_original]" value="' + ((datos && datos.video) ? datos.video : '') + '">' +
@@ -292,6 +365,211 @@ function filtrarFilas() {
     document.getElementById('impSinResultados').classList.toggle('visible', !algunaVisible);
 }
 
+/* ─────────── Modal de recorte ─────────── */
+
+function abrirTrimModal(idx, input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    trimIdx = idx;
+    trimInputRef = input;
+    trimOriginalFile = file;
+
+    if (trimVideoURL) URL.revokeObjectURL(trimVideoURL);
+    trimVideoURL = URL.createObjectURL(file);
+
+    const player = document.getElementById('trimPreviewPlayer');
+    player.src = trimVideoURL;
+    document.getElementById('trimStatus').textContent = 'Cargando video…';
+    document.getElementById('modalTrim').classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    player.onloadedmetadata = function () {
+        trimDuration = player.duration;
+        trimStart = 0;
+        trimEnd = trimDuration;
+        document.getElementById('trimStatus').textContent = '';
+        actualizarUISeleccionTrim();
+        generarMiniaturasTrim(file, trimDuration);
+        player.currentTime = 0;
+        player.play().catch(function () {});
+    };
+
+    player.ontimeupdate = function () {
+        if (player.currentTime >= trimEnd) player.currentTime = trimStart;
+        actualizarPlayheadTrim();
+    };
+}
+
+function cerrarTrimModalSinLimpiar() {
+    const player = document.getElementById('trimPreviewPlayer');
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+    document.getElementById('modalTrim').classList.remove('open');
+    document.body.style.overflow = '';
+    if (trimVideoURL) { URL.revokeObjectURL(trimVideoURL); trimVideoURL = null; }
+}
+
+function cancelarTrimModal() {
+    // El usuario decidió no usar este video: limpiamos el input de la fila
+    if (trimInputRef) trimInputRef.value = '';
+    cerrarTrimModalSinLimpiar();
+    trimIdx = null;
+    trimInputRef = null;
+    trimOriginalFile = null;
+}
+
+async function generarMiniaturasTrim(file, duration) {
+    const track = document.getElementById('trimTrack');
+    track.innerHTML = '';
+    const N = 8;
+    const tempVideo = document.createElement('video');
+    tempVideo.muted = true;
+    tempVideo.src = URL.createObjectURL(file);
+    await new Promise(function (res) { tempVideo.onloadedmetadata = res; });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 80; canvas.height = 80;
+    const ctx = canvas.getContext('2d');
+
+    for (let i = 0; i < N; i++) {
+        const t = Math.min(duration - 0.05, (duration / N) * i + 0.05);
+        await new Promise(function (res) {
+            tempVideo.currentTime = Math.max(0, t);
+            tempVideo.onseeked = function () {
+                const size = Math.min(tempVideo.videoWidth, tempVideo.videoHeight) || 80;
+                const sx = (tempVideo.videoWidth - size) / 2;
+                const sy = (tempVideo.videoHeight - size) / 2;
+                ctx.drawImage(tempVideo, sx, sy, size, size, 0, 0, 80, 80);
+                const img = document.createElement('img');
+                img.src = canvas.toDataURL('image/jpeg', 0.6);
+                track.appendChild(img);
+                res();
+            };
+        });
+    }
+    URL.revokeObjectURL(tempVideo.src);
+}
+
+function formatTiempoTrim(s) {
+    s = Math.max(0, s || 0);
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, '0');
+    return m + ':' + sec;
+}
+
+function actualizarUISeleccionTrim() {
+    const pctStart = trimDuration ? (trimStart / trimDuration) * 100 : 0;
+    const pctEnd   = trimDuration ? (trimEnd / trimDuration) * 100 : 100;
+
+    document.getElementById('trimHandleStart').style.left  = pctStart + '%';
+    document.getElementById('trimHandleEnd').style.left    = 'calc(' + pctEnd + '% - 16px)';
+    document.getElementById('trimDimLeft').style.left      = '0';
+    document.getElementById('trimDimLeft').style.width     = pctStart + '%';
+    document.getElementById('trimDimRight').style.left     = pctEnd + '%';
+    document.getElementById('trimDimRight').style.width    = (100 - pctEnd) + '%';
+    document.getElementById('trimSelectionBorder').style.left  = pctStart + '%';
+    document.getElementById('trimSelectionBorder').style.width = (pctEnd - pctStart) + '%';
+
+    document.getElementById('trimInicioLabel').textContent = formatTiempoTrim(trimStart);
+    document.getElementById('trimFinLabel').textContent    = formatTiempoTrim(trimEnd);
+    document.getElementById('trimDuracionLabel').textContent = 'Duración: ' + formatTiempoTrim(trimEnd - trimStart);
+}
+
+function actualizarPlayheadTrim() {
+    const player = document.getElementById('trimPreviewPlayer');
+    const pct = trimDuration ? (player.currentTime / trimDuration) * 100 : 0;
+    document.getElementById('trimPlayhead').style.left = pct + '%';
+}
+
+document.getElementById('trimHandleStart').addEventListener('pointerdown', function (e) {
+    e.preventDefault(); trimDragging = 'start'; e.target.setPointerCapture(e.pointerId);
+});
+document.getElementById('trimHandleEnd').addEventListener('pointerdown', function (e) {
+    e.preventDefault(); trimDragging = 'end'; e.target.setPointerCapture(e.pointerId);
+});
+
+document.addEventListener('pointermove', function (e) {
+    if (!trimDragging || !trimDuration) return;
+    const rect = document.getElementById('trimTrack').getBoundingClientRect();
+    let pct = (e.clientX - rect.left) / rect.width;
+    pct = Math.min(1, Math.max(0, pct));
+    const tiempo = pct * trimDuration;
+    const player = document.getElementById('trimPreviewPlayer');
+
+    if (trimDragging === 'start') {
+        trimStart = Math.max(0, Math.min(tiempo, trimEnd - TRIM_MIN_DUR));
+        player.currentTime = trimStart;
+    } else {
+        trimEnd = Math.min(trimDuration, Math.max(tiempo, trimStart + TRIM_MIN_DUR));
+        player.currentTime = trimEnd;
+    }
+    actualizarUISeleccionTrim();
+});
+
+document.addEventListener('pointerup', function () { trimDragging = null; });
+
+/**
+ * "Video completo": no recorta, sigue el camino normal (que igual comprime
+ * si el video pesa más del umbral).
+ */
+function usarVideoCompletoDesdeTrim() {
+    const idx = trimIdx, input = trimInputRef;
+    cerrarTrimModalSinLimpiar();
+    trimIdx = null;
+    trimInputRef = null;
+    trimOriginalFile = null;
+    subirVideoFila(idx, input);
+}
+
+/**
+ * "Recortar y subir": corta el clip Y comprime en el mismo paso de ffmpeg,
+ * luego lo manda directo a la cola de subida (ya no pasa por la cola de
+ * compresión genérica, porque este ya salió comprimido de aquí).
+ */
+async function aplicarTrimYSubir() {
+    if (!trimOriginalFile || !trimDuration) return;
+
+    const idx = trimIdx, input = trimInputRef, file = trimOriginalFile;
+    const inicio = trimStart, duracion = trimEnd - trimStart;
+    const btnModal = document.getElementById('btnAplicarTrim');
+    const status = document.getElementById('trimStatus');
+    btnModal.disabled = true;
+    status.textContent = 'Cargando editor de video… (solo la primera vez)';
+
+    videosSubiendo++;
+    videosTotalLote++;
+    actualizarBarraProgreso();
+
+    const btnFila = document.getElementById('btnVideo_' + idx);
+    btnFila.classList.add('subiendo');
+    btnFila.classList.remove('ok', 'error', 'tiene-actual');
+    btnFila.innerHTML = '<i class="ti ti-loader-2"></i> Recortando…';
+
+    cerrarTrimModalSinLimpiar();
+    trimIdx = null;
+    trimInputRef = null;
+    trimOriginalFile = null;
+
+    try {
+        const archivoFinal = await comprimirVideo(file, { inicio: inicio, duracion: duracion });
+        colaSubida.push({ idx: idx, file: archivoFinal, input: input });
+        procesarColaSubida();
+    } catch (err) {
+        console.error('[recorte de video]', err);
+        btnFila.classList.remove('subiendo');
+        btnFila.classList.add('error');
+        btnFila.innerHTML = '<i class="ti ti-alert-triangle"></i> Reintentar';
+        btnFila.appendChild(input);
+        videosSubiendo--;
+        actualizarBarraProgreso();
+    } finally {
+        btnModal.disabled = false;
+        status.textContent = '';
+    }
+}
+
 /* ─────────── Subida de video en segundo plano ─────────── */
 
 function actualizarBarraProgreso() {
@@ -331,27 +609,34 @@ async function procesarColaCompresion() {
     procesarColaCompresion();
 }
 
+// Si el video ya pesa poco, no vale la pena comprimirlo (ahorra tiempo real)
+const UMBRAL_SIN_COMPRIMIR = 12 * 1024 * 1024; // 12MB
+
 async function comprimirYEncolarSubida(item) {
     const idx = item.idx, file = item.file, input = item.input;
     const btn = document.getElementById('btnVideo_' + idx);
     btn.classList.add('subiendo');
     btn.classList.remove('ok', 'error', 'tiene-actual');
-    btn.innerHTML = '<i class="ti ti-loader-2"></i> Comprimiendo…';
 
     let archivoFinal = file;
-    try {
-        archivoFinal = await comprimirVideo(file);
-    } catch (err) {
-        // Si falla la compresión (ej. archivo raro), seguimos con el
-        // original tal cual — mejor subir algo pesado que no subir nada.
-        console.warn('[compresión de video] fallo, se sube el original sin comprimir:', err);
+
+    if (file.size <= UMBRAL_SIN_COMPRIMIR) {
+        // Ya es liviano, se sube tal cual sin pasar por ffmpeg
+        btn.innerHTML = '<i class="ti ti-loader-2"></i> Subiendo…';
+    } else {
+        btn.innerHTML = '<i class="ti ti-loader-2"></i> Comprimiendo…';
+        try {
+            archivoFinal = await comprimirVideo(file);
+        } catch (err) {
+            console.warn('[compresión de video] fallo, se sube el original sin comprimir:', err);
+        }
     }
 
     colaSubida.push({ idx: idx, file: archivoFinal, input: input });
     procesarColaSubida();
 }
 
-async function comprimirVideo(file) {
+async function comprimirVideo(file, rango) {
     const ffmpeg = await cargarFFmpeg();
     const { fetchFile } = window.__FFmpegLib;
 
@@ -362,17 +647,24 @@ async function comprimirVideo(file) {
 
     let blob;
     try {
-        // Mismos parámetros que ya usa el editor individual: máx. 1280px
-        // de ancho, calidad razonable — reduce videos de celular de
-        // 200-300MB a 10-20MB en la mayoría de los casos.
-        await ffmpeg.exec([
-            '-i', nombreEntrada,
-            '-vf', "scale='min(1280,iw)':-2",
-            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
-            '-c:a', 'aac', '-b:a', '128k',
+        // "ultrafast" en vez de "veryfast": bastante más rápido, el archivo
+        // pesa un poco más pero para nuestro caso vale la pena por velocidad.
+        // 960px en vez de 1280px: suficiente para ver la técnica de un
+        // ejercicio en el celular, y reduce el trabajo del encoder.
+        // Si viene "rango", primero recorta (-ss/-t antes de -i = más rápido).
+        const args = rango
+            ? ['-ss', rango.inicio.toFixed(2), '-i', nombreEntrada, '-t', rango.duracion.toFixed(2)]
+            : ['-i', nombreEntrada];
+
+        args.push(
+            '-vf', "scale='min(960,iw)':-2",
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
+            '-c:a', 'aac', '-b:a', '96k',
             '-movflags', '+faststart',
             nombreSalida
-        ]);
+        );
+
+        await ffmpeg.exec(args);
         const data = await ffmpeg.readFile(nombreSalida);
         if (!data || !data.length) throw new Error('salida vacía');
         blob = new Blob([data.buffer], { type: 'video/mp4' });

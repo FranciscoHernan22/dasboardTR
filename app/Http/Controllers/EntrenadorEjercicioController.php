@@ -177,15 +177,105 @@ class EntrenadorEjercicioController extends Controller
   
  
 
-    /**
- * Muestra la pantalla de importación masiva.
- */
+ 
 public function importarForm()
 {
+    $entrenadorId = Auth::id();
     $segmentosFijos = self::SEGMENTOS;
+    $r2Url = env('AWS_URL');
  
-    return view('ejercicios.importar', compact('segmentosFijos'));
+    $ejercicios = Ejercicio::where('entrenador_id', $entrenadorId)
+        ->orderBy('nombre')
+        ->get(['id', 'nombre', 'segmento', 'imagen', 'video']);
+ 
+    return view('ejercicios.importar', compact('segmentosFijos', 'ejercicios', 'r2Url'));
 }
+ 
+/**
+ * Guarda el lote completo: crea las filas nuevas (sin "id") y
+ * actualiza las filas existentes (con "id"). Si una fila trae imagen o
+ * video nuevo, reemplaza el archivo anterior en R2.
+ */
+public function importarLote(Request $request)
+{
+    $data = $request->validate([
+        'filas'                    => ['required', 'array', 'min:1'],
+        'filas.*.id'               => ['nullable', 'integer'],
+        'filas.*.nombre'           => ['required', 'string', 'max:120'],
+        'filas.*.segmento'         => ['required', Rule::in(array_keys(self::SEGMENTOS))],
+        'filas.*.imagen'           => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
+        'filas.*.video_path'       => ['nullable', 'string'],
+        'filas.*.imagen_original'  => ['nullable', 'string'],
+        'filas.*.video_original'   => ['nullable', 'string'],
+    ], [
+        'filas.*.nombre.required'   => 'Todas las filas necesitan un nombre.',
+        'filas.*.segmento.required' => 'Todas las filas necesitan un segmento.',
+        'filas.*.segmento.in'       => 'Selecciona un segmento válido de la lista.',
+        'filas.*.imagen.image'      => 'El archivo debe ser una imagen.',
+        'filas.*.imagen.max'        => 'La imagen no puede pesar más de 15MB.',
+    ]);
+ 
+    $entrenadorId = Auth::id();
+    $creados = 0;
+    $actualizados = 0;
+ 
+    DB::transaction(function () use ($request, $data, $entrenadorId, &$creados, &$actualizados) {
+        foreach ($data['filas'] as $i => $fila) {
+ 
+            $esNueva = empty($fila['id']);
+ 
+            if ($esNueva) {
+                $ejercicio = new Ejercicio();
+                $ejercicio->entrenador_id = $entrenadorId;
+            } else {
+                $ejercicio = Ejercicio::where('id', $fila['id'])
+                    ->where('entrenador_id', $entrenadorId)
+                    ->first();
+ 
+                if (!$ejercicio) {
+                    // No es tuyo o no existe: se ignora esta fila por seguridad.
+                    continue;
+                }
+            }
+ 
+            $ejercicio->nombre   = $fila['nombre'];
+            $ejercicio->segmento = $fila['segmento'];
+ 
+            // ── Imagen ──
+            if ($request->hasFile("filas.$i.imagen")) {
+                $imagenAnterior = $fila['imagen_original'] ?? null;
+                $ejercicio->imagen = $this->procesarImagen($request->file("filas.$i.imagen"));
+ 
+                if ($imagenAnterior && !Ejercicio::archivoEnUsoPorOtros($imagenAnterior, $ejercicio->id ?? 0)) {
+                    Storage::disk('r2')->delete($imagenAnterior);
+                }
+            }
+            // si no mandó imagen nueva, no se toca $ejercicio->imagen (se conserva la que ya tenía)
+ 
+            // ── Video ──
+            if (!empty($fila['video_path'])) {
+                $videoAnterior = $fila['video_original'] ?? null;
+                $ejercicio->video = $fila['video_path'];
+ 
+                if ($videoAnterior && !Ejercicio::archivoEnUsoPorOtros($videoAnterior, $ejercicio->id ?? 0, 'video')) {
+                    Storage::disk('r2')->delete($videoAnterior);
+                }
+            }
+            // si no mandó video nuevo, no se toca $ejercicio->video
+ 
+            $ejercicio->save();
+ 
+            $esNueva ? $creados++ : $actualizados++;
+        }
+    });
+ 
+    $mensaje = trim("Se agregaron {$creados} ejercicios nuevos. Se actualizaron {$actualizados}.");
+ 
+    return redirect()
+        ->route('entrenador.ejercicios.index')
+        ->with('success', $mensaje);
+}
+  
  
 /**
  * Sube UN video de forma asíncrona (se llama por AJAX apenas el usuario
@@ -210,55 +300,6 @@ public function subirVideoTemporal(Request $request)
     ]);
 }
  
-/**
- * Guarda TODOS los ejercicios del lote en una sola petición.
- * Las imágenes llegan como archivos (filas[i][imagen]); los videos
- * llegan como texto (filas[i][video_path]) porque ya se subieron antes
- * vía subirVideoTemporal().
- */
-public function importarLote(Request $request)
-{
-    $data = $request->validate([
-        'filas'              => ['required', 'array', 'min:1'],
-        'filas.*.nombre'     => ['required', 'string', 'max:120'],
-        'filas.*.segmento'   => ['required', Rule::in(array_keys(self::SEGMENTOS))],
-        'filas.*.imagen'     => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'],
-        'filas.*.video_path' => ['nullable', 'string'],
-    ], [
-        'filas.*.nombre.required'   => 'Todas las filas necesitan un nombre.',
-        'filas.*.segmento.required' => 'Todas las filas necesitan un segmento.',
-        'filas.*.segmento.in'       => 'Selecciona un segmento válido de la lista.',
-        'filas.*.imagen.image'      => 'El archivo debe ser una imagen.',
-        'filas.*.imagen.max'        => 'La imagen no puede pesar más de 15MB.',
-    ]);
- 
-    $entrenadorId = Auth::id();
-    $creados = 0;
- 
-    DB::transaction(function () use ($request, $data, $entrenadorId, &$creados) {
-        foreach ($data['filas'] as $i => $fila) {
- 
-            $rutaImagen = null;
-            if ($request->hasFile("filas.$i.imagen")) {
-                $rutaImagen = $this->procesarImagen($request->file("filas.$i.imagen"));
-            }
- 
-            Ejercicio::create([
-                'nombre'        => $fila['nombre'],
-                'segmento'      => $fila['segmento'],
-                'imagen'        => $rutaImagen,
-                'video'         => $fila['video_path'] ?? null,
-                'entrenador_id' => $entrenadorId,
-            ]);
- 
-            $creados++;
-        }
-    });
- 
-    return redirect()
-        ->route('entrenador.ejercicios.index')
-        ->with('success', "Se importaron {$creados} ejercicios correctamente.");
-}
 
 
 }

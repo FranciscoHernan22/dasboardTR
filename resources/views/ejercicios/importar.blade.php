@@ -1,6 +1,6 @@
 {{-- DESTINO: resources/views/ejercicios/importar.blade.php --}}
 @extends('layouts.entrenador')
-@section('titulo','Importar ejercicios')
+@section('titulo','Importar / editar ejercicios')
 @section('contenido')
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,17 +25,23 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .imp-tabla th { text-align:left; background:#fafbfc; padding:9px 10px; font-size:0.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--border); }
 .imp-tabla td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
 .imp-tabla tr:last-child td { border-bottom:none; }
+.imp-tabla tr.fila-existente { background:#fafbfe; }
 .imp-tabla input[type="text"], .imp-tabla select { width:100%; border:1px solid var(--border2); border-radius:7px; padding:6px 8px; font-size:0.8rem; font-family:'DM Sans',sans-serif; }
 .imp-tabla input[type="text"]:focus, .imp-tabla select:focus { outline:none; border-color:var(--accent); }
 
-.imp-file-btn { display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border:1px solid var(--border2); border-radius:7px; background:white; font-size:0.72rem; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap; }
+.imp-file-btn { display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border:1px solid var(--border2); border-radius:7px; background:white; font-size:0.72rem; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
 .imp-file-btn:hover { border-color:var(--accent); color:var(--accent); }
 .imp-file-btn.ok { border-color:#bbf7d0; color:var(--ok); background:#f0fdf4; }
 .imp-file-btn.subiendo { border-color:#bfdbfe; color:var(--accent); background:var(--accent-l); }
 .imp-file-btn.error { border-color:#fecaca; color:var(--danger); background:#fef2f2; }
+.imp-file-btn.tiene-actual { border-color:#bfdbfe; background:var(--accent-l); color:var(--accent); }
+.imp-file-btn img { width:20px; height:20px; border-radius:4px; object-fit:cover; }
+
+.badge-existente { font-size:0.6rem; font-weight:700; color:var(--accent); background:var(--accent-l); border:1px solid #bfdbfe; padding:1px 6px; border-radius:99px; text-transform:uppercase; margin-left:6px; }
 
 .imp-btn-quitar { width:26px; height:26px; border:1px solid #fecaca; border-radius:6px; background:white; color:var(--danger); cursor:pointer; }
 .imp-btn-quitar:hover { background:var(--danger); color:white; }
+.imp-btn-quitar:disabled { opacity:.25; cursor:not-allowed; }
 
 .imp-acciones { display:flex; gap:8px; align-items:center; }
 .btn-agregar-fila { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border:1.5px dashed var(--border2); border-radius:var(--radius); background:white; color:var(--muted); font-size:0.82rem; font-weight:600; cursor:pointer; }
@@ -51,10 +57,8 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .imp-status.ok { color:var(--ok); }
 </style>
 
-@php $r2Url = env('AWS_URL'); @endphp
-
 <div class="imp-header">
-    <h2>📥 Importar ejercicios en lote</h2>
+    <h2>📥 Importar / editar ejercicios en lote</h2>
     <a href="{{ route('entrenador.ejercicios.index') }}">← Volver al listado</a>
 </div>
 
@@ -67,10 +71,10 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     <table class="imp-tabla">
         <thead>
             <tr>
-                <th style="width:34%">Nombre</th>
-                <th style="width:22%">Segmento</th>
-                <th style="width:110px">Imagen</th>
-                <th style="width:110px">Video</th>
+                <th style="width:32%">Nombre</th>
+                <th style="width:20%">Segmento</th>
+                <th style="width:130px">Imagen</th>
+                <th style="width:130px">Video</th>
                 <th style="width:36px"></th>
             </tr>
         </thead>
@@ -84,7 +88,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 </div>
 
 <div class="imp-guardar-wrap">
-    <button type="button" class="btn-guardar-lote" id="btnGuardarLote" onclick="guardarLote()">Guardar todo</button>
+    <button type="button" class="btn-guardar-lote" id="btnGuardarLote" onclick="guardarLote()">Guardar cambios</button>
 </div>
 <div class="imp-status" id="impStatus"></div>
 
@@ -99,11 +103,21 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 const SUBIR_VIDEO_URL   = "{{ route('entrenador.ejercicios.subirVideoTemporal') }}";
 const IMPORTAR_LOTE_URL = "{{ route('entrenador.ejercicios.importarLote') }}";
 const CSRF_TOKEN = "{{ csrf_token() }}";
+const R2_URL = "{{ $r2Url }}";
+
+// Ejercicios existentes, mandados desde el controlador
+const EJERCICIOS_EXISTENTES = @json($ejercicios->map(fn($e) => [
+    'id'       => $e->id,
+    'nombre'   => $e->nombre,
+    'segmento' => $e->segmento,
+    'imagen'   => $e->imagen,
+    'video'    => $e->video,
+]));
 
 let filaIndex = 0;
-let videosSubiendo = 0;   // contador de subidas en curso
-let videosTotalLote = 0;  // total de videos que se han intentado subir en la sesión actual
-let colaSubida = [];      // cola simple para limitar concurrencia
+let videosSubiendo = 0;
+let videosTotalLote = 0;
+let colaSubida = [];
 const MAX_CONCURRENTES = 3;
 let subidasActivas = 0;
 
@@ -111,36 +125,79 @@ function segmentoOptionsHTML() {
     return document.getElementById('tplSegmentoOptions').innerHTML;
 }
 
-function agregarFila() {
+/**
+ * Agrega una fila. Si "datos" viene con id, es una fila de un ejercicio
+ * ya existente (precargada); si no, es una fila nueva vacía.
+ */
+function agregarFila(datos = null) {
     const idx = filaIndex++;
+    const esExistente = !!(datos && datos.id);
     const tbody = document.getElementById('tbodyFilas');
     const tr = document.createElement('tr');
     tr.dataset.fila = idx;
+    if (esExistente) tr.classList.add('fila-existente');
+
+    const nombreVal   = datos?.nombre ?? '';
+    const segmentoVal = datos?.segmento ?? '';
+    const imagenUrl   = datos?.imagen ? `${R2_URL}/${datos.imagen}` : '';
+    const videoUrl    = datos?.video ? `${R2_URL}/${datos.video}` : '';
+
+    const opciones = segmentoOptionsHTML().replace(
+        `value="${segmentoVal}"`, `value="${segmentoVal}" selected`
+    );
+
     tr.innerHTML = `
-        <td><input type="text" name="filas[${idx}][nombre]" placeholder="Nombre del ejercicio" required></td>
         <td>
-            <select name="filas[${idx}][segmento]" required>${segmentoOptionsHTML()}</select>
+            <input type="text" name="filas[${idx}][nombre]" value="${nombreVal.replace(/"/g,'&quot;')}" placeholder="Nombre del ejercicio" required>
+            ${esExistente ? '<span class="badge-existente">guardado</span>' : ''}
         </td>
         <td>
-            <label class="imp-file-btn" id="btnImg_${idx}">
-                <i class="ti ti-camera-plus"></i> Imagen
+            <select name="filas[${idx}][segmento]" required>${opciones}</select>
+        </td>
+        <td>
+            <label class="imp-file-btn ${imagenUrl ? 'tiene-actual' : ''}" id="btnImg_${idx}">
+                ${imagenUrl ? `<img src="${imagenUrl}" alt="">` : '<i class="ti ti-camera-plus"></i>'}
+                ${imagenUrl ? 'Cambiar' : 'Imagen'}
                 <input type="file" name="filas[${idx}][imagen]" accept="image/*" style="display:none;" onchange="marcarImagenLista(${idx}, this)">
             </label>
+            <input type="hidden" name="filas[${idx}][imagen_original]" value="${datos?.imagen ?? ''}">
         </td>
         <td>
-            <label class="imp-file-btn" id="btnVideo_${idx}">
-                <i class="ti ti-video-plus"></i> Video
+            <label class="imp-file-btn ${videoUrl ? 'tiene-actual' : ''}" id="btnVideo_${idx}">
+                <i class="ti ${videoUrl ? 'ti-player-play-filled' : 'ti-video-plus'}"></i>
+                ${videoUrl ? 'Cambiar' : 'Video'}
                 <input type="file" accept="video/*" style="display:none;" onchange="subirVideoFila(${idx}, this)">
             </label>
             <input type="hidden" name="filas[${idx}][video_path]" id="videoPath_${idx}">
+            <input type="hidden" name="filas[${idx}][video_original]" value="${datos?.video ?? ''}">
         </td>
-        <td><button type="button" class="imp-btn-quitar" onclick="this.closest('tr').remove()"><i class="ti ti-x"></i></button></td>
+        <td>
+            <button type="button" class="imp-btn-quitar" onclick="quitarFila(this, ${esExistente})" ${esExistente ? 'title="Los ejercicios guardados se eliminan desde el listado"' : ''}>
+                <i class="ti ti-x"></i>
+            </button>
+        </td>
     `;
+
+    if (esExistente) {
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = `filas[${idx}][id]`;
+        idInput.value = datos.id;
+        tr.appendChild(idInput);
+    }
+
     tbody.appendChild(tr);
 }
 
+function quitarFila(btn, esExistente) {
+    if (esExistente) {
+        alert('Este ejercicio ya está guardado. Para eliminarlo por completo usa el botón de eliminar en el listado normal — aquí solo puedes quitarlo de esta pantalla sin borrarlo.');
+    }
+    btn.closest('tr').remove();
+}
+
 function agregarVariasFilas() {
-    const n = parseInt(prompt('¿Cuántas filas quieres agregar?', '10'), 10);
+    const n = parseInt(prompt('¿Cuántas filas nuevas quieres agregar?', '10'), 10);
     if (!n || n < 1) return;
     for (let i = 0; i < n; i++) agregarFila();
 }
@@ -149,8 +206,9 @@ function marcarImagenLista(idx, input) {
     const btn = document.getElementById(`btnImg_${idx}`);
     if (input.files[0]) {
         btn.classList.add('ok');
+        btn.classList.remove('tiene-actual');
         btn.innerHTML = `<i class="ti ti-check"></i> ${input.files[0].name.slice(0,14)}`;
-        btn.appendChild(input); // conservar el input dentro del label
+        btn.appendChild(input);
     }
 }
 
@@ -196,7 +254,7 @@ function procesarColaSubida() {
 async function ejecutarSubidaVideo({ idx, file, input }) {
     const btn = document.getElementById(`btnVideo_${idx}`);
     btn.classList.add('subiendo');
-    btn.classList.remove('ok', 'error');
+    btn.classList.remove('ok', 'error', 'tiene-actual');
     btn.innerHTML = `<i class="ti ti-loader-2"></i> Subiendo…`;
 
     try {
@@ -219,7 +277,6 @@ async function ejecutarSubidaVideo({ idx, file, input }) {
         btn.classList.add('error');
         btn.innerHTML = `<i class="ti ti-alert-triangle"></i> Reintentar`;
         btn.appendChild(input);
-        btn.onclick = null; // el label ya reabre el file picker normalmente
     } finally {
         videosSubiendo--;
         actualizarBarraProgreso();
@@ -232,7 +289,7 @@ async function guardarLote() {
     status.className = 'imp-status';
 
     if (filas.length === 0) {
-        status.textContent = 'Agrega al menos una fila.';
+        status.textContent = 'No hay filas para guardar.';
         status.classList.add('error');
         return;
     }
@@ -275,9 +332,10 @@ async function guardarLote() {
     }
 }
 
-// Arranca con 5 filas vacías para no partir de cero
+// Carga primero los ejercicios existentes, luego 3 filas nuevas vacías
 document.addEventListener('DOMContentLoaded', () => {
-    for (let i = 0; i < 5; i++) agregarFila();
+    EJERCICIOS_EXISTENTES.forEach(ej => agregarFila(ej));
+    for (let i = 0; i < 3; i++) agregarFila();
 });
 </script>
 

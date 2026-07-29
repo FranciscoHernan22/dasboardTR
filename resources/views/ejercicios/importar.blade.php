@@ -252,6 +252,11 @@ function agregarFila(datos) {
     const tbody = document.getElementById('tbodyFilas');
     const tr = document.createElement('tr');
     tr.dataset.fila = idx;
+    // Guardamos los valores originales para poder detectar después si el
+    // usuario realmente cambió algo en esta fila (y así no reenviar todo
+    // el catálogo cada vez que guardas).
+    tr.dataset.nombreOriginal = (datos && datos.nombre) ? datos.nombre : '';
+    tr.dataset.segmentoOriginal = (datos && datos.segmento) ? datos.segmento : '';
 
     // Si es una fila NUEVA (sin datos) y hay un filtro de segmento activo,
     // la fila nace con ese segmento ya seleccionado.
@@ -756,19 +761,41 @@ async function guardarLote() {
     const status = document.getElementById('impStatus');
     status.className = 'imp-status';
 
-    // Reunimos solo las filas con datos (con nombre, o ya existentes)
+    // Reunimos solo las filas que realmente hacen falta guardar:
+    // - Nuevas (sin id) que ya tienen nombre.
+    // - Existentes, PERO solo si de verdad cambiaste algo (nombre, segmento,
+    //   imagen nueva o video nuevo) — si no las tocaste, se ignoran, para
+    //   no reenviar los 150+ ejercicios del catálogo cada vez que guardas.
     const filasConDatos = [];
     document.querySelectorAll('#tbodyFilas tr').forEach(function (tr) {
         const idInput = tr.querySelector('input[name$="[id]"]');
         const nombreInput = tr.querySelector('input[name$="[nombre]"]');
+        const segmentoSelect = tr.querySelector('select[name$="[segmento]"]');
+        const imagenInput = tr.querySelector('input[type="file"][name$="[imagen]"]');
+        const videoPathInput = tr.querySelector('input[name$="[video_path]"]');
+
         const esExistente = !!idInput;
         const nombreVal = nombreInput ? nombreInput.value.trim() : '';
-        if (!esExistente && !nombreVal) return; // fila vacía, se ignora
-        filasConDatos.push(tr);
+
+        if (!esExistente) {
+            // Fila nueva: solo cuenta si tiene nombre
+            if (nombreVal) filasConDatos.push(tr);
+            return;
+        }
+
+        // Fila existente: ¿cambió algo?
+        const nombreCambio = nombreVal !== (tr.dataset.nombreOriginal || '');
+        const segmentoCambio = segmentoSelect && segmentoSelect.value !== (tr.dataset.segmentoOriginal || '');
+        const hayImagenNueva = imagenInput && imagenInput.files[0];
+        const hayVideoNuevo = videoPathInput && videoPathInput.value;
+
+        if (nombreCambio || segmentoCambio || hayImagenNueva || hayVideoNuevo) {
+            filasConDatos.push(tr);
+        }
     });
 
     if (filasConDatos.length === 0) {
-        status.textContent = 'No hay ejercicios con nombre para guardar.';
+        status.textContent = 'No hay cambios nuevos que guardar.';
         status.classList.add('error');
         return;
     }

@@ -16,6 +16,14 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .imp-header a { margin-left:auto; font-size:0.82rem; color:var(--muted); text-decoration:none; }
 .imp-header a:hover { color:var(--accent); }
 
+#impBuscador { width:100%; border:1px solid var(--border2); border-radius:8px; padding:9px 12px; font-size:0.85rem; font-family:'DM Sans',sans-serif; color:var(--text); background:white; margin-bottom:10px; }
+#impBuscador:focus { outline:none; border-color:var(--accent); }
+
+.imp-nav-segmentos { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.imp-nav-segmentos .pill { padding:5px 13px; border:1.5px solid var(--border2); border-radius:99px; background:white; color:var(--muted); font-size:0.74rem; font-weight:600; cursor:pointer; transition:all .12s; white-space:nowrap; font-family:'DM Sans',sans-serif; }
+.imp-nav-segmentos .pill:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-l); }
+.imp-nav-segmentos .pill.activa { background:var(--accent); border-color:var(--accent); color:white; }
+
 .imp-barra-progreso { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:0.8rem; color:var(--muted); }
 .imp-barra-progreso .track { flex:1; height:6px; background:#e5e7eb; border-radius:99px; overflow:hidden; }
 .imp-barra-progreso .fill { height:100%; background:var(--accent); width:0%; transition:width .2s; }
@@ -43,6 +51,11 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .imp-btn-quitar:hover { background:var(--danger); color:white; }
 .imp-btn-quitar:disabled { opacity:.25; cursor:not-allowed; }
 
+.imp-fila-oculta { display:none !important; }
+
+.imp-sin-resultados { display:none; text-align:center; padding:40px 20px; color:var(--muted); font-size:0.85rem; background:var(--surface); border:1.5px dashed var(--border2); border-radius:var(--radius); margin-bottom:14px; }
+.imp-sin-resultados.visible { display:block; }
+
 .imp-acciones { display:flex; gap:8px; align-items:center; }
 .btn-agregar-fila { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border:1.5px dashed var(--border2); border-radius:var(--radius); background:white; color:var(--muted); font-size:0.82rem; font-weight:600; cursor:pointer; }
 .btn-agregar-fila:hover { border-color:var(--accent); color:var(--accent); }
@@ -60,6 +73,15 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 <div class="imp-header">
     <h2>📥 Importar / editar ejercicios en lote</h2>
     <a href="{{ route('entrenador.ejercicios.index') }}">← Volver al listado</a>
+</div>
+
+<input type="text" id="impBuscador" placeholder="🔍 Buscar por nombre…" oninput="filtrarFilas()">
+
+<div class="imp-nav-segmentos" id="impFiltroSegmentos">
+    <button type="button" class="pill activa" data-segmento="" onclick="filtrarPorSegmento(this)">Todos</button>
+    @foreach($segmentosFijos as $valor => $label)
+        <button type="button" class="pill" data-segmento="{{ $valor }}" onclick="filtrarPorSegmento(this)">{{ $label }}</button>
+    @endforeach
 </div>
 
 <div class="imp-barra-progreso" id="barraProgreso" style="display:none;">
@@ -81,6 +103,8 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         <tbody id="tbodyFilas"></tbody>
     </table>
 </div>
+
+<div class="imp-sin-resultados" id="impSinResultados">No hay ejercicios que coincidan con ese filtro o búsqueda.</div>
 
 <div class="imp-acciones">
     <button type="button" class="btn-agregar-fila" onclick="agregarFila()">＋ Agregar fila</button>
@@ -156,11 +180,11 @@ function agregarFila(datos) {
 
     tr.innerHTML =
         '<td>' +
-            '<input type="text" name="filas[' + idx + '][nombre]" value="' + nombreVal.replace(/"/g, '&quot;') + '" placeholder="Nombre del ejercicio" required>' +
+            '<input type="text" name="filas[' + idx + '][nombre]" value="' + nombreVal.replace(/"/g, '&quot;') + '" placeholder="Nombre del ejercicio" required oninput="filtrarFilas()">' +
             (esExistente ? '<span class="badge-existente">guardado</span>' : '') +
         '</td>' +
         '<td>' +
-            '<select name="filas[' + idx + '][segmento]" required>' + opciones + '</select>' +
+            '<select name="filas[' + idx + '][segmento]" required onchange="filtrarFilas()">' + opciones + '</select>' +
         '</td>' +
         '<td>' +
             '<label class="imp-file-btn ' + (imagenUrl ? 'tiene-actual' : '') + '" id="btnImg_' + idx + '">' +
@@ -194,6 +218,7 @@ function agregarFila(datos) {
     }
 
     tbody.appendChild(tr);
+    filtrarFilas();
 }
 
 function quitarFila(btn, esExistente) {
@@ -201,6 +226,7 @@ function quitarFila(btn, esExistente) {
         alert('Este ejercicio ya está guardado. Para eliminarlo por completo usa el botón de eliminar en el listado normal — aquí solo puedes quitarlo de esta pantalla sin borrarlo.');
     }
     btn.closest('tr').remove();
+    filtrarFilas();
 }
 
 function agregarVariasFilas() {
@@ -218,6 +244,40 @@ function marcarImagenLista(idx, input) {
         btn.appendChild(input);
     }
 }
+
+/* ─────────── FILTRO por nombre + segmento ─────────── */
+
+function filtrarPorSegmento(btn) {
+    document.querySelectorAll('#impFiltroSegmentos .pill').forEach(function (p) { p.classList.remove('activa'); });
+    btn.classList.add('activa');
+    filtrarFilas();
+}
+
+function filtrarFilas() {
+    const texto = document.getElementById('impBuscador').value.toLowerCase().trim();
+    const segmentoActivo = document.querySelector('#impFiltroSegmentos .pill.activa')?.dataset.segmento || '';
+
+    let algunaVisible = false;
+
+    document.querySelectorAll('#tbodyFilas tr').forEach(function (tr) {
+        const nombreInput = tr.querySelector('input[name$="[nombre]"]');
+        const segmentoSelect = tr.querySelector('select[name$="[segmento]"]');
+
+        const nombre = nombreInput ? nombreInput.value.toLowerCase() : '';
+        const segmento = segmentoSelect ? segmentoSelect.value : '';
+
+        const coincideTexto = !texto || nombre.includes(texto);
+        const coincideSegmento = !segmentoActivo || segmento === segmentoActivo;
+        const visible = coincideTexto && coincideSegmento;
+
+        tr.classList.toggle('imp-fila-oculta', !visible);
+        if (visible) algunaVisible = true;
+    });
+
+    document.getElementById('impSinResultados').classList.toggle('visible', !algunaVisible);
+}
+
+/* ─────────── Subida de video en segundo plano ─────────── */
 
 function actualizarBarraProgreso() {
     const barra = document.getElementById('barraProgreso');
@@ -313,6 +373,7 @@ async function guardarLote() {
 
     const fd = new FormData();
     fd.append('_token', CSRF_TOKEN);
+    // Importante: se manda TODO (incluso filas ocultas por el filtro), no solo lo visible
     document.querySelectorAll('#tbodyFilas input, #tbodyFilas select').forEach(function (el) {
         if (el.type === 'file') {
             if (el.files[0]) fd.append(el.name, el.files[0]);

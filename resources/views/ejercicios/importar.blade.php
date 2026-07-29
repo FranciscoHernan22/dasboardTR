@@ -785,14 +785,37 @@ async function guardarLote() {
 
     const fd = new FormData();
     fd.append('_token', CSRF_TOKEN);
-    // Importante: se manda TODO (incluso filas ocultas por el filtro), no solo lo visible
-    document.querySelectorAll('#tbodyFilas input, #tbodyFilas select').forEach(function (el) {
-        if (el.type === 'file') {
-            if (el.files[0]) fd.append(el.name, el.files[0]);
-        } else if (el.name) {
-            fd.append(el.name, el.value);
-        }
+
+    let filasConDatos = 0;
+    // Importante: recorremos por FILA (no por input suelto), así podemos
+    // saltar por completo las filas nuevas que quedaron vacías (las 3 que
+    // se agregan solas al final, o cualquiera que agregaste de más y no
+    // llegaste a llenar).
+    document.querySelectorAll('#tbodyFilas tr').forEach(function (tr) {
+        const idInput = tr.querySelector('input[name$="[id]"]');
+        const nombreInput = tr.querySelector('input[name$="[nombre]"]');
+        const esExistente = !!idInput;
+        const nombreVal = nombreInput ? nombreInput.value.trim() : '';
+
+        // Fila nueva sin nombre = nunca se usó, se ignora silenciosamente
+        if (!esExistente && !nombreVal) return;
+
+        tr.querySelectorAll('input, select').forEach(function (el) {
+            if (el.type === 'file') {
+                if (el.files[0]) fd.append(el.name, el.files[0]);
+            } else if (el.name) {
+                fd.append(el.name, el.value);
+            }
+        });
+        filasConDatos++;
     });
+
+    if (filasConDatos === 0) {
+        status.textContent = 'No hay ejercicios con nombre para guardar.';
+        status.classList.add('error');
+        btn.disabled = false;
+        return;
+    }
 
     try {
         const res = await fetch(IMPORTAR_LOTE_URL, {

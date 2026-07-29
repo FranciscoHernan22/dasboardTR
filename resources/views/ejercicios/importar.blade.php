@@ -753,12 +753,22 @@ async function ejecutarSubidaVideo(item) {
 }
 
 async function guardarLote() {
-    const filas = document.querySelectorAll('#tbodyFilas tr');
     const status = document.getElementById('impStatus');
     status.className = 'imp-status';
 
-    if (filas.length === 0) {
-        status.textContent = 'No hay filas para guardar.';
+    // Reunimos solo las filas con datos (con nombre, o ya existentes)
+    const filasConDatos = [];
+    document.querySelectorAll('#tbodyFilas tr').forEach(function (tr) {
+        const idInput = tr.querySelector('input[name$="[id]"]');
+        const nombreInput = tr.querySelector('input[name$="[nombre]"]');
+        const esExistente = !!idInput;
+        const nombreVal = nombreInput ? nombreInput.value.trim() : '';
+        if (!esExistente && !nombreVal) return; // fila vacía, se ignora
+        filasConDatos.push(tr);
+    });
+
+    if (filasConDatos.length === 0) {
+        status.textContent = 'No hay ejercicios con nombre para guardar.';
         status.classList.add('error');
         return;
     }
@@ -770,73 +780,94 @@ async function guardarLote() {
 
     const btn = document.getElementById('btnGuardarLote');
     btn.disabled = true;
-    status.textContent = 'Guardando ejercicios…';
 
-    const fd = new FormData();
-    fd.append('_token', CSRF_TOKEN);
-
-    let filasConDatos = 0;
-    // Importante: recorremos por FILA (no por input suelto), así podemos
-    // saltar por completo las filas nuevas que quedaron vacías (las 3 que
-    // se agregan solas al final, o cualquiera que agregaste de más y no
-    // llegaste a llenar).
-    document.querySelectorAll('#tbodyFilas tr').forEach(function (tr) {
-        const idInput = tr.querySelector('input[name$="[id]"]');
-        const nombreInput = tr.querySelector('input[name$="[nombre]"]');
-        const esExistente = !!idInput;
-        const nombreVal = nombreInput ? nombreInput.value.trim() : '';
-
-        // Fila nueva sin nombre = nunca se usó, se ignora silenciosamente
-        if (!esExistente && !nombreVal) return;
-
-        tr.querySelectorAll('input, select').forEach(function (el) {
-            if (el.type === 'file') {
-                if (el.files[0]) fd.append(el.name, el.files[0]);
-            } else if (el.name) {
-                fd.append(el.name, el.value);
-            }
-        });
-        filasConDatos++;
-    });
-
-    if (filasConDatos === 0) {
-        status.textContent = 'No hay ejercicios con nombre para guardar.';
-        status.classList.add('error');
-        btn.disabled = false;
-        return;
+    // Lotes chicos para no toparnos con el límite de tamaño del servidor
+    // (413 Request Entity Too Large) cuando hay muchas imágenes juntas.
+    const TAMANO_LOTE = 8;
+    const lotes = [];
+    for (let i = 0; i < filasConDatos.length; i += TAMANO_LOTE) {
+        lotes.push(filasConDatos.slice(i, i + TAMANO_LOTE));
     }
 
-    try {
-        const res = await fetch(IMPORTAR_LOTE_URL, {
-            method: 'POST',
-            body: fd,
-            headers: { 'Accept': 'application/json' }
+    let totalCreados = 0;
+    let totalActualizados = 0;
+
+    for (let l = 0; l < lotes.length; l++) {
+        status.className = 'imp-status';
+        status.textContent = 'Guardando lote ' + (l + 1) + ' de ' + lotes.length + '…';
+
+        const fd = new FormData();
+        fd.append('_token', CSRF_TOKEN);
+        lotes[l].forEach(function (tr) {
+            tr.querySelectorAll('input, select').forEach(function (el) {
+                if (el.type === 'file') {
+                    if (el.files[0]) fd.append(el.name, el.files[0]);
+                } else if (el.name) {
+                    fd.append(el.name, el.value);
+                }
+            });
         });
 
-        if (res.url.includes('/login')) {
-            throw new Error('Tu sesión expiró. Recarga la página y vuelve a intentar (revisa qué filas no se guardaron).');
-        }
-        if (res.redirected) {
-            // Guardado exitoso: el controlador redirige al listado normal
-            window.location.href = res.url;
+        try {
+            const res = await fetch(IMPORTAR_LOTE_URL, {
+                method: 'POST',
+                body: fd,
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (res.url.includes('/login')) {
+                throw new Error('Tu sesión expiró a mitad del guardado. Ya se guardaron ' + (l) + ' de ' + lotes.length + ' lotes — recarga la página y vuelve a intentar (lo ya guardado no se va a duplicar).');
+            }
+            if (res.status === 413) {
+                throw new Error('El lote sigue pesando demasiado para el servidor. Avísame para bajar el tamaño de lote o comprimir más las imágenes.');
+            }
+            if (res.status === 422) {
+                const errores = await res.json();
+                const listaErrores = Object.values(errores.errors || {}).map(function (arr) { return arr[0]; });
+                throw new Error('Lote ' + (l + 1) + ': ' + (listaErrores[0] || 'datos inválidos') + '. Ya se guardaron ' + l + ' de ' + lotes.length + ' lotes.');
+            }
+            if (!res.ok) {
+                throw new Error('Fallo del servidor en el lote ' + (l + 1) + '. Ya se guardaron ' + l + ' de ' + lotes.length + ' lotes.');
+            }
+
+            const data = await res.json();
+            totalCreados += data.creados || 0;
+            totalActualizados += data.actualizados || 0;
+
+            // Marcamos las filas de este lote como "ya guardadas" (les
+            // ponemos su id real), así si algo falla más adelante y
+            // reintentas, estas NO se vuelven a crear duplicadas.
+            lotes[l].forEach(function (tr) {
+                const nombreInput = tr.querySelector('input[name$="[nombre]"]');
+                const match = nombreInput.name.match(/filas\[(\d+)\]/);
+                if (!match) return;
+                const filaKey = match[1];
+                const nuevoId = data.ids ? data.ids[filaKey] : null;
+                if (!nuevoId) return;
+
+                let idInput = tr.querySelector('input[name$="[id]"]');
+                if (!idInput) {
+                    idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'filas[' + filaKey + '][id]';
+                    tr.appendChild(idInput);
+                }
+                idInput.value = nuevoId;
+            });
+        } catch (err) {
+            console.error('[guardar lote]', err);
+            status.textContent = 'Error: ' + err.message;
+            status.classList.add('error');
+            btn.disabled = false;
             return;
         }
-        if (res.status === 422) {
-            const errores = await res.json();
-            const listaErrores = Object.values(errores.errors || {}).map(function (arr) { return arr[0]; });
-            throw new Error(listaErrores.length ? listaErrores.slice(0, 3).join(' | ') : 'Revisa los datos de las filas.');
-        }
-        if (!res.ok) {
-            const data = await res.json().catch(function () { return {}; });
-            throw new Error(data.message || 'error al guardar');
-        }
-        window.location.href = "{{ route('entrenador.ejercicios.index') }}";
-    } catch (err) {
-        console.error('[guardar lote]', err);
-        status.textContent = 'Error: ' + err.message;
-        status.classList.add('error');
-        btn.disabled = false;
     }
+
+    status.textContent = 'Listo — ' + totalCreados + ' nuevos, ' + totalActualizados + ' actualizados. Redirigiendo…';
+    status.classList.add('ok');
+    setTimeout(function () {
+        window.location.href = "{{ route('entrenador.ejercicios.index') }}";
+    }, 600);
 }
 
 // Carga primero los ejercicios existentes, luego 3 filas nuevas vacías

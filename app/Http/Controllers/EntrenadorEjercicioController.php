@@ -218,8 +218,9 @@ public function importarLote(Request $request)
     $entrenadorId = Auth::id();
     $creados = 0;
     $actualizados = 0;
+    $idsPorFila = []; // clave original del array (filas[X]) => id real en la BD
  
-    DB::transaction(function () use ($request, $data, $entrenadorId, &$creados, &$actualizados) {
+    DB::transaction(function () use ($request, $data, $entrenadorId, &$creados, &$actualizados, &$idsPorFila) {
         foreach ($data['filas'] as $i => $fila) {
  
             $esNueva = empty($fila['id']);
@@ -233,7 +234,6 @@ public function importarLote(Request $request)
                     ->first();
  
                 if (!$ejercicio) {
-                    // No es tuyo o no existe: se ignora esta fila por seguridad.
                     continue;
                 }
             }
@@ -241,7 +241,6 @@ public function importarLote(Request $request)
             $ejercicio->nombre   = $fila['nombre'];
             $ejercicio->segmento = $fila['segmento'];
  
-            // ── Imagen ──
             if ($request->hasFile("filas.$i.imagen")) {
                 $imagenAnterior = $fila['imagen_original'] ?? null;
                 $ejercicio->imagen = $this->procesarImagen($request->file("filas.$i.imagen"));
@@ -250,9 +249,7 @@ public function importarLote(Request $request)
                     Storage::disk('r2')->delete($imagenAnterior);
                 }
             }
-            // si no mandó imagen nueva, no se toca $ejercicio->imagen (se conserva la que ya tenía)
  
-            // ── Video ──
             if (!empty($fila['video_path'])) {
                 $videoAnterior = $fila['video_original'] ?? null;
                 $ejercicio->video = $fila['video_path'];
@@ -261,13 +258,25 @@ public function importarLote(Request $request)
                     Storage::disk('r2')->delete($videoAnterior);
                 }
             }
-            // si no mandó video nuevo, no se toca $ejercicio->video
  
             $ejercicio->save();
+            $idsPorFila[$i] = $ejercicio->id;
  
             $esNueva ? $creados++ : $actualizados++;
         }
     });
+ 
+    // Si la petición pide JSON (nuestro fetch con Accept: application/json),
+    // devolvemos los datos para que el JS pueda seguir con el siguiente
+    // lote y marcar qué filas ya quedaron guardadas.
+    if ($request->wantsJson()) {
+        return response()->json([
+            'ok'           => true,
+            'creados'      => $creados,
+            'actualizados' => $actualizados,
+            'ids'          => $idsPorFila,
+        ]);
+    }
  
     $mensaje = trim("Se agregaron {$creados} ejercicios nuevos. Se actualizaron {$actualizados}.");
  

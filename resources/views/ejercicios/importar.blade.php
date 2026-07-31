@@ -1,4 +1,4 @@
-{{-- DESTINO: resources/views/ejercicios/importar.blade.phpss --}}
+{{-- DESTINO: resources/views/ejercicios/importar.blade.php --}}
 @extends('layouts.entrenador')
 @section('titulo','Importar / editar ejercicios')
 @section('contenido')
@@ -702,7 +702,8 @@ async function comprimirVideo(file, rango) {
 
         args.push(
             '-vf', "scale='min(960,iw)':-2",
-            '-c:v', 'libx264', '-profile:v', 'baseline', '-preset', 'ultrafast', '-crf', '28', '-pix_fmt', 'yuv420p',
+            '-c:v', 'libx264', '-profile:v', 'baseline', '-preset', 'ultrafast', '-crf', '28',
+            '-pix_fmt', 'yuv420p', '-color_range', 'tv', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
             '-c:a', 'aac', '-b:a', '96k',
             '-movflags', '+faststart',
             nombreSalida

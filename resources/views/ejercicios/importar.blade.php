@@ -1,4 +1,4 @@
-{{-- DESTINO: resources/views/ejercicios/importar.blade.php --}}
+{{-- DESTINO: resources/views/ejercicios/importar.blade.phpss --}}
 @extends('layouts.entrenador')
 @section('titulo','Importar / editar ejercicios')
 @section('contenido')

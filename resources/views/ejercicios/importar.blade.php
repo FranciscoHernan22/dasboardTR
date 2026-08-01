@@ -702,7 +702,7 @@ async function comprimirVideo(file, rango) {
 
         args.push(
             '-vf', "scale='min(960,iw)':-2",
-            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+            '-c:v', 'libx264', '-profile:v', 'baseline', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '128k',
             '-movflags', '+faststart',
             nombreSalida

@@ -691,18 +691,21 @@ async function comprimirVideo(file, rango) {
 
     let blob;
     try {
-        // "ultrafast" en vez de "veryfast": bastante más rápido, el archivo
-        // pesa un poco más pero para nuestro caso vale la pena por velocidad.
-        // 960px en vez de 1280px: suficiente para ver la técnica de un
-        // ejercicio en el celular, y reduce el trabajo del encoder.
+        // Tus videos de iPhone vienen en HDR (HLG/Dolby Vision, HEVC 10-bit,
+        // BT.2020) — por eso se veían "iluminados": sin este paso, ffmpeg
+        // solo trunca a 8 bits pero deja los valores de brillo de HDR tal
+        // cual. La cadena zscale+tonemap SÍ convierte los valores reales de
+        // HDR a SDR (no solo la etiqueta), y los flags de color al final
+        // fuerzan que el archivo quede correctamente marcado como SDR/bt709.
         // Si viene "rango", primero recorta (-ss/-t antes de -i = más rápido).
         const args = rango
             ? ['-ss', rango.inicio.toFixed(2), '-i', nombreEntrada, '-t', rango.duracion.toFixed(2)]
             : ['-i', nombreEntrada];
 
         args.push(
-            '-vf', "scale='min(960,iw)':-2",
-            '-c:v', 'libx264', '-profile:v', 'baseline', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p',
+            '-vf', "scale='min(960,iw)':-2,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p",
+            '-c:v', 'libx264', '-profile:v', 'baseline', '-preset', 'veryfast', '-crf', '26',
+            '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-color_range', 'tv',
             '-c:a', 'aac', '-b:a', '128k',
             '-movflags', '+faststart',
             nombreSalida

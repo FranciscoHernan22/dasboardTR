@@ -1,8 +1,5 @@
-<?php
+ <?php
 // DESTINO: app/Http/Controllers/EntrenadorRutinaController.php
-// Cambios respecto a tu original: en editar() se asegura el clonado de
-// defaults y se filtran $ejercicios y $ejerciciosPorGrupo por
-// entrenador_id = Auth::id(). El resto del archivo queda igual.
 
 namespace App\Http\Controllers;
 
@@ -16,77 +13,78 @@ use Illuminate\Support\Facades\Auth;
 
 class EntrenadorRutinaController extends Controller
 {
-  public function menu(User $cliente)
-{
-    if ($cliente->entrenador_id !== Auth::id()) {
-        abort(403);
+    public function menu(User $cliente)
+    {
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $plan = $cliente->plan;
+
+        // Si no tiene plan → regresa a clientes con modal
+        if (!$plan) {
+            return redirect()->route('entrenador.clientes')
+                ->with('sin_plan_cliente', $cliente->name);
+        }
+
+        $semanaInicio = $plan->semana_inicio;
+        $semanaFin    = $plan->semana_inicio + $plan->semanas - 1;
+
+        return view('rutina.menu', compact('cliente', 'semanaInicio', 'semanaFin'));
     }
-
-    $plan = $cliente->plan;
-
-    // Si no tiene plan → regresa a clientes con modal
-    if (!$plan) {
-        return redirect()->route('entrenador.clientes')
-            ->with('sin_plan_cliente', $cliente->name);
-    }
-
-    $semanaInicio = $plan->semana_inicio;
-    $semanaFin    = $plan->semana_inicio + $plan->semanas - 1;
-
-    return view('rutina.menu', compact('cliente', 'semanaInicio', 'semanaFin'));
-}
 
     public function editar(User $cliente, $semana, $dia)
-{
-    if ($cliente->entrenador_id !== Auth::id()) {
-        abort(403);
+    {
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Asegura que este entrenador ya tenga su propio set de ejercicios
+        // (la primera vez le clonamos el catálogo default; las siguientes no hace nada)
+        Ejercicio::asegurarDefaultsPara(Auth::id());
+
+        $ejercicios = Ejercicio::where('entrenador_id', Auth::id())
+            ->get()
+            ->keyBy('id');
+
+        $ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
+            ->where('entrenador_id', Auth::id())
+            ->get()
+            ->groupBy('segmento');
+
+        $bloques = Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $dia)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('grupo');
+
+        $notaSesion = Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $dia)
+            ->value('nota_sesion') ?? '';
+
+        $plantillas = \App\Models\Plantilla::where('entrenador_id', Auth::id())
+            ->orderBy('nombre')
+            ->get();
+
+        // ── Navegador: días que ya tienen rutina ──
+        $diasConRutina = Rutina::where('user_id', $cliente->id)
+            ->selectRaw('CONCAT(semana, "-", dia) as clave')
+            ->pluck('clave')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return view('layouts.editar-rutina', compact(
+            'cliente', 'semana', 'dia', 'bloques',
+            'ejerciciosPorGrupo', 'ejercicios',
+            'notaSesion', 'plantillas',
+            'diasConRutina'
+        ));
     }
 
-    // Asegura que este entrenador ya tenga su propio set de ejercicios
-    // (la primera vez le clonamos el catálogo default; las siguientes no hace nada)
-    Ejercicio::asegurarDefaultsPara(Auth::id());
-
-    $ejercicios = Ejercicio::where('entrenador_id', Auth::id())
-        ->get()
-        ->keyBy('id');
-
-    $ejerciciosPorGrupo = Ejercicio::select('id', 'nombre', 'segmento', 'imagen')
-        ->where('entrenador_id', Auth::id())
-        ->get()
-        ->groupBy('segmento');
-
-    $bloques = Rutina::where('user_id', $cliente->id)
-        ->where('semana', $semana)
-        ->where('dia', $dia)
-        ->orderBy('orden')
-        ->orderBy('id')
-        ->get()
-        ->groupBy('grupo');
-
-    $notaSesion = Rutina::where('user_id', $cliente->id)
-        ->where('semana', $semana)
-        ->where('dia', $dia)
-        ->value('nota_sesion') ?? '';
-
-    $plantillas = \App\Models\Plantilla::where('entrenador_id', Auth::id())
-        ->orderBy('nombre')
-        ->get();
-
-    // ── Navegador: días que ya tienen rutina ──
-    $diasConRutina = Rutina::where('user_id', $cliente->id)
-        ->selectRaw('CONCAT(semana, "-", dia) as clave')
-        ->pluck('clave')
-        ->unique()
-        ->values()
-        ->toArray();
-
-    return view('layouts.editar-rutina', compact(
-        'cliente', 'semana', 'dia', 'bloques',
-        'ejerciciosPorGrupo', 'ejercicios',
-        'notaSesion', 'plantillas',
-        'diasConRutina'
-    ));
-}
     public function guardar(Request $request, User $cliente, $semana, $dia)
     {
         if ($cliente->entrenador_id !== Auth::id()) {
@@ -121,8 +119,7 @@ class EntrenadorRutinaController extends Controller
 
         foreach ($datos['bloques'] as $grupo => $bloque) {
 
-       $descansos_serie = $bloque['descansos_serie'] ?? [];
-
+            $descansos_serie = $bloque['descansos_serie'] ?? [];
 
             foreach ($bloque['ejercicios'] ?? [] as $ej) {
 
@@ -238,5 +235,116 @@ class EntrenadorRutinaController extends Controller
         }
 
         return back()->with('success', 'Rutina guardada correctamente');
+    }
+
+    /**
+     * Copia todos los días de una semana (con sus bloques/ejercicios/series)
+     * hacia otra semana del mismo cliente. Sobrescribe lo que exista en destino.
+     */
+    public function copiarSemana(Request $request, User $cliente)
+    {
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'semana_origen'  => 'required|integer|min:1|max:52',
+            'semana_destino' => 'required|integer|min:1|max:52',
+        ]);
+
+        $origen  = (int) $request->semana_origen;
+        $destino = (int) $request->semana_destino;
+
+        if ($origen === $destino) {
+            return back()->withErrors(['error' => 'La semana origen y destino no pueden ser la misma.']);
+        }
+
+        $rutinasOrigen = Rutina::where('user_id', $cliente->id)
+            ->where('semana', $origen)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get();
+
+        if ($rutinasOrigen->isEmpty()) {
+            return back()->withErrors(['error' => "La semana {$origen} no tiene rutinas para copiar."]);
+        }
+
+        $plan = $cliente->plan;
+
+        // Limpia lo que ya exista en la semana destino antes de pegar
+        Rutina::where('user_id', $cliente->id)
+            ->where('semana', $destino)
+            ->delete();
+
+        foreach ($rutinasOrigen as $r) {
+            $fecha = $r->fecha;
+            if ($plan && $plan->fecha_inicio) {
+                $fecha = Carbon::parse($plan->fecha_inicio)
+                    ->addDays(($destino - 1) * 7 + ($r->dia - 1))
+                    ->toDateString();
+            }
+
+            $series          = is_string($r->series) ? json_decode($r->series, true) : $r->series;
+            $descansosSerie  = is_string($r->descansos_serie) ? json_decode($r->descansos_serie, true) : $r->descansos_serie;
+
+            Rutina::create([
+                'user_id'         => $cliente->id,
+                'semana'          => $destino,
+                'dia'             => $r->dia,
+                'fecha'           => $fecha,
+                'grupo'           => $r->grupo,
+                'tipo'            => $r->tipo,
+                'orden'           => $r->orden,
+                'ejercicio_id'    => $r->ejercicio_id,
+                'segmento'        => $r->segmento,
+                'nombre'          => $r->nombre,
+                'series'          => $series ?? [],
+                'descansos_serie' => $descansosSerie ?? [],
+                'nota_sesion'     => $r->nota_sesion,
+                'nota_ej'         => $r->nota_ej,
+            ]);
+        }
+
+        return back()->with('success', "Semana {$origen} copiada a la semana {$destino} correctamente.");
+    }
+
+    /**
+     * Borra TODO el historial de rutinas de un cliente (todas las semanas/días).
+     * Requiere que el entrenador escriba el nombre del cliente como confirmación.
+     */
+    public function borrarHistorial(Request $request, User $cliente)
+    {
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'confirmar_nombre' => 'required|string',
+        ]);
+
+        if (trim($request->confirmar_nombre) !== trim($cliente->name)) {
+            return back()->withErrors(['error' => 'El nombre no coincide. No se borró nada.']);
+        }
+
+        Rutina::where('user_id', $cliente->id)->delete();
+
+        return redirect()->route('entrenador.rutina.editar', [$cliente->id, 1, 1])
+            ->with('success', 'Historial de entrenamientos borrado correctamente.');
+    }
+
+    /**
+     * Vacía únicamente una semana específica de un cliente (todos sus días).
+     */
+    public function vaciarSemana(Request $request, User $cliente, $semana)
+    {
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->delete();
+
+        return back()->with('success', "Semana {$semana} vaciada correctamente.");
     }
 }

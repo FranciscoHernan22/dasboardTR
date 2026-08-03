@@ -390,81 +390,12 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     </div>
 </div>
 
-{{-- MODAL COPIAR SEMANA --}}
-<div id="modalCopiarSemana" onclick="if(event.target===this)cerrarModalCopiarSemana()"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10002;align-items:center;justify-content:center;padding:16px;">
-    <div style="background:white;border-radius:14px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e5ea;border-radius:14px 14px 0 0;">
-            <h3 style="font-size:1rem;font-weight:700;margin:0;">📅 Copiar semana</h3>
-            <button type="button" onclick="cerrarModalCopiarSemana()" style="width:28px;height:28px;border-radius:7px;background:#f3f4f6;border:none;cursor:pointer;font-size:1rem;color:#6b7280;">✕</button>
-        </div>
-        <form method="POST" action="{{ route('entrenador.rutina.copiarSemana', $cliente->id) }}">
-            @csrf
-            <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px;">
-                <div style="display:flex;gap:10px;">
-                    <div style="flex:1;">
-                        <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Semana origen</label>
-                        <input type="number" name="semana_origen" min="1" max="52" value="{{ $semana }}" required
-                            style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.9rem;font-family:'DM Mono',monospace;color:#111827;text-align:center;">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Semana destino</label>
-                        <input type="number" name="semana_destino" min="1" max="52" required
-                            style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.9rem;font-family:'DM Mono',monospace;color:#111827;text-align:center;">
-                    </div>
-                </div>
-                <div style="background:#fefce8;border:1px solid #fde047;border-radius:7px;padding:10px 12px;font-size:0.78rem;color:#854d0e;">
-                    ⚠️ Esto <strong>reemplazará</strong> cualquier rutina existente en la semana destino con la rutina completa (los 7 días) de la semana origen.
-                </div>
-                <button type="submit"
-                    style="width:100%;padding:10px;background:#059669;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;"
-                    onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
-                    ✅ Copiar semana
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-{{-- MODAL BORRAR HISTORIAL --}}
-<div id="modalBorrarHistorial" onclick="if(event.target===this)cerrarModalBorrarHistorial()"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10002;align-items:center;justify-content:center;padding:16px;">
-    <div style="background:white;border-radius:14px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e5ea;border-radius:14px 14px 0 0;">
-            <h3 style="font-size:1rem;font-weight:700;margin:0;color:#ef4444;">🗑️ Borrar historial</h3>
-            <button type="button" onclick="cerrarModalBorrarHistorial()" style="width:28px;height:28px;border-radius:7px;background:#f3f4f6;border:none;cursor:pointer;font-size:1rem;color:#6b7280;">✕</button>
-        </div>
-        <form method="POST" action="{{ route('entrenador.rutina.borrarHistorial', $cliente->id) }}">
-            @csrf
-            <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px;">
-                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:10px 12px;font-size:0.8rem;color:#991b1b;">
-                    ⚠️ Esto borrará <strong>TODAS</strong> las rutinas de <strong>{{ $cliente->name }}</strong> en todas las semanas. Esta acción no se puede deshacer.
-                </div>
-                <div>
-                    <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">
-                        Escribe "{{ $cliente->name }}" para confirmar
-                    </label>
-                    <input type="text" name="confirmar_nombre" required autocomplete="off"
-                        style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.85rem;color:#111827;">
-                </div>
-                <button type="submit"
-                    style="width:100%;padding:10px;background:#ef4444;color:white;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;"
-                    onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
-                    Borrar historial permanentemente
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 {{-- ══ PÁGINA ══ --}}
 <div class="page-header">
     <h2>{{ $cliente->name }}</h2>
     <span class="badge">Semana {{ $semana }} · Día {{ $dia }}</span>
     <button class="btn-metodos" onclick="abrirModal()">❓ Métodos</button>
     <button class="btn-metodos" onclick="abrirModalPlantilla()" style="border-color:#7c3aed;color:#7c3aed;">📋 Plantilla</button>
-    <button class="btn-metodos" onclick="abrirModalCopiarSemana()" style="border-color:#059669;color:#059669;">📅 Copiar semana</button>
-    <button class="btn-metodos" onclick="abrirModalBorrarHistorial()" style="border-color:#ef4444;color:#ef4444;">🗑️ Borrar historial</button>
 </div>
 
 @php
@@ -831,7 +762,7 @@ const BGS    = ['ej-bg-a','ej-bg-b','ej-bg-c','ej-bg-d','ej-bg-e','ej-bg-f','ej-
 /* ── Modales ── */
 function abrirModal()  { document.getElementById('modalMetodos').classList.add('open'); document.body.style.overflow='hidden'; }
 function cerrarModal() { document.getElementById('modalMetodos').classList.remove('open'); document.body.style.overflow=''; }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal(); cerrarModalCircuito(); cerrarModalPlantilla(); cerrarModalEliminar(); cerrarModalCopiarSemana(); cerrarModalBorrarHistorial(); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal(); cerrarModalCircuito(); cerrarModalPlantilla(); cerrarModalEliminar(); } });
 function abrirModalCircuito() { document.getElementById('circuitoNum').value=4; document.getElementById('modalCircuito').classList.add('open'); setTimeout(()=>document.getElementById('circuitoNum').focus(),50); }
 function cerrarModalCircuito() { document.getElementById('modalCircuito').classList.remove('open'); }
 function confirmarCircuito() {
@@ -910,10 +841,6 @@ function confirmarCircuito() {
 document.getElementById('circuitoNum').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmarCircuito(); if(e.key==='Escape') cerrarModalCircuito(); });
 function abrirModalPlantilla()  { document.getElementById('modalPlantilla').style.display='flex'; }
 function cerrarModalPlantilla() { document.getElementById('modalPlantilla').style.display='none'; }
-function abrirModalCopiarSemana()  { document.getElementById('modalCopiarSemana').style.display='flex'; }
-function cerrarModalCopiarSemana() { document.getElementById('modalCopiarSemana').style.display='none'; }
-function abrirModalBorrarHistorial()  { document.getElementById('modalBorrarHistorial').style.display='flex'; }
-function cerrarModalBorrarHistorial() { document.getElementById('modalBorrarHistorial').style.display='none'; }
 function mostrarInfoPlantilla() {
     const plantillaId=document.getElementById('selectPlantilla').value, info=document.getElementById('infoPlantilla');
     if(!plantillaId){ info.style.display='none'; return; }

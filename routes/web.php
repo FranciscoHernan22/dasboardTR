@@ -182,18 +182,6 @@ Route::post('/entrenador/ejercicios/importar-lote', [EntrenadorEjercicioControll
     ->name('entrenador.ejercicios.importarLote');
  
 
-
-
-
-    Route::post('/rutina/{cliente}/copiar-semana', [EntrenadorRutinaController::class, 'copiarSemana'])
-    ->name('entrenador.rutina.copiarSemana');
- 
-Route::post('/rutina/{cliente}/borrar-historial', [EntrenadorRutinaController::class, 'borrarHistorial'])
-    ->name('entrenador.rutina.borrarHistorial');
- 
-Route::delete('/rutina/{cliente}/semana/{semana}', [EntrenadorRutinaController::class, 'vaciarSemana'])
-    ->name('entrenador.rutina.vaciarSemana');
-
 });
 
 

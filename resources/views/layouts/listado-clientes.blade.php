@@ -56,6 +56,24 @@
 </div>
 @endif
 
+@if(session('error'))
+<div class="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+    <div class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+    <span class="text-sm text-red-700">{{ session('error') }}</span>
+</div>
+@endif
+
+@if($errors->has('fecha_inicio') || $errors->has('semanas'))
+<div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+    @foreach($errors->get('fecha_inicio') as $error)
+        <p class="text-sm text-red-700">{{ $error }}</p>
+    @endforeach
+    @foreach($errors->get('semanas') as $error)
+        <p class="text-sm text-red-700">{{ $error }}</p>
+    @endforeach
+</div>
+@endif
+
 {{-- Buscador + filtros --}}
 <div class="bg-white border border-gray-200 rounded-xl p-3 mb-4 flex flex-wrap gap-2">
     <div class="relative flex-1 min-w-[180px]">
@@ -455,7 +473,7 @@
     </div>
 </div>
 
-{{-- ── Modal semanas ── --}}
+{{-- ── Modal semanas / plan ── --}}
 <div id="modalSemanas"
     onclick="if(event.target===this)cerrarModalSemanas()"
     style="display:none;"
@@ -466,23 +484,40 @@
         <div class="grid grid-cols-2 gap-2 mb-4">
             @foreach([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] as $s)
             <button type="button"
-                onclick="confirmarSemanas({{ $s }})"
+                onclick="seleccionarSemanas({{ $s }})"
                 id="btn-semana-{{ $s }}"
                 class="semana-btn py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all">
                 {{ $s }} {{ $s === 1 ? 'semana' : 'semanas' }}
             </button>
             @endforeach
         </div>
-        <button type="button" onclick="cerrarModalSemanas()"
-            class="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
-            Cancelar
-        </button>
+
+        <div class="flex flex-col gap-1 mb-4">
+            <label for="inputFechaInicioPlan" class="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                Fecha de inicio (Semana 1 · Día 1)
+            </label>
+            <input type="date" id="inputFechaInicioPlan"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            <p class="text-[11px] text-gray-400 mt-0.5">No puede ser anterior a hoy. Si el cliente ya tenía un plan, este lo reemplaza por completo.</p>
+        </div>
+
+        <div class="flex gap-2">
+            <button type="button" onclick="cerrarModalSemanas()"
+                class="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
+                Cancelar
+            </button>
+            <button type="button" id="btnConfirmarPlan" onclick="confirmarPlan()"
+                class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                Guardar plan
+            </button>
+        </div>
     </div>
 </div>
 
 <form id="formPlan" method="POST" class="hidden">
     @csrf
     <input type="hidden" name="semanas" id="inputSemanas">
+    <input type="hidden" name="fecha_inicio" id="inputFechaInicioHidden">
 </form>
 
 {{-- ── Modal confirmar activar/desactivar ── --}}
@@ -611,11 +646,20 @@ document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
     }, { passive: true });
 });
 
-// ── Modal semanas ────────────────────────────────────────
-let _clienteIdPendiente = null;
+// ── Modal semanas / plan ─────────────────────────────────
+let _clienteIdPendiente   = null;
+let _semanasSeleccionadas = null;
+
+function hoyISO() {
+    const d = new Date();
+    const tz = d.getTimezoneOffset() * 60000;
+    return new Date(d - tz).toISOString().slice(0, 10);
+}
 
 function abrirModalSemanas(clienteId, semanaActual) {
     _clienteIdPendiente = clienteId;
+    _semanasSeleccionadas = semanaActual || null;
+
     document.querySelectorAll('.semana-btn').forEach((btn, i) => {
         const s = i + 1;
         if (s === semanaActual) {
@@ -626,19 +670,57 @@ function abrirModalSemanas(clienteId, semanaActual) {
             btn.classList.add('border-gray-200', 'text-gray-600');
         }
     });
+
+    const inputFecha = document.getElementById('inputFechaInicioPlan');
+    const hoy = hoyISO();
+    inputFecha.min = hoy;
+    inputFecha.value = hoy;
+
     document.getElementById('modalSemanas').style.display = 'flex';
 }
 
 function cerrarModalSemanas() {
     document.getElementById('modalSemanas').style.display = 'none';
-    _clienteIdPendiente = null;
+    _clienteIdPendiente   = null;
+    _semanasSeleccionadas = null;
 }
 
-function confirmarSemanas(semanas) {
+function seleccionarSemanas(semanas) {
+    _semanasSeleccionadas = semanas;
+    document.querySelectorAll('.semana-btn').forEach((btn, i) => {
+        const s = i + 1;
+        if (s === semanas) {
+            btn.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
+            btn.classList.remove('border-gray-200', 'text-gray-600');
+        } else {
+            btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
+            btn.classList.add('border-gray-200', 'text-gray-600');
+        }
+    });
+}
+
+function confirmarPlan() {
     if (!_clienteIdPendiente) return;
+
+    if (!_semanasSeleccionadas) {
+        alert('Selecciona cuántas semanas durará el plan.');
+        return;
+    }
+
+    const fecha = document.getElementById('inputFechaInicioPlan').value;
+    if (!fecha) {
+        alert('Selecciona la fecha de inicio del plan.');
+        return;
+    }
+    if (fecha < hoyISO()) {
+        alert('La fecha de inicio no puede ser anterior a hoy.');
+        return;
+    }
+
     const form = document.getElementById('formPlan');
     form.action = '/entrenador/plan/' + _clienteIdPendiente;
-    document.getElementById('inputSemanas').value = semanas;
+    document.getElementById('inputSemanas').value = _semanasSeleccionadas;
+    document.getElementById('inputFechaInicioHidden').value = fecha;
     form.submit();
 }
 
@@ -706,6 +788,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('formEditarCliente');
     form.action = '/entrenador/clientes/' + document.getElementById('editClienteIdHidden').value;
     document.getElementById('modalEditarCliente').style.display = 'flex';
+});
+@endif
+
+@if($errors->has('fecha_inicio') || $errors->has('semanas'))
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('modalSemanas').style.display = 'flex';
 });
 @endif
 

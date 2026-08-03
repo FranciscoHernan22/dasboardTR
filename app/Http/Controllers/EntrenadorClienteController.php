@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
@@ -21,26 +22,36 @@ class EntrenadorClienteController extends Controller
 
     public function guardarPlan(Request $request, $clienteId)
     {
-        $cliente       = User::findOrFail($clienteId);
-        $semanas       = (int) $request->semanas;
-        $planExistente = Plan::where('user_id', $clienteId)->first();
+        $cliente = User::findOrFail($clienteId);
 
-        if ($planExistente) {
-            $nuevaInicio = $planExistente->semana_inicio + $planExistente->semanas;
-            $planExistente->update([
-                'semanas'       => $semanas,
-                'semana_inicio' => $nuevaInicio,
-            ]);
-        } else {
-            Plan::create([
-                'user_id'       => $clienteId,
-                'semanas'       => $semanas,
-                'semana_inicio' => 1,
-                'fecha_inicio'  => Carbon::now()->startOfWeek()->toDateString(),
-            ]);
+        // Seguridad: que el cliente pertenezca a este entrenador
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
         }
 
-        return redirect()->route('entrenador.rutina.menu', $cliente->id);
+        $request->validate([
+            'semanas'      => 'required|integer|min:1|max:52',
+            // La fecha de inicio la elige el entrenador y nunca puede ser anterior a hoy.
+            'fecha_inicio' => 'required|date|after_or_equal:' . Carbon::today()->toDateString(),
+        ]);
+
+        $semanas = (int) $request->semanas;
+
+        // Reemplazo total: la Semana 1 / Día 1 del plan siempre coincide
+        // con la fecha que eligió el entrenador. Esto evita que un plan
+        // nuevo arrastre fechas de un plan anterior (por ejemplo después
+        // de borrar el historial).
+        Plan::updateOrCreate(
+            ['user_id' => $clienteId],
+            [
+                'semanas'       => $semanas,
+                'semana_inicio' => 1,
+                'fecha_inicio'  => $request->fecha_inicio,
+            ]
+        );
+
+        return redirect()->route('entrenador.rutina.menu', $cliente->id)
+            ->with('success', 'Plan de entrenamiento guardado correctamente.');
     }
 
     public function store(Request $request)
@@ -61,7 +72,7 @@ class EntrenadorClienteController extends Controller
         ]);
 
         return redirect()->route('entrenador.clientes')
-                 ->with('success', 'Cliente registrado correctamente.');
+                         ->with('success', 'Cliente registrado correctamente.');
     }
 
     public function toggleEstado($clienteId)

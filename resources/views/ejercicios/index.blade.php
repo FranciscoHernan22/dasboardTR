@@ -1,4 +1,4 @@
-{{-- DESTINO: resources/views/ejercicios/index.blade.php --}}
+ {{-- DESTINO: resources/views/ejercicios/index.blade.php --}}
 @extends('layouts.entrenador')
 @section('titulo','Ejercicios')
 @section('contenido')
@@ -642,15 +642,18 @@ async function aplicarTrim() {
         status.textContent = 'Comprimiendo y recortando video…';
         let blob;
         try {
-            // Recodificamos (no solo copiamos) para que el video quede liviano y
-            // listo para verse bien en el celular: máx. 1280px de ancho, calidad
-            // razonable. Esto también evita que un clip de 4K/alta calidad pese
-            // demasiado aunque sea corto.
+            // Tus videos de iPhone vienen en HDR (HLG/Dolby Vision, HEVC
+            // 10-bit, BT.2020) — sin este paso se ven negros o "iluminados"
+            // en apps nativas (ExoPlayer/AVPlayer). La cadena zscale+tonemap
+            // convierte de verdad los valores de brillo de HDR a SDR (no
+            // solo cambia la etiqueta, sino los valores reales de los
+            // píxeles).
             await ffmpeg.exec([
                 '-i', nombreEntrada,
                 '-ss', ss, '-t', dur,
-                '-vf', "scale='min(1280,iw)':-2",
-                '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+                '-vf', "scale='min(1280,iw)':-2,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p",
+                '-c:v', 'libx264', '-profile:v', 'baseline', '-preset', 'veryfast', '-crf', '26',
+                '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-color_range', 'tv',
                 '-c:a', 'aac', '-b:a', '128k',
                 '-movflags', '+faststart',
                 nombreSalida
@@ -659,13 +662,31 @@ async function aplicarTrim() {
             if (!data || !data.length) throw new Error('salida vacía');
             blob = new Blob([data.buffer], { type: 'video/mp4' });
         } catch (errCompresion) {
-            // Respaldo: si por algún motivo la recodificación falla, intentamos
-            // una copia directa sin recomprimir (puede pesar más).
-            status.textContent = 'No se pudo comprimir, probando un método alterno…';
+            // Respaldo 1: si el tonemap falla (ej. video que no es HDR y el
+            // filtro no aplica bien), probamos sin tonemap, solo con
+            // perfil/pix_fmt seguros.
+            status.textContent = 'Reintentando con otros parámetros…';
             await ffmpeg.deleteFile(nombreSalida).catch(() => {});
-            await ffmpeg.exec(['-i', nombreEntrada, '-ss', ss, '-t', dur, '-c', 'copy', '-avoid_negative_ts', 'make_zero', nombreSalida]);
-            const data = await ffmpeg.readFile(nombreSalida);
-            blob = new Blob([data.buffer], { type: 'video/mp4' });
+            try {
+                await ffmpeg.exec([
+                    '-i', nombreEntrada,
+                    '-ss', ss, '-t', dur,
+                    '-vf', "scale='min(1280,iw)':-2,format=yuv420p",
+                    '-c:v', 'libx264', '-profile:v', 'baseline', '-preset', 'veryfast', '-crf', '26',
+                    '-c:a', 'aac', '-b:a', '128k',
+                    '-movflags', '+faststart',
+                    nombreSalida
+                ]);
+                const data = await ffmpeg.readFile(nombreSalida);
+                blob = new Blob([data.buffer], { type: 'video/mp4' });
+            } catch (errSinTonemap) {
+                // Respaldo 2: copia directa sin recomprimir (último recurso)
+                status.textContent = 'No se pudo comprimir, probando un método alterno…';
+                await ffmpeg.deleteFile(nombreSalida).catch(() => {});
+                await ffmpeg.exec(['-i', nombreEntrada, '-ss', ss, '-t', dur, '-c', 'copy', '-avoid_negative_ts', 'make_zero', nombreSalida]);
+                const data = await ffmpeg.readFile(nombreSalida);
+                blob = new Blob([data.buffer], { type: 'video/mp4' });
+            }
         }
 
         await ffmpeg.deleteFile(nombreEntrada).catch(() => {});

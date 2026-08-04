@@ -10,7 +10,15 @@ use Carbon\Carbon;
  * Servicio de cálculo y mantenimiento del 1RM estimado por (cliente, ejercicio).
  *
  * Reglas de negocio (definidas junto con el usuario):
- * - Solo se calcula a partir de series con metodo === 'normal'.
+ * - Se calcula a partir de series que mecánicamente equivalen a "una
+ *   serie normal a fallo": método 'normal', 'restpause', 'forzadas'
+ *   (solo las reps hechas sin asistencia), y el PRIMER tramo del
+ *   método '888' (los tramos 2 y 3 ya vienen con fatiga acumulada y
+ *   no representan la fuerza máxima real, así que no se usan).
+ *   El caller (RutinaApiController) es responsable de extraer el
+ *   peso/reps correctos según el método antes de llamar a
+ *   registrarSerie() — este servicio no conoce la estructura de cada
+ *   método, solo recibe un peso y unas reps ya resueltos.
  * - Niveles de confianza por rango de repeticiones:
  *     A (1-6 reps)   -> más confiable
  *     B (7-12 reps)  -> confiable
@@ -26,6 +34,9 @@ use Carbon\Carbon;
  */
 class Calculador1RM
 {
+    /** Métodos cuya serie (ya resuelta por el caller) puede alimentar el 1RM. */
+    private const METODOS_CONFIABLES = ['normal', 'restpause', 'forzadas', '888'];
+
     /** Rango de repeticiones válido para calcular/estimar (fuera de esto, no se usa). */
     private const REPS_MIN = 1;
     private const REPS_MAX = 20;
@@ -155,10 +166,13 @@ class Calculador1RM
 
     /**
      * Punto de entrada principal. Se llama cada vez que el cliente
-     * confirma/completa una serie con metodo 'normal' y peso > 0.
+     * confirma/completa una serie de un método "confiable" (ver
+     * METODOS_CONFIABLES) con peso > 0. El caller debe haber resuelto
+     * ya el peso/reps correctos según el método (ej. para '888' se
+     * pasa el peso y reps del PRIMER tramo, no los tres).
      *
      * No hace nada (retorna null) si:
-     * - el método no es 'normal'
+     * - el método no está en la lista de confiables
      * - el peso o las reps no son válidos
      * - las reps quedan fuera del rango 1-20 (no se puede clasificar por nivel)
      *
@@ -177,7 +191,7 @@ class Calculador1RM
         int $reps,
         string $unidad = 'kg'
     ): ?array {
-        if ($metodo !== 'normal' || $peso <= 0 || $reps <= 0) {
+        if (!in_array($metodo, self::METODOS_CONFIABLES, true) || $peso <= 0 || $reps <= 0) {
             return null;
         }
 

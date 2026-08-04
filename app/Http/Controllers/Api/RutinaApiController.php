@@ -225,18 +225,18 @@ class RutinaApiController extends Controller
 
                     if ($completadaAhora && !$completadaAntes) {
                         $metodo = $serieNueva['metodo'] ?? 'normal';
-                        $peso   = (float) ($serieNueva['peso'] ?? 0);
-                        $reps   = (int)   ($serieNueva['reps'] ?? 0);
-                        $unidad = $serieNueva['unidad'] ?? 'kg';
+                        [$peso, $reps, $unidad] = $this->extraerPesoRepsParaUnoRM($serieNueva, $metodo);
 
-                        Calculador1RM::registrarSerie(
-                            userId: (int) $clienteId,
-                            ejercicioId: (int) $rutina->ejercicio_id,
-                            metodo: $metodo,
-                            peso: $peso,
-                            reps: $reps,
-                            unidad: $unidad
-                        );
+                        if ($peso !== null && $reps !== null) {
+                            Calculador1RM::registrarSerie(
+                                userId: (int) $clienteId,
+                                ejercicioId: (int) $rutina->ejercicio_id,
+                                metodo: $metodo,
+                                peso: $peso,
+                                reps: $reps,
+                                unidad: $unidad
+                            );
+                        }
                     }
                 }
 
@@ -246,5 +246,53 @@ class RutinaApiController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Extrae el peso/reps/unidad que representan mejor "una serie
+     * normal a fallo" para cada método, para poder alimentar el 1RM.
+     * Devuelve [null, null, 'kg'] para métodos que no aplican (el
+     * caller no debe registrar nada en ese caso).
+     */
+    private function extraerPesoRepsParaUnoRM(array $serie, string $metodo): array
+    {
+        switch ($metodo) {
+            case 'normal':
+                return [
+                    ((float) ($serie['peso'] ?? 0)) ?: null,
+                    ((int)   ($serie['reps'] ?? 0)) ?: null,
+                    $serie['unidad'] ?? 'kg',
+                ];
+
+            case 'restpause':
+                return [
+                    ((float) ($serie['peso_rp'] ?? 0)) ?: null,
+                    ((int)   ($serie['reps_rp'] ?? 0)) ?: null,
+                    $serie['unidad_rp'] ?? 'kg',
+                ];
+
+            case 'forzadas':
+                // Solo las reps hechas SOLO (sin asistencia) reflejan
+                // el esfuerzo real del cliente; las asistidas no cuentan.
+                return [
+                    ((float) ($serie['peso_fz'] ?? 0)) ?: null,
+                    ((int)   ($serie['reps_fz'] ?? 0)) ?: null,
+                    $serie['unidad_fz'] ?? 'kg',
+                ];
+
+            case '888':
+                // Solo el PRIMER tramo (P1) es, en la práctica, una
+                // serie normal a fallo. Los tramos 2 y 3 ya vienen con
+                // fatiga acumulada del tramo anterior y no representan
+                // la fuerza máxima real, así que no se usan.
+                return [
+                    ((float) ($serie['peso1'] ?? 0)) ?: null,
+                    ((int)   ($serie['reps_888'] ?? 0)) ?: null,
+                    $serie['unidad1'] ?? 'kg',
+                ];
+
+            default:
+                return [null, null, 'kg'];
+        }
     }
 }

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -13,43 +12,31 @@ class HIstorialController extends Controller
         9=>'Septiembre', 10=>'Octubre', 11=>'Noviembre', 12=>'Diciembre',
     ];
 
-    public function anio(User $cliente)
-    {
-        $anio = (int) request('anio', date('Y'));
+   public function anio(User $cliente)
+{
+    $anio = (int) request('anio', date('Y'));
 
-        $rutinas = Rutina::where('user_id', $cliente->id)
-            ->whereNotNull('fecha')
-            ->whereYear('fecha', $anio)
-            ->select('fecha', 'series')
-            ->get();
+    $rutinas = Rutina::where('user_id', $cliente->id)
+        ->whereNotNull('fecha')
+        ->whereYear('fecha', $anio)
+        ->select('fecha')
+        ->distinct()
+        ->get();
 
-        // Solo cuentan las fechas donde el cliente realmente marcó
-        // al menos una serie como completada en la app — no basta con
-        // que el entrenador haya planificado/asignado la rutina.
-        $fechasConEntrenamiento = $rutinas
-            ->groupBy(fn ($r) => substr($r->fecha, 0, 10))
-            ->filter(fn ($grupoDia) => $this->grupoTieneSerieCompletada($grupoDia))
-            ->keys()
-            ->flip()
-            ->toArray();
+    // Fechas con entrenamiento como set
+    $fechasConEntrenamiento = $rutinas->pluck('fecha')->map(fn($f) => substr($f, 0, 10))->flip()->toArray();
 
-        // Total por mes: cuántas fechas completadas caen en cada mes
-        $mesesData = collect(range(1, 12))->map(function ($m) use ($anio, $fechasConEntrenamiento) {
-            $totalMes = collect(array_keys($fechasConEntrenamiento))
-                ->filter(fn ($f) => (int) substr($f, 5, 2) === $m)
-                ->count();
+    // Total por mes
+    $mesesData = collect(range(1, 12))->map(fn($m) => [
+        'nombre'    => $this->nombresMes[$m],
+        'mes'       => $m,
+        'diasMes'   => cal_days_in_month(CAL_GREGORIAN, $m, $anio),
+        'total'     => $rutinas->filter(fn($r) => (int)date('n', strtotime($r->fecha)) === $m)->count(),
+        'fechas'    => $fechasConEntrenamiento,
+    ]);
 
-            return [
-                'nombre'  => $this->nombresMes[$m],
-                'mes'     => $m,
-                'diasMes' => cal_days_in_month(CAL_GREGORIAN, $m, $anio),
-                'total'   => $totalMes,
-                'fechas'  => $fechasConEntrenamiento,
-            ];
-        });
-
-        return view('entrenador.historial.anio', compact('cliente', 'anio', 'mesesData'));
-    }
+    return view('entrenador.historial.anio', compact('cliente', 'anio', 'mesesData'));
+}
 
     public function mes(User $cliente, int $anio, int $mes)
     {
@@ -57,18 +44,11 @@ class HIstorialController extends Controller
             ->whereNotNull('fecha')
             ->whereYear('fecha', $anio)
             ->whereMonth('fecha', $mes)
-            ->select('semana', 'dia', 'fecha', 'series')
-            ->get();
-
-        // Igual que en anio(): un día del calendario semanal solo se
-        // marca si el cliente completó realmente al menos una serie.
-        $rutinas = $rutinas->groupBy('semana')->map(function ($diasSemana) {
-            return $diasSemana
-                ->groupBy('dia')
-                ->filter(fn ($grupoDia) => $this->grupoTieneSerieCompletada($grupoDia))
-                ->keys()
-                ->flip();
-        });
+            ->select('semana', 'dia', 'fecha')
+            ->distinct()
+            ->get()
+            ->groupBy('semana')
+            ->map(fn($s) => $s->pluck('dia')->flip());
 
         return view('entrenador.historial.mes', compact('cliente', 'anio', 'mes', 'rutinas'));
     }
@@ -86,7 +66,7 @@ class HIstorialController extends Controller
         $bloques = $rutinas->groupBy('grupo')->map(function ($grupo) {
             return [
                 'tipo'       => $grupo->first()->tipo,
-                'ejercicios' => $grupo->map(fn ($r) => [
+                'ejercicios' => $grupo->map(fn($r) => [
                     'nombre'   => $r->nombre,
                     'segmento' => $r->segmento,
                     'series'   => is_string($r->series)
@@ -96,39 +76,10 @@ class HIstorialController extends Controller
             ];
         })->values();
 
-        // "Planificada" (existe rutina asignada ese día) vs.
-        // "completada" (el cliente realmente marcó series como hechas).
-        $rutina    = $rutinas->isNotEmpty();
-        $completada = $this->grupoTieneSerieCompletada($rutinas);
+        $rutina = $rutinas->isNotEmpty();
 
         return view('entrenador.historial.dia', compact(
-            'cliente', 'anio', 'mes', 'sem', 'dia', 'rutina', 'bloques', 'completada'
+            'cliente', 'anio', 'mes', 'sem', 'dia', 'rutina', 'bloques'
         ));
-    }
-
-    /**
-     * Recibe una colección de filas de Rutina (todas correspondientes al
-     * mismo día) y determina si el cliente marcó al menos una serie como
-     * completada ('completada' => true/'1' dentro del JSON de 'series').
-     * Esto es lo que distingue "planificado" de "realmente entrenado".
-     */
-    private function grupoTieneSerieCompletada($rutinasDelDia): bool
-    {
-        foreach ($rutinasDelDia as $r) {
-            $series = is_string($r->series)
-                ? json_decode($r->series, true)
-                : ($r->series ?? []);
-
-            if (!is_array($series)) continue;
-
-            foreach ($series as $serie) {
-                $completada = $serie['completada'] ?? false;
-                if ($completada === true || $completada === 1 || $completada === '1') {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

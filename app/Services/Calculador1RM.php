@@ -290,12 +290,19 @@ class Calculador1RM
      * Sugiere el peso esperado para un ejercicio + número de reps
      * objetivo, a partir del 1RM vigente del cliente. Devuelve null si
      * no hay 1RM registrado aún, o si repsObjetivo está fuera de 1-20.
+     *
+     * Si no se especifica $unidadSalida, se usa la misma unidad con la
+     * que el cliente registró el 1RM vigente (unidad_base) — así la
+     * sugerencia sale en la unidad que el cliente realmente usa para
+     * ese ejercicio (por ejemplo, si solo tiene mancuernas en lb, la
+     * sugerencia sale en lb aunque la serie vacía tenga 'kg' por
+     * defecto), en vez de forzar una unidad arbitraria.
      */
     public static function pesoSugeridoParaEjercicio(
         int $userId,
         int $ejercicioId,
         int $repsObjetivo,
-        string $unidadSalida = 'kg'
+        ?string $unidadSalida = null
     ): ?array {
         $vigente = EstimacionUnoRm::where('user_id', $userId)
             ->where('ejercicio_id', $ejercicioId)
@@ -304,6 +311,8 @@ class Calculador1RM
         if (!$vigente) {
             return null;
         }
+
+        $unidadSalida = $unidadSalida ?? $vigente->unidad_base;
 
         $pesoKgSugerido = self::pesoParaReps($vigente->valor_1rm_kg, $repsObjetivo);
         if ($pesoKgSugerido === null) {

@@ -88,9 +88,12 @@ class RutinaApiController extends Controller
      * Si la serie es de método 'normal' y el entrenador NO puso un peso
      * objetivo explícito (el campo viene vacío o en 0), se busca una
      * sugerencia a partir del 1RM vigente del cliente para ese ejercicio,
-     * usando las reps prescritas en la serie. Se agrega como campo extra
-     * 'peso_sugerido' (y metadatos), sin tocar el campo 'peso' original
-     * — la app decide cómo mostrarlo/prellenarlo.
+     * usando las reps prescritas en la serie. La sugerencia sale en la
+     * unidad con la que el cliente ya viene registrando ese ejercicio
+     * (no en la unidad por defecto de la serie vacía) — así no se
+     * mezclan kg/lb cuando el cliente solo tiene equipo en una unidad.
+     * Se agrega como campo extra 'peso_sugerido' (y metadatos), sin
+     * tocar el campo 'peso' original — la app decide cómo mostrarlo.
      */
     private function conSugerenciaDePeso(array $serie, int $clienteId, int $ejercicioId): array
     {
@@ -110,9 +113,9 @@ class RutinaApiController extends Controller
             return $serie;
         }
 
-        $unidad = $serie['unidad'] ?? 'kg';
-
-        $sugerencia = Calculador1RM::pesoSugeridoParaEjercicio($clienteId, $ejercicioId, $reps, $unidad);
+        // Sin unidad forzada: pesoSugeridoParaEjercicio usa por defecto
+        // la unidad con la que se calculó el 1RM vigente del cliente.
+        $sugerencia = Calculador1RM::pesoSugeridoParaEjercicio($clienteId, $ejercicioId, $reps);
         if (!$sugerencia) {
             return $serie; // sin 1RM registrado todavía para este ejercicio
         }

@@ -85,45 +85,108 @@ class RutinaApiController extends Controller
     }
 
     /**
-     * Si la serie es de método 'normal' y el entrenador NO puso un peso
-     * objetivo explícito (el campo viene vacío o en 0), se busca una
-     * sugerencia a partir del 1RM vigente del cliente para ese ejercicio,
-     * usando las reps prescritas en la serie. La sugerencia sale en la
-     * unidad con la que el cliente ya viene registrando ese ejercicio
-     * (no en la unidad por defecto de la serie vacía) — así no se
-     * mezclan kg/lb cuando el cliente solo tiene equipo en una unidad.
-     * Se agrega como campo extra 'peso_sugerido' (y metadatos), sin
-     * tocar el campo 'peso' original — la app decide cómo mostrarlo.
+     * Punto de entrada: decide cómo sugerir peso según el método de la
+     * serie. Solo se sugiere para métodos donde el 1RM de rango
+     * completo es una base razonable: normal, rest-pause, forzadas
+     * (mapeo directo), y 10+21s / 888 (derivados con una regla extra).
+     * Los demás métodos (21s, parciales, isometría, negativas) no
+     * tienen sugerencia todavía — la relación con el 1RM de rango
+     * completo no es lo bastante confiable.
      */
     private function conSugerenciaDePeso(array $serie, int $clienteId, int $ejercicioId): array
     {
         $metodo = $serie['metodo'] ?? 'normal';
-        if ($metodo !== 'normal') {
+
+        return match ($metodo) {
+            'normal'    => $this->conSugerenciaSimple($serie, $clienteId, $ejercicioId, 'peso', 'reps'),
+            'restpause' => $this->conSugerenciaSimple($serie, $clienteId, $ejercicioId, 'peso_rp', 'reps_rp'),
+            'forzadas'  => $this->conSugerenciaSimple($serie, $clienteId, $ejercicioId, 'peso_fz', 'reps_fz'),
+            '10_21'     => $this->conSugerencia1021($serie, $clienteId, $ejercicioId),
+            '888'       => $this->conSugerencia888($serie, $clienteId, $ejercicioId),
+            default     => $serie,
+        };
+    }
+
+    /**
+     * Sugerencia directa: una sola serie a un número de reps fijo
+     * (normal, rest-pause, forzadas). Solo sugiere si el campo de peso
+     * correspondiente está vacío.
+     */
+    private function conSugerenciaSimple(array $serie, int $clienteId, int $ejercicioId, string $pesoKey, string $repsKey): array
+    {
+        $pesoActual = trim((string) ($serie[$pesoKey] ?? ''));
+        if ($pesoActual !== '' && (float) $pesoActual > 0) {
             return $serie;
         }
 
-        $pesoActual = trim((string) ($serie['peso'] ?? ''));
-        $tienePesoExplicito = $pesoActual !== '' && (float) $pesoActual > 0;
-        if ($tienePesoExplicito) {
-            return $serie;
-        }
-
-        $reps = (int) ($serie['reps'] ?? 0);
+        $reps = (int) ($serie[$repsKey] ?? 0);
         if ($reps <= 0) {
             return $serie;
         }
 
-        // Sin unidad forzada: pesoSugeridoParaEjercicio usa por defecto
-        // la unidad con la que se calculó el 1RM vigente del cliente.
         $sugerencia = Calculador1RM::pesoSugeridoParaEjercicio($clienteId, $ejercicioId, $reps);
         if (!$sugerencia) {
-            return $serie; // sin 1RM registrado todavía para este ejercicio
+            return $serie;
         }
 
-        $serie['peso_sugerido']         = $sugerencia['peso_sugerido'];
-        $serie['peso_sugerido_unidad']  = $sugerencia['unidad'];
-        $serie['peso_sugerido_nivel']   = $sugerencia['nivel_confianza'];
-        $serie['peso_sugerido_fecha']   = optional($sugerencia['fecha_calculo'])->toDateString();
+        $serie['peso_sugerido']        = $sugerencia['peso_sugerido'];
+        $serie['peso_sugerido_unidad'] = $sugerencia['unidad'];
+        $serie['peso_sugerido_nivel']  = $sugerencia['nivel_confianza'];
+        $serie['peso_sugerido_fecha']  = optional($sugerencia['fecha_calculo'])->toDateString();
+
+        return $serie;
+    }
+
+    /**
+     * Sugerencia para 10+21s: solo si el peso del primer tramo (×10)
+     * está vacío — si el entrenador ya lo puso, el ×21s ya se calcula
+     * automáticamente en el editor con la regla −40% existente.
+     */
+    private function conSugerencia1021(array $serie, int $clienteId, int $ejercicioId): array
+    {
+        $peso10Actual = trim((string) ($serie['peso_10'] ?? ''));
+        if ($peso10Actual !== '' && (float) $peso10Actual > 0) {
+            return $serie;
+        }
+
+        $sugerencia = Calculador1RM::sugerir1021($clienteId, $ejercicioId);
+        if (!$sugerencia) {
+            return $serie;
+        }
+
+        $serie['peso_10_sugerido']     = $sugerencia['peso_10_sugerido'];
+        $serie['peso_21_sugerido']     = $sugerencia['peso_21_sugerido'];
+        $serie['peso_sugerido_unidad'] = $sugerencia['unidad'];
+        $serie['peso_sugerido_nivel']  = $sugerencia['nivel_confianza'];
+        $serie['peso_sugerido_fecha']  = optional($sugerencia['fecha_calculo'])->toDateString();
+
+        return $serie;
+    }
+
+    /**
+     * Sugerencia para 888 (descendente): solo si el primer tramo (P1)
+     * está vacío. Los tres pesos se derivan del mismo 1RM con la
+     * heurística de dropset (−10% por tramo).
+     */
+    private function conSugerencia888(array $serie, int $clienteId, int $ejercicioId): array
+    {
+        $peso1Actual = trim((string) ($serie['peso1'] ?? ''));
+        if ($peso1Actual !== '' && (float) $peso1Actual > 0) {
+            return $serie;
+        }
+
+        $repsBase = (int) ($serie['reps_888'] ?? 8);
+        $sugerencia = Calculador1RM::sugerir888($clienteId, $ejercicioId, $repsBase);
+        if (!$sugerencia) {
+            return $serie;
+        }
+
+        $serie['peso1_sugerido']       = $sugerencia['peso1_sugerido'];
+        $serie['peso2_sugerido']       = $sugerencia['peso2_sugerido'];
+        $serie['peso3_sugerido']       = $sugerencia['peso3_sugerido'];
+        $serie['peso_sugerido_unidad'] = $sugerencia['unidad'];
+        $serie['peso_sugerido_nivel']  = $sugerencia['nivel_confianza'];
+        $serie['peso_sugerido_fecha']  = optional($sugerencia['fecha_calculo'])->toDateString();
 
         return $serie;
     }

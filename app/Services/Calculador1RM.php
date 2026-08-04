@@ -330,4 +330,67 @@ class Calculador1RM
             'fecha_calculo'   => $vigente->fecha_calculo,
         ];
     }
+
+    /**
+     * Sugerencia para el método '10+21s': el primer tramo (10 reps
+     * completas) se sugiere igual que una serie normal; el segundo
+     * tramo (21s) aplica la misma regla de −40% que ya usa el editor
+     * web para calcularlo automáticamente a partir del primero.
+     */
+    public static function sugerir1021(
+        int $userId,
+        int $ejercicioId,
+        int $repsBase = 10,
+        ?string $unidadSalida = null
+    ): ?array {
+        $sugerenciaBase = self::pesoSugeridoParaEjercicio($userId, $ejercicioId, $repsBase, $unidadSalida);
+        if (!$sugerenciaBase) {
+            return null;
+        }
+
+        $unidad = $sugerenciaBase['unidad'];
+        $peso21 = self::redondear($sugerenciaBase['peso_sugerido'] * 0.60, $unidad);
+
+        return [
+            'peso_10_sugerido' => $sugerenciaBase['peso_sugerido'],
+            'peso_21_sugerido' => $peso21,
+            'unidad'           => $unidad,
+            'nivel_confianza'  => $sugerenciaBase['nivel_confianza'],
+            'fecha_calculo'    => $sugerenciaBase['fecha_calculo'],
+        ];
+    }
+
+    /**
+     * Sugerencia para el método descendente/888: el primer tramo se
+     * sugiere igual que una serie normal a las reps prescritas; los
+     * siguientes dos tramos aplican una caída típica de dropset del
+     * 10% por tramo (heurística de referencia, no medida con datos
+     * propios del cliente — por eso no se usa para calcular/actualizar
+     * el 1RM, solo para sugerir).
+     */
+    public static function sugerir888(
+        int $userId,
+        int $ejercicioId,
+        int $repsBase = 8,
+        ?string $unidadSalida = null
+    ): ?array {
+        $sugerenciaBase = self::pesoSugeridoParaEjercicio($userId, $ejercicioId, $repsBase, $unidadSalida);
+        if (!$sugerenciaBase) {
+            return null;
+        }
+
+        $unidad = $sugerenciaBase['unidad'];
+        $peso1  = $sugerenciaBase['peso_sugerido'];
+        $peso2  = self::redondear($peso1 * 0.90, $unidad);
+        $peso3  = self::redondear($peso2 * 0.90, $unidad);
+
+        return [
+            'peso1_sugerido'  => $peso1,
+            'peso2_sugerido'  => $peso2,
+            'peso3_sugerido'  => $peso3,
+            'unidad'          => $unidad,
+            'nivel_confianza' => $sugerenciaBase['nivel_confianza'],
+            'fecha_calculo'   => $sugerenciaBase['fecha_calculo'],
+        ];
+    }
 }

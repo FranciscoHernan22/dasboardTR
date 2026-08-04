@@ -8,6 +8,7 @@ use App\Models\Plantilla;
 use App\Models\Ejercicio;
 use App\Models\Rutina;
 use App\Models\User;
+use App\Models\DiaCompletado;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -51,7 +52,10 @@ class PlantillaController extends Controller
             'entrenador_id' => Auth::id(),
             'nombre'        => $request->nombre,
             'descripcion'   => $request->descripcion,
-            'bloques'       => $datos['dias'],
+            // Una plantilla es un diseño reutilizable, nunca debe cargar
+            // estado de progreso (peso registrado / serie marcada) de un
+            // cliente real. Se limpia antes de guardar.
+            'bloques'       => $this->limpiarDiasPlantilla($datos['dias']),
         ]);
 
         return redirect()->route('entrenador.plantillas.index')
@@ -114,7 +118,7 @@ class PlantillaController extends Controller
         $plantilla->update([
             'nombre'      => $request->nombre,
             'descripcion' => $request->descripcion,
-            'bloques'     => $datos['dias'],
+            'bloques'     => $this->limpiarDiasPlantilla($datos['dias']),
         ]);
 
         return redirect()->route('entrenador.plantillas.index')
@@ -199,9 +203,48 @@ class PlantillaController extends Controller
         return $mapa;
     }
 
+    /**
+     * Quita cualquier estado de progreso ('completada') de las series
+     * de cada ejercicio, en todos los días/bloques de una plantilla.
+     * Una plantilla es un diseño, no debe recordar que "ya se hizo".
+     */
+    private function limpiarDiasPlantilla(array $dias): array
+    {
+        foreach ($dias as $diaIdx => $dia) {
+            foreach ($dia['bloques'] ?? [] as $grupo => $bloque) {
+                foreach ($bloque['ejercicios'] ?? [] as $ejIdx => $ej) {
+                    $dias[$diaIdx]['bloques'][$grupo]['ejercicios'][$ejIdx]['series'] =
+                        $this->limpiarSeries($ej['series'] ?? []);
+                }
+            }
+        }
+        return $dias;
+    }
+
+    /**
+     * Quita el flag 'completada' (y cualquier otro campo de progreso) de
+     * un array de series, dejando intactos los valores prescritos
+     * (reps, peso objetivo, método, tempo, rir, etc.).
+     */
+    private function limpiarSeries(array $series): array
+    {
+        return array_map(function ($serie) {
+            unset($serie['completada']);
+            return $serie;
+        }, $series);
+    }
+
     private function guardarDiaRutina(User $cliente, int $semana, int $dia, array $bloques, string $fecha, array $mapaEjercicios = [])
     {
         Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $dia)
+            ->delete();
+
+        // Este día se está reescribiendo desde una plantilla: si el
+        // cliente ya lo tenía marcado como completado, ese estado ya
+        // no corresponde a la rutina nueva que se está aplicando.
+        DiaCompletado::where('user_id', $cliente->id)
             ->where('semana', $semana)
             ->where('dia', $dia)
             ->delete();
@@ -228,7 +271,11 @@ class PlantillaController extends Controller
                     'ejercicio_id'    => $ejercicio->id,
                     'segmento'        => $ejercicio->segmento,
                     'nombre'          => $ejercicio->nombre,
-                    'series'          => $ej['series'] ?? [],
+                    // Blindaje extra: aunque la plantilla ya venga limpia,
+                    // se vuelve a quitar 'completada' justo antes de crear
+                    // la rutina real del cliente. Así cubrimos también
+                    // plantillas guardadas antes de este fix.
+                    'series'          => $this->limpiarSeries($ej['series'] ?? []),
                     'descanso_valor'  => $bloque['descanso_valor']  ?? '',
                     'descanso_unidad' => $bloque['descanso_unidad'] ?? 'seg',
                     'nota_sesion'     => '',

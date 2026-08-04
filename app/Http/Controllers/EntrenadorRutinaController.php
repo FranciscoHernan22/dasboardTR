@@ -1,4 +1,5 @@
 <?php
+// DESTINO: app/Http/Controllers/EntrenadorRutinaController.php
 
 namespace App\Http\Controllers;
 
@@ -6,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Rutina;
 use App\Models\Plan;
 use App\Models\User;
+use App\Models\DiaCompletado;
 use Carbon\Carbon;
 use App\Models\Ejercicio;
 use Illuminate\Support\Facades\Auth;
@@ -110,6 +112,14 @@ class EntrenadorRutinaController extends Controller
         }
 
         Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $dia)
+            ->delete();
+
+        // El entrenador está reescribiendo este día desde el editor:
+        // si el cliente lo había marcado como completado antes, ese
+        // estado ya no corresponde a la rutina nueva.
+        DiaCompletado::where('user_id', $cliente->id)
             ->where('semana', $semana)
             ->where('dia', $dia)
             ->delete();
@@ -275,6 +285,13 @@ class EntrenadorRutinaController extends Controller
             ->where('semana', $destino)
             ->delete();
 
+        // La semana destino es un plan nuevo para esos días: si el
+        // cliente ya los había marcado como completados antes, ese
+        // estado no debe seguir aplicando a lo que se está pegando ahora.
+        DiaCompletado::where('user_id', $cliente->id)
+            ->where('semana', $destino)
+            ->delete();
+
         foreach ($rutinasOrigen as $r) {
             $fecha = $r->fecha;
             if ($plan && $plan->fecha_inicio) {
@@ -285,6 +302,13 @@ class EntrenadorRutinaController extends Controller
 
             $series          = is_string($r->series) ? json_decode($r->series, true) : $r->series;
             $descansosSerie  = is_string($r->descansos_serie) ? json_decode($r->descansos_serie, true) : $r->descansos_serie;
+
+            // No arrastrar el flag 'completada' de la semana origen: la
+            // copia es una rutina nueva, no una que el cliente ya hizo.
+            $series = collect($series ?? [])->map(function ($serie) {
+                unset($serie['completada']);
+                return $serie;
+            })->all();
 
             Rutina::create([
                 'user_id'         => $cliente->id,
@@ -297,7 +321,7 @@ class EntrenadorRutinaController extends Controller
                 'ejercicio_id'    => $r->ejercicio_id,
                 'segmento'        => $r->segmento,
                 'nombre'          => $r->nombre,
-                'series'          => $series ?? [],
+                'series'          => $series,
                 'descansos_serie' => $descansosSerie ?? [],
                 'nota_sesion'     => $r->nota_sesion,
                 'nota_ej'         => $r->nota_ej,
@@ -308,7 +332,9 @@ class EntrenadorRutinaController extends Controller
     }
 
     /**
-     * Borra TODO el historial de rutinas de un cliente (todas las semanas/días).
+     * Borra TODO el historial de rutinas de un cliente (todas las semanas/días)
+     * y también su registro de días completados, para que un plan nuevo
+     * empiece realmente desde cero.
      * Requiere que el entrenador escriba el nombre del cliente como confirmación.
      */
     public function borrarHistorial(Request $request, User $cliente)
@@ -326,13 +352,15 @@ class EntrenadorRutinaController extends Controller
         }
 
         Rutina::where('user_id', $cliente->id)->delete();
+        DiaCompletado::where('user_id', $cliente->id)->delete();
 
         return redirect()->route('entrenador.rutina.editar', [$cliente->id, 1, 1])
             ->with('success', 'Historial de entrenamientos borrado correctamente.');
     }
 
     /**
-     * Vacía únicamente una semana específica de un cliente (todos sus días).
+     * Vacía únicamente una semana específica de un cliente (todos sus días)
+     * y su registro de días completados en esa semana.
      */
     public function vaciarSemana(Request $request, User $cliente, $semana)
     {
@@ -341,6 +369,10 @@ class EntrenadorRutinaController extends Controller
         }
 
         Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->delete();
+
+        DiaCompletado::where('user_id', $cliente->id)
             ->where('semana', $semana)
             ->delete();
 

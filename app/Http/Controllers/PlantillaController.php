@@ -205,7 +205,7 @@ class PlantillaController extends Controller
 
     /**
      * Quita cualquier estado de progreso ('completada') de las series
-     * de cada ejercicio, en todos los días/bloques de una plantilla.
+     * de cada ejercicio, en todos los días/bloques de una plantilla.w
      * Una plantilla es un diseño, no debe recordar que "ya se hizo".
      */
     private function limpiarDiasPlantilla(array $dias): array

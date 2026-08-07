@@ -159,31 +159,76 @@
 
 {{-- ── TAB: RENDIMIENTO ── --}}
 <div id="tab-rendimiento" class="tab-panel">
-    @if($registrosEjercicio->isEmpty())
-        <div class="bg-white border border-gray-200 rounded-xl p-8 text-center">
-            <p class="text-sm text-gray-400">Todavía no hay registros de series/pesos para este cliente.</p>
-        </div>
-    @else
-        <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4">
-            <h2 class="text-sm font-bold text-gray-900 mb-4">Progreso de peso — {{ $ejercicioPrincipal }}</h2>
-            <canvas id="chartRendimiento" height="90"></canvas>
+
+    {{-- 1RM vigente por ejercicio --}}
+    <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+        <h2 class="text-sm font-bold text-gray-900 mb-3">1RM estimado por ejercicio</h2>
+
+        @if($estimaciones1RM->isEmpty())
+            <p class="text-sm text-gray-400 text-center py-6">
+                Todavía no hay ningún 1RM calculado. Se genera automáticamente cuando el cliente completa series normales, rest-pause, forzadas o el primer tramo de un 888.
+            </p>
+        @else
+            <div class="overflow-x-auto -mx-1">
+                <table class="w-full text-xs min-w-[520px]">
+                    <thead>
+                        <tr class="text-gray-400">
+                            <th class="text-left font-medium pb-2 px-1">Ejercicio</th>
+                            <th class="text-right font-medium pb-2 px-1">1RM estimado</th>
+                            <th class="text-center font-medium pb-2 px-1">Confianza</th>
+                            <th class="text-right font-medium pb-2 px-1">Basado en</th>
+                            <th class="text-right font-medium pb-2 px-1">Actualizado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-700">
+                        @foreach($estimaciones1RM as $est)
+                        @php
+                            $nivelInfo = [
+                                'A' => ['label' => 'Alta',  'bg' => 'bg-green-100',  'text' => 'text-green-700'],
+                                'B' => ['label' => 'Media', 'bg' => 'bg-amber-100',  'text' => 'text-amber-700'],
+                                'C' => ['label' => 'Baja',  'bg' => 'bg-gray-100',   'text' => 'text-gray-500'],
+                            ][$est->nivel_confianza] ?? ['label' => $est->nivel_confianza, 'bg' => 'bg-gray-100', 'text' => 'text-gray-500'];
+                        @endphp
+                        <tr class="border-t border-gray-50">
+                            <td class="py-2 px-1 font-medium text-gray-900">{{ $est->ejercicio->nombre ?? 'Ejercicio eliminado' }}</td>
+                            <td class="text-right px-1 font-bold text-gray-900">{{ rtrim(rtrim(number_format($est->valor_1rm_kg, 1), '0'), '.') }} kg</td>
+                            <td class="text-center px-1">
+                                <span class="inline-block px-2 py-0.5 rounded-full font-semibold {{ $nivelInfo['bg'] }} {{ $nivelInfo['text'] }}">
+                                    {{ $nivelInfo['label'] }}
+                                </span>
+                            </td>
+                            <td class="text-right px-1 text-gray-500">{{ $est->reps_base }} reps × {{ rtrim(rtrim(number_format($est->peso_base, 1), '0'), '.') }} {{ $est->unidad_base }}</td>
+                            <td class="text-right px-1 text-gray-400">{{ $est->fecha_calculo?->diffForHumans() }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
+
+    {{-- Evolución de peso por ejercicio --}}
+    <div class="bg-white border border-gray-200 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 class="text-sm font-bold text-gray-900">Evolución de peso</h2>
+            @if(count($historialPesoPorEjercicio) > 0)
+            <select id="selectEjercicioProgreso" onchange="cambiarEjercicioProgreso(this.value)"
+                class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 bg-gray-50 text-gray-700">
+                @foreach($historialPesoPorEjercicio as $ejercicioId => $data)
+                    <option value="{{ $ejercicioId }}">{{ $data['nombre'] }}</option>
+                @endforeach
+            </select>
+            @endif
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-                <p class="text-xs text-gray-400 mb-1">Peso máximo</p>
-                <p class="text-xl font-bold text-gray-900">{{ $pesoMaximo ?? '—' }} kg</p>
-            </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-                <p class="text-xs text-gray-400 mb-1">Series últimos 7 días</p>
-                <p class="text-xl font-bold text-gray-900">{{ $seriesUltimaSemana ?? 0 }}</p>
-            </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-                <p class="text-xs text-gray-400 mb-1">Volumen total</p>
-                <p class="text-xl font-bold text-gray-900">{{ number_format($volumenTotal ?? 0) }} kg</p>
-            </div>
-        </div>
-    @endif
+        @if(count($historialPesoPorEjercicio) === 0)
+            <p class="text-sm text-gray-400 text-center py-8">
+                Todavía no hay series completadas con peso registrado. La gráfica aparece en cuanto el cliente marque al menos dos días de un mismo ejercicio.
+            </p>
+        @else
+            <canvas id="chartProgresoPeso" height="90"></canvas>
+        @endif
+    </div>
 </div>
 
 {{-- ── TAB: CONSTANCIA ── --}}
@@ -440,26 +485,62 @@ new Chart(document.getElementById('chartFisico'), {
 });
 @endif
 
-@if($registrosEjercicio->isNotEmpty())
-new Chart(document.getElementById('chartRendimiento'), {
-    type: 'line',
-    data: {
-        labels: {!! json_encode($registrosEjercicio->map(fn($r) => $r->fecha->format('d/m'))->values()) !!},
-        datasets: [{
-            label: 'kg',
-            data: {!! json_encode($registrosEjercicio->pluck('peso')->values()) !!},
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37,99,235,0.08)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 4,
-            pointBackgroundColor: '#2563eb'
-        }]
-    },
-    options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
-    }
+// ── Evolución de peso por ejercicio (pestaña Rendimiento) ──
+@if(count($historialPesoPorEjercicio) > 0)
+const historialPesoPorEjercicio = {!! json_encode(collect($historialPesoPorEjercicio)->mapWithKeys(function ($data, $ejercicioId) {
+    return [$ejercicioId => [
+        'nombre'  => $data['nombre'],
+        'fechas'  => array_keys($data['puntos']),
+        'valores' => array_values($data['puntos']),
+    ]];
+})) !!};
+
+let chartProgresoPeso = null;
+
+function dibujarChartProgresoPeso(ejercicioId) {
+    const info = historialPesoPorEjercicio[ejercicioId];
+    if (!info) return;
+
+    const ctx = document.getElementById('chartProgresoPeso');
+    if (!ctx) return;
+
+    if (chartProgresoPeso) chartProgresoPeso.destroy();
+
+    chartProgresoPeso = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: info.fechas.map(f => {
+                const d = new Date(f + 'T00:00:00');
+                return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+            }),
+            datasets: [{
+                label: info.nombre,
+                data: info.valores,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37,99,235,0.08)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#2563eb'
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kg` } }
+            },
+            scales: { y: { grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+        }
+    });
+}
+
+function cambiarEjercicioProgreso(ejercicioId) {
+    dibujarChartProgresoPeso(ejercicioId);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const primerId = Object.keys(historialPesoPorEjercicio)[0];
+    if (primerId) dibujarChartProgresoPeso(primerId);
 });
 @endif
 </script>

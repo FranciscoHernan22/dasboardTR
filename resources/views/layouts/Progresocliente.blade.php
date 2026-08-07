@@ -184,42 +184,23 @@
     </div>
     @endif
 
-    {{-- Total 1RM + comparativa por segmento --}}
-    @if($estimaciones1RM->isNotEmpty())
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div class="bg-white border border-gray-200 rounded-xl p-4">
-            <p class="text-xs text-gray-400 mb-1">1RM total (suma de todos los ejercicios)</p>
-            <div class="flex items-end gap-2">
-                <p class="text-2xl font-bold text-gray-900">{{ number_format($total1RM['total_hoy_kg'], 1) }} kg</p>
-                @if($total1RM['cambio_pct'] !== null)
-                    <span class="text-xs font-semibold mb-1 {{ $total1RM['cambio_pct'] >= 0 ? 'text-green-600' : 'text-red-500' }}">
-                        {{ $total1RM['cambio_pct'] > 0 ? '+' : '' }}{{ $total1RM['cambio_pct'] }}% (30 días)
+    {{-- Comparativa por segmento --}}
+    @if($estimaciones1RM->isNotEmpty() && count($comparativaSegmentos) > 0)
+    <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+        <p class="text-xs text-gray-400 mb-2">Mejora por grupo muscular (30 días)</p>
+        <div class="flex flex-col gap-1.5">
+            @foreach($comparativaSegmentos as $seg)
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-700 font-medium">{{ $seg['segmento'] }}</span>
+                @if($seg['cambio_pct'] === null)
+                    <span class="text-[11px] text-gray-300 font-semibold">sin datos (30d)</span>
+                @else
+                    <span class="text-xs font-bold px-1.5 py-0.5 rounded {{ $seg['cambio_pct'] >= 0 ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50' }}">
+                        {{ $seg['cambio_pct'] > 0 ? '+' : '' }}{{ $seg['cambio_pct'] }}%
                     </span>
                 @endif
             </div>
-            <p class="text-[11px] text-gray-400 mt-0.5">{{ $total1RM['ejercicios'] }} {{ $total1RM['ejercicios'] === 1 ? 'ejercicio' : 'ejercicios' }} con 1RM calculado</p>
-        </div>
-
-        <div class="bg-white border border-gray-200 rounded-xl p-4">
-            <p class="text-xs text-gray-400 mb-2">Mejora por grupo muscular (30 días)</p>
-            @if(count($comparativaSegmentos) === 0)
-                <p class="text-xs text-gray-400">Sin datos suficientes todavía.</p>
-            @else
-                <div class="flex flex-col gap-1.5">
-                    @foreach($comparativaSegmentos as $seg)
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-700 font-medium">{{ $seg['segmento'] }}</span>
-                        @if($seg['cambio_pct'] === null)
-                            <span class="text-[11px] text-gray-300 font-semibold">sin datos (30d)</span>
-                        @else
-                            <span class="text-xs font-bold px-1.5 py-0.5 rounded {{ $seg['cambio_pct'] >= 0 ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50' }}">
-                                {{ $seg['cambio_pct'] > 0 ? '+' : '' }}{{ $seg['cambio_pct'] }}%
-                            </span>
-                        @endif
-                    </div>
-                    @endforeach
-                </div>
-            @endif
+            @endforeach
         </div>
     </div>
     @endif

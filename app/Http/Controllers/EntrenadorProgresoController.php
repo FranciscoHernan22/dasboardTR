@@ -101,7 +101,6 @@ class EntrenadorProgresoController extends Controller
             ->values();
 
         $comparativaSegmentos = $this->construirComparativaSegmentos($clienteId, $estimaciones1RM);
-        $total1RM             = $this->construirTotal1RM($clienteId, $estimaciones1RM);
         $estancamientos       = $this->detectarEstancamientos($clienteId, $estimaciones1RM);
 
         // ── Constancia ──
@@ -141,7 +140,6 @@ class EntrenadorProgresoController extends Controller
             'historialPesoPorEjercicio',
             'segmentosDisponibles',
             'comparativaSegmentos',
-            'total1RM',
             'estancamientos',
             'sesiones',
             'porcentajeConstancia',
@@ -334,49 +332,6 @@ class EntrenadorProgresoController extends Controller
         usort($resultado, fn ($a, $b) => ($b['cambio_pct'] ?? -999) <=> ($a['cambio_pct'] ?? -999));
 
         return $resultado;
-    }
-
-    /**
-     * Total general de 1RM sumando todos los ejercicios, más el %
-     * de cambio general en los últimos 30 días (comparando, para cada
-     * ejercicio con dato de esa antigüedad, el valor de hoy vs. el de
-     * hace ~30 días).
-     */
-    private function construirTotal1RM(int $clienteId, $estimaciones1RM): array
-    {
-        $totalHoy = round($estimaciones1RM->sum('valor_1rm_kg'), 1);
-
-        if ($estimaciones1RM->isEmpty()) {
-            return ['total_hoy_kg' => 0.0, 'ejercicios' => 0, 'cambio_pct' => null];
-        }
-
-        $fechaCorte = Carbon::now()->subDays(self::DIAS_COMPARACION);
-        $sumaHoyComparable = 0.0;
-        $sumaAntes = 0.0;
-
-        foreach ($estimaciones1RM as $est) {
-            $antes = EstimacionUnoRmHistorial::where('user_id', $clienteId)
-                ->where('ejercicio_id', $est->ejercicio_id)
-                ->where('se_uso_como_vigente', true)
-                ->where('fecha_calculo', '<=', $fechaCorte)
-                ->orderByDesc('fecha_calculo')
-                ->value('valor_1rm_kg');
-
-            if ($antes !== null && $antes > 0) {
-                $sumaHoyComparable += $est->valor_1rm_kg;
-                $sumaAntes += $antes;
-            }
-        }
-
-        $cambioPct = $sumaAntes > 0
-            ? round((($sumaHoyComparable - $sumaAntes) / $sumaAntes) * 100, 1)
-            : null;
-
-        return [
-            'total_hoy_kg' => $totalHoy,
-            'ejercicios'   => $estimaciones1RM->count(),
-            'cambio_pct'   => $cambioPct,
-        ];
     }
 
     /**

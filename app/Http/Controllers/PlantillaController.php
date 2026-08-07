@@ -234,6 +234,36 @@ class PlantillaController extends Controller
         }, $series);
     }
 
+    /**
+     * Normaliza el descanso de un bloque de plantilla al formato que
+     * espera Rutina: un array de {valor} en segundos, uno por serie.
+     *
+     * Soporta dos formatos de entrada:
+     * - Nuevo (descanso por serie):  $bloque['descansos_serie'] = [{valor:'90'}, {valor:'60'}, ...]
+     * - Legado (un solo descanso para todo el bloque, plantillas
+     *   guardadas antes de este cambio): $bloque['descanso_valor'] / $bloque['descanso_unidad']
+     *   Ese valor legado se replica en todas las series del bloque.
+     */
+    private function normalizarDescansosSerie(array $bloque, int $numSeries): array
+    {
+        if (isset($bloque['descansos_serie']) && is_array($bloque['descansos_serie'])) {
+            return $bloque['descansos_serie'];
+        }
+
+        $valor  = $bloque['descanso_valor'] ?? '';
+        $unidad = $bloque['descanso_unidad'] ?? 'seg';
+        $segundos = 0;
+        if ($valor !== '' && $valor !== null) {
+            $segundos = $unidad === 'min' ? ((int) $valor) * 60 : (int) $valor;
+        }
+
+        $descansos = [];
+        for ($i = 0; $i < $numSeries; $i++) {
+            $descansos[] = ['valor' => $segundos > 0 ? (string) $segundos : ''];
+        }
+        return $descansos;
+    }
+
     private function guardarDiaRutina(User $cliente, int $semana, int $dia, array $bloques, string $fecha, array $mapaEjercicios = [])
     {
         Rutina::where('user_id', $cliente->id)
@@ -251,7 +281,17 @@ class PlantillaController extends Controller
 
         $orden = 0;
         foreach ($bloques as $grupo => $bloque) {
-            foreach ($bloque['ejercicios'] ?? [] as $ej) {
+            $ejercicios = $bloque['ejercicios'] ?? [];
+            if (empty($ejercicios)) { $orden++; continue; }
+
+            // El descanso se guarda por bloque (mismo descanso para todos
+            // los ejercicios del grupo), calculado a partir del número de
+            // series del primer ejercicio del bloque -- igual que hace el
+            // editor de rutina.
+            $numSeries = count(reset($ejercicios)['series'] ?? []);
+            $descansosSerie = $this->normalizarDescansosSerie($bloque, $numSeries);
+
+            foreach ($ejercicios as $ej) {
                 if (empty($ej['ejercicio_id'])) continue;
 
                 // Si el ID viene del catálogo default, lo convertimos al clon del entrenador
@@ -276,8 +316,9 @@ class PlantillaController extends Controller
                     // la rutina real del cliente. Así cubrimos también
                     // plantillas guardadas antes de este fix.
                     'series'          => $this->limpiarSeries($ej['series'] ?? []),
-                    'descanso_valor'  => $bloque['descanso_valor']  ?? '',
-                    'descanso_unidad' => $bloque['descanso_unidad'] ?? 'seg',
+                    // Mismo formato que usa el editor de rutina: descanso
+                    // por serie, no un único valor por bloque.
+                    'descansos_serie' => $descansosSerie,
                     'nota_sesion'     => '',
                     'nota_ej'         => $ej['nota_ej'] ?? '',
                 ]);

@@ -25,7 +25,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .nombre-input:focus { outline:none; border-color:var(--accent); }
 .desc-input { width:100%; border:1px solid var(--border2); border-radius:6px; padding:6px 10px; font-size:0.82rem; font-family:'DM Sans',sans-serif; color:var(--text); resize:none; }
 .desc-input:focus { outline:none; border-color:var(--accent); }
-.dias-config { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; }
+.dias-config { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .dias-config label { font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
 .dias-input { width:70px; border:1px solid var(--border2); border-radius:6px; padding:6px 10px; font-size:1rem; font-family:'DM Mono',monospace; text-align:center; color:var(--text); }
 .dias-input:focus { outline:none; border-color:var(--accent); }
@@ -35,6 +35,9 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .dia-tab { padding:6px 14px; border:1.5px solid var(--border2); border-bottom:none; border-radius:8px 8px 0 0; font-size:0.78rem; font-weight:600; color:var(--muted); cursor:pointer; background:var(--bg); transition:all .12s; }
 .dia-tab.active { background:var(--surface); color:var(--accent); border-color:var(--border); border-bottom-color:var(--surface); }
 .dia-tab:hover:not(.active) { background:#eef0f3; }
+.dia-tab[draggable="true"] { cursor:grab; }
+.dia-tab.dia-dragging { opacity:.4; }
+.dia-tab.dia-drag-over { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-l) inset; background:var(--accent-l); }
 .dias-panels { background:var(--surface); border:1.5px solid var(--border); border-radius:0 8px 8px 8px; padding:14px; margin-bottom:14px; }
 .dia-panel { display:none; }
 .dia-panel.active { display:block; }
@@ -83,22 +86,15 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .add-block-btn:hover { background:var(--accent-l); border-color:var(--accent); color:var(--accent); }
 .bloque { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); overflow:visible; }
 .bloque-header { display:flex; align-items:center; gap:8px; padding:7px 12px; border-bottom:1px solid var(--border); background:#f5f6f8; border-radius:var(--radius) var(--radius) 0 0; flex-wrap:wrap; }
-.bloque-tipo { font-size:0.6rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:2px 8px; border-radius:99px; flex-shrink:0; }
+.bloque-tipo { font-size:0.6rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:2px 8px; border-radius:99px; flex-shrink:0; cursor:pointer; user-select:none; position:relative; transition:filter .13s; }
+.bloque-tipo:hover { filter:brightness(.92); }
 .tipo-monoserie{background:#dbeafe;color:#1d4ed8} .tipo-biserie{background:#d1fae5;color:#065f46}
 .tipo-triserie{background:#fef3c7;color:#92400e} .tipo-circuito{background:#fce7f3;color:#9d174d}
 .bloque-series-count { display:flex; align-items:center; gap:5px; font-size:0.72rem; color:var(--muted); margin-left:auto; }
 .bloque-series-count input { width:42px; border:1px solid var(--border2); border-radius:5px; padding:2px 5px; font-size:0.74rem; font-family:'DM Mono',monospace; text-align:center; color:var(--text); }
 .btn-remove { width:24px; height:24px; border-radius:5px; background:#fee2e2; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .btn-remove:hover { background:#fca5a5; }
-.bloque-footer { border-top:1px solid var(--border); background:#f9fafb; padding:7px 12px; border-radius:0 0 var(--radius) var(--radius); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.descanso-inline { display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--muted); flex:1; flex-wrap:wrap; }
-.descanso-inline span { font-size:0.7rem; }
-.descanso-valor-input { width:46px; border:1px solid var(--border2); border-radius:5px; padding:2px 5px; font-size:0.74rem; font-family:'DM Mono',monospace; text-align:center; color:var(--text); }
-.descanso-valor-input:focus { outline:none; border-color:#059669; }
-.descanso-unit-btn { padding:2px 6px; border:1px solid var(--border2); border-radius:4px; background:white; font-size:0.62rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all .1s; }
-.descanso-unit-btn:hover { border-color:#059669; color:#059669; }
-.descanso-unit-btn.sel { background:#059669; color:white; border-color:#059669; }
-.descanso-badge { font-size:0.62rem; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:99px; padding:1px 7px; font-family:'DM Mono',monospace; }
+.bloque-footer { border-top:1px solid var(--border); background:#f9fafb; padding:6px 12px; border-radius:0 0 var(--radius) var(--radius); display:flex; align-items:center; gap:8px; }
 .series-header-row { display:flex; border-bottom:2px solid var(--border); background:#f0f2f5; }
 .series-header-row .col-info-header { width:265px; flex-shrink:0; border-right:1px solid var(--border); padding:5px 10px; font-size:0.6rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; }
 .series-header-row .col-series-headers { flex:1; display:flex; padding:0; min-width:0; }
@@ -178,6 +174,55 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .btn-guardar:disabled { background:#93c5fd; cursor:not-allowed; transform:none; }
 .btn-metodos { margin-left:auto; display:inline-flex; align-items:center; gap:5px; background:white; color:var(--muted); border:1px solid var(--border2); border-radius:7px; padding:5px 12px; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all .13s; font-family:'DM Sans',sans-serif; }
 .btn-metodos:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-l); }
+
+/* ── Descanso por serie ── */
+.descanso-row { display:flex; border-top:2px solid #bbf7d0; background:#f0fdf4; align-items:stretch; }
+.descanso-row-label { width:265px; flex-shrink:0; border-right:1px solid #bbf7d0; padding:8px 10px; font-size:0.6rem; font-weight:700; color:#065f46; text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:5px; }
+.descanso-row-cols { flex:1; display:flex; min-width:0; }
+.descanso-serie-cell { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:7px 5px; border-right:1px solid #bbf7d0; }
+.descanso-serie-cell:last-child { border-right:none; }
+.desc-inputs { display:flex; align-items:center; gap:3px; width:100%; }
+.desc-select-min { flex:1.2; border:1px solid #a7f3d0; border-radius:5px; padding:3px 2px; font-size:0.68rem; font-family:'DM Mono',monospace; color:#065f46; background:white; text-align:center; min-width:0; cursor:pointer; }
+.desc-select-min:focus { outline:none; border-color:#059669; }
+.desc-input-seg { flex:1; border:1px solid #a7f3d0; border-radius:5px; padding:3px 4px; font-size:0.68rem; font-family:'DM Mono',monospace; color:#065f46; background:white; text-align:center; min-width:0; -moz-appearance:textfield; }
+.desc-input-seg::-webkit-outer-spin-button, .desc-input-seg::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.desc-input-seg:focus { outline:none; border-color:#059669; }
+.desc-input-seg::placeholder { color:#a7f3d0; }
+.desc-input-seg.error { border-color:#fca5a5 !important; background:#fff5f5; color:#ef4444; }
+.desc-sep { font-size:0.75rem; font-weight:700; color:#6ee7b7; flex-shrink:0; line-height:1; }
+.desc-preview { font-size:0.58rem; font-weight:700; border-radius:99px; padding:2px 8px; font-family:'DM Mono',monospace; text-align:center; white-space:nowrap; }
+.desc-preview.has-val { color:#475569; background:#e2e8f0; border:1px solid #cbd5e1; }
+.desc-preview.no-val { color:#cbd5e1; background:transparent; border:1px solid #e2e8f0; }
+
+/* ── Dropdown tipo bloque ── */
+.tipo-dropdown { display:none; position:fixed; background:white; border:1.5px solid var(--border2); border-radius:8px; box-shadow:0 12px 32px rgba(0,0,0,.22); z-index:9500; min-width:130px; overflow:hidden; }
+.tipo-dropdown.open { display:block; }
+.tipo-dropdown-item { display:flex; align-items:center; gap:7px; padding:7px 12px; font-size:0.72rem; font-weight:600; cursor:pointer; color:var(--text); border-bottom:1px solid var(--border); transition:background .1s; }
+.tipo-dropdown-item:last-child { border-bottom:none; }
+.tipo-dropdown-item:hover { background:var(--accent-l); color:var(--accent); }
+.tipo-dropdown-item.activo { background:var(--accent-l); color:var(--accent); }
+.tipo-dropdown-item.activo:not(.circuito-item) { pointer-events:none; }
+.tipo-dropdown-item.circuito-item { cursor:pointer; }
+.tipo-dot { width:8px; height:8px; border-radius:99px; flex-shrink:0; }
+
+/* ── Modal elegir ejercicio a eliminar ── */
+.modal-eliminar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10010; align-items:center; justify-content:center; padding:16px; }
+.modal-eliminar-overlay.open { display:flex; }
+.modal-eliminar-box { background:white; border-radius:14px; width:100%; max-width:360px; box-shadow:0 20px 60px rgba(0,0,0,.2); overflow:hidden; }
+.modal-eliminar-header { padding:14px 18px; border-bottom:1px solid var(--border); font-size:0.9rem; font-weight:700; color:var(--text); }
+.modal-eliminar-body { padding:12px 18px 16px; display:flex; flex-direction:column; gap:6px; }
+.modal-eliminar-sub { font-size:0.75rem; color:var(--muted); margin-bottom:4px; }
+.ej-eliminar-btn { display:flex; align-items:center; gap:8px; padding:8px 12px; border:1.5px solid var(--border); border-radius:7px; background:white; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.78rem; color:var(--text); transition:all .12s; text-align:left; }
+.ej-eliminar-btn:hover { border-color:var(--danger); background:#fff5f5; color:var(--danger); }
+.ej-eliminar-letra { width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:800; flex-shrink:0; }
+.modal-eliminar-cancel { margin-top:4px; padding:7px; border:1px solid var(--border2); border-radius:7px; background:white; color:var(--muted); font-size:0.78rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; width:100%; }
+.modal-eliminar-cancel:hover { background:#f3f4f6; }
+
+/* ── Toast de bloque ── */
+.bloque-toast { position:absolute; top:8px; left:50%; transform:translateX(-50%); font-size:0.68rem; font-weight:700; padding:4px 14px; border-radius:99px; opacity:0; transition:opacity .18s; pointer-events:none; white-space:nowrap; z-index:100; }
+.bloque-toast.blue { background:#1d4ed8; color:white; }
+.bloque-toast.red { background:#ef4444; color:white; }
+.bloque-toast.show { opacity:1; }
 </style>
 
 {{-- MODAL MÉTODOS --}}
@@ -214,6 +259,21 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     </div>
 </div>
 
+{{-- MODAL ELIMINAR EJERCICIO --}}
+<div class="modal-eliminar-overlay" id="modalEliminarEj" onclick="if(event.target===this)cerrarModalEliminar()">
+    <div class="modal-eliminar-box">
+        <div class="modal-eliminar-header">¿Cuál ejercicio eliminar?</div>
+        <div class="modal-eliminar-body">
+            <p class="modal-eliminar-sub">Al reducir el tipo, uno de los ejercicios se eliminará. Elige cuál:</p>
+            <div id="eliminar-ej-lista"></div>
+            <button class="modal-eliminar-cancel" onclick="cerrarModalEliminar()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+{{-- DROPDOWN TIPO GLOBAL --}}
+<div class="tipo-dropdown" id="tipo-dd-global" onclick="event.stopPropagation()"></div>
+
 {{-- HEADER --}}
 <div class="page-header">
     <a href="{{ route('entrenador.plantillas.index') }}"
@@ -244,6 +304,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     <label>Número de días:</label>
     <input type="number" class="dias-input" id="numDias" min="1" max="7" value="7">
     <button type="button" class="btn-generar-dias" onclick="generarTabs()">Generar días</button>
+    <span style="font-size:0.72rem;color:var(--muted);">↔️ Arrastra las pestañas de día para intercambiar su contenido</span>
 </div>
 
 <div id="dias-tabs-wrap" style="display:none;">
@@ -266,15 +327,42 @@ const NUMS   = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 const LETRAS = ['ej-letra-a','ej-letra-b','ej-letra-c','ej-letra-d','ej-letra-e','ej-letra-f','ej-letra-g','ej-letra-h','ej-letra-i','ej-letra-j','ej-letra-k','ej-letra-l'];
 const BGS    = ['ej-bg-a','ej-bg-b','ej-bg-c','ej-bg-d','ej-bg-e','ej-bg-f','ej-bg-g','ej-bg-h','ej-bg-i','ej-bg-j','ej-bg-k','ej-bg-l'];
 
+/* ── Utilidad: URL de imagen ── */
+const R2_URL = "{{ env('AWS_URL') }}";
+const imgUrl = img => img ? `${R2_URL}/${img}` : '';
+
 /* ── Modales ── */
 function abrirModal()  { document.getElementById('modalMetodos').classList.add('open'); document.body.style.overflow='hidden'; }
 function cerrarModal() { document.getElementById('modalMetodos').classList.remove('open'); document.body.style.overflow=''; }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal(); cerrarModalCircuito(); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal(); cerrarModalCircuito(); cerrarModalEliminar(); } });
 let _diaCircuito = 1;
 function abrirModalCircuito(dia) { _diaCircuito=dia; document.getElementById('circuitoNum').value=4; document.getElementById('modalCircuito').classList.add('open'); setTimeout(()=>document.getElementById('circuitoNum').focus(),50); }
 function cerrarModalCircuito() { document.getElementById('modalCircuito').classList.remove('open'); }
-function confirmarCircuito() { const n=Math.min(12,Math.max(2,parseInt(document.getElementById('circuitoNum').value)||4)); cerrarModalCircuito(); agregarBloque('circuito',n,_diaCircuito); }
+function confirmarCircuito() {
+    const n = Math.min(12, Math.max(2, parseInt(document.getElementById('circuitoNum').value) || 4));
+    const pending = _pendingCircuitoCambio;
+    _pendingCircuitoCambio = null;
+    cerrarModalCircuito();
+
+    if (pending) {
+        const { grupo, cantidadActual } = pending;
+        if (n === cantidadActual) return;
+        if (n > cantidadActual) {
+            aplicarCambioTipo(grupo, 'circuito', n, cantidadActual);
+        } else {
+            abrirModalEliminarParaReducir(grupo, 'circuito', n);
+        }
+        return;
+    }
+
+    agregarBloque('circuito', n, _diaCircuito);
+}
 document.getElementById('circuitoNum').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmarCircuito(); if(e.key==='Escape') cerrarModalCircuito(); });
+
+function cerrarModalEliminar() {
+    document.getElementById('modalEliminarEj').classList.remove('open');
+    _pendingCircuitoCambio = null;
+}
 
 /* ── Auto-expand nota ── */
 function autoExpandNota(el) { el.style.height='0'; el.style.height=el.scrollHeight+'px'; }
@@ -288,6 +376,7 @@ function generarTabs() {
         const tab=document.createElement('div');
         tab.className='dia-tab'+(d===1?' active':'');
         tab.textContent=`Día ${d}`; tab.dataset.dia=d;
+        tab.draggable = true;
         tab.onclick=()=>activarTab(d); tabsEl.appendChild(tab);
         const panel=document.createElement('div');
         panel.className='dia-panel'+(d===1?' active':'');
@@ -308,12 +397,104 @@ function generarTabs() {
     }
     diaActivo=1;
     document.getElementById('dias-tabs-wrap').style.display='block';
+    initDragTabs();
 }
 
 function activarTab(d) {
     document.querySelectorAll('.dia-tab').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.dia)===d));
     document.querySelectorAll('.dia-panel').forEach(p=>p.classList.toggle('active',parseInt(p.dataset.dia)===d));
     diaActivo=d;
+}
+
+/* ── Intercambiar días (drag & drop de pestañas) ── */
+function serializarDia(d) {
+    const contenedor = document.getElementById(`bloques-dia-${d}`);
+    const notaSesion = document.querySelector(`.nota-dia[data-dia="${d}"]`)?.value || '';
+    const bloques = {};
+    if (contenedor) {
+        contenedor.querySelectorAll('.bloque').forEach(bloque => {
+            const grupo = bloque.dataset.grupo, tipo = bloque.dataset.tipo;
+            if (!grupo) return;
+            const descansosSerie = [];
+            bloque.querySelectorAll('.descanso-serie-cell').forEach((cell, s) => {
+                const m = parseInt(cell.querySelector(`[data-desc-min="${grupo}-${s}"]`)?.value) || 0;
+                const seg = parseInt(cell.querySelector(`[data-desc-seg="${grupo}-${s}"]`)?.value) || 0;
+                const total = m * 60 + seg;
+                descansosSerie.push({ valor: total > 0 ? String(total) : '' });
+            });
+            const ejercicios = {};
+            bloque.querySelectorAll('.ejercicio-row').forEach((ejRow, i) => {
+                const segmento = ejRow.querySelector('.segmento-select')?.value ?? '';
+                const ejercicio_id = ejRow.querySelector('.ejercicio-id-input')?.value ?? '';
+                const nota_ej = ejRow.querySelector('.nota-ej-input')?.value ?? '';
+                const series = [];
+                ejRow.querySelectorAll('[data-serie]').forEach(col => {
+                    const metodo = col.querySelector('.metodo-select')?.value ?? 'normal';
+                    const s = { metodo };
+                    col.querySelectorAll('[data-key]').forEach(el => { s[el.dataset.key] = el.value; });
+                    series.push(s);
+                });
+                ejercicios[i] = { segmento, ejercicio_id, nota_ej, series };
+            });
+            bloques[grupo] = { tipo, descansos_serie: descansosSerie, ejercicios };
+        });
+    }
+    return { notaSesion, bloques };
+}
+
+function vaciarDia(d) {
+    const contenedor = document.getElementById(`bloques-dia-${d}`);
+    if (contenedor) contenedor.innerHTML = '';
+    const nota = document.querySelector(`.nota-dia[data-dia="${d}"]`);
+    if (nota) { nota.value = ''; autoExpandNota(nota); }
+}
+
+function pintarDia(d, data) {
+    vaciarDia(d);
+    const nota = document.querySelector(`.nota-dia[data-dia="${d}"]`);
+    if (nota) { nota.value = data.notaSesion || ''; autoExpandNota(nota); }
+    Object.entries(data.bloques || {}).forEach(([grupo, bloque]) => precargarBloque(grupo, bloque, d));
+}
+
+function intercambiarDias(diaA, diaB) {
+    if (diaA === diaB) return;
+    if (!confirm(`¿Intercambiar el contenido del Día ${diaA} con el Día ${diaB}?`)) return;
+    const dataA = serializarDia(diaA);
+    const dataB = serializarDia(diaB);
+    pintarDia(diaA, dataB);
+    pintarDia(diaB, dataA);
+}
+
+function initDragTabs() {
+    const tabsEl = document.getElementById('dias-tabs');
+    if (!tabsEl || tabsEl._dragInit) return;
+    tabsEl._dragInit = true;
+    let dragged = null;
+    tabsEl.addEventListener('dragstart', e => {
+        const tab = e.target.closest('.dia-tab');
+        if (!tab) return;
+        dragged = tab;
+        tab.classList.add('dia-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+    tabsEl.addEventListener('dragend', () => {
+        tabsEl.querySelectorAll('.dia-tab').forEach(t => t.classList.remove('dia-dragging', 'dia-drag-over'));
+        dragged = null;
+    });
+    tabsEl.addEventListener('dragover', e => {
+        e.preventDefault();
+        const tab = e.target.closest('.dia-tab');
+        tabsEl.querySelectorAll('.dia-tab').forEach(t => t.classList.remove('dia-drag-over'));
+        if (!tab || tab === dragged) return;
+        tab.classList.add('dia-drag-over');
+    });
+    tabsEl.addEventListener('drop', e => {
+        e.preventDefault();
+        const tab = e.target.closest('.dia-tab');
+        tabsEl.querySelectorAll('.dia-tab').forEach(t => t.classList.remove('dia-drag-over'));
+        if (!tab || !dragged || tab === dragged) return;
+        intercambiarDias(parseInt(dragged.dataset.dia), parseInt(tab.dataset.dia));
+    });
 }
 
 /* ── Guardar ── */
@@ -330,9 +511,14 @@ function guardarPlantilla() {
         contenedor.querySelectorAll('.bloque').forEach(bloque=>{
             const grupo=bloque.dataset.grupo, tipo=bloque.dataset.tipo;
             if(!grupo) return;
-            const descInput=bloque.querySelector(`[data-bloque-descanso-valor="${grupo}"]`);
-            const descHidden=bloque.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
-            bloques[grupo]={ tipo, orden:orden++, descanso_valor:descInput?.value||'', descanso_unidad:descHidden?.value||'seg', ejercicios:{} };
+            const descansosSerie = [];
+            bloque.querySelectorAll('.descanso-serie-cell').forEach((cell, s) => {
+                const m = parseInt(cell.querySelector(`[data-desc-min="${grupo}-${s}"]`)?.value) || 0;
+                const seg = parseInt(cell.querySelector(`[data-desc-seg="${grupo}-${s}"]`)?.value) || 0;
+                const total = m * 60 + seg;
+                descansosSerie.push({ valor: total > 0 ? String(total) : '' });
+            });
+            bloques[grupo]={ tipo, orden:orden++, descansos_serie: descansosSerie, ejercicios:{} };
             bloque.querySelectorAll('.ejercicio-row').forEach((ejRow,i)=>{
                 const segmento    =ejRow.querySelector('.segmento-select')?.value??'';
                 const ejercicio_id=ejRow.querySelector('.ejercicio-id-input')?.value??'';
@@ -375,30 +561,19 @@ function onSegmentoChange(select) {
     const trigger=wrapper.querySelector('.ej-select-trigger'), img=trigger.querySelector('img'), label=trigger.querySelector('.ej-trigger-nombre,.ej-trigger-placeholder');
     const dropdown=wrapper.querySelector('.ej-select-dropdown'), hidden=document.getElementById(ejId);
     hidden.value=''; img.src=''; img.style.display='none'; label.className='ej-trigger-placeholder'; label.textContent='-- Ejercicio --'; dropdown.innerHTML='';
-    const R2_URL = "{{ env('AWS_URL') }}";
-    (ejerciciosPorGrupo[seg]??[]).forEach(e=>{
-        const url = e.imagen ? R2_URL + e.imagen : '';
-        const div=document.createElement('div');
-        div.className='ej-select-option'; div.dataset.value=e.id; div.dataset.nombre=e.nombre; div.dataset.imagen=url; div.onclick=()=>seleccionarEjercicio(div);
-        div.innerHTML=url?`<img src="${url}" alt="${e.nombre}"><span>${e.nombre}</span>`:`<div class="ej-no-img">Sin img</div><span>${e.nombre}</span>`;
-        dropdown.appendChild(div);
-    });
+    (ejerciciosPorGrupo[seg]??[]).forEach(e=>dropdown.appendChild(construirOpcionEjercicio(e)));
+}
+function construirOpcionEjercicio(e, ejSeleccionadoId = null) {
+    const url = imgUrl(e.imagen);
+    const sel = String(e.id) === String(ejSeleccionadoId) ? 'selected' : '';
+    const div = document.createElement('div');
+    div.className = `ej-select-option ${sel}`;
+    div.dataset.value = e.id; div.dataset.nombre = e.nombre; div.dataset.imagen = url;
+    div.onclick = () => seleccionarEjercicio(div);
+    div.innerHTML = url ? `<img src="${url}" alt="${e.nombre}"><span>${e.nombre}</span>` : `<div class="ej-no-img">Sin img</div><span>${e.nombre}</span>`;
+    return div;
 }
 document.addEventListener('change', e=>{if(e.target.classList.contains('segmento-select')) onSegmentoChange(e.target);});
-
-/* ── Descanso ── */
-function actualizarDescansoBadge(grupo) {
-    const input=document.querySelector(`[data-bloque-descanso-valor="${grupo}"]`), badge=document.getElementById(`desc-badge-${grupo}`);
-    const unidad=document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`)?.value||'seg';
-    if(!input||!badge) return;
-    if(input.value){badge.textContent=`${input.value} ${unidad}`;badge.style.display='';}else{badge.style.display='none';}
-}
-function setDescUnidadBloque(btn, grupo, unidad) {
-    const hidden=document.querySelector(`[data-bloque-descanso-unidad-val="${grupo}"]`);
-    if(hidden) hidden.value=unidad;
-    document.querySelectorAll(`[data-bloque-descanso-unidad="${grupo}"]`).forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel'); actualizarDescansoBadge(grupo);
-}
 
 /* ── Tempo ── */
 function toggleTempo(btn) {
@@ -447,8 +622,69 @@ function actualizarHeader(grupo, numSeries) {
     for(let s=0;s<numSeries;s++){const d=document.createElement('div');d.className='serie-header-col';d.textContent=`S${s+1}`;header.appendChild(d);}
 }
 
-function bloqueFooterHTML(grupo) {
-    return `<div class="bloque-footer"><span class="descanso-inline"><span>💤 Descanso entre series:</span><input type="number" min="0" class="descanso-valor-input" data-bloque-descanso-valor="${grupo}" value="" placeholder="0" oninput="actualizarDescansoBadge('${grupo}')"><button type="button" class="descanso-unit-btn sel" data-bloque-descanso-unidad="${grupo}" onclick="setDescUnidadBloque(this,'${grupo}','seg')">seg</button><button type="button" class="descanso-unit-btn" data-bloque-descanso-unidad="${grupo}" onclick="setDescUnidadBloque(this,'${grupo}','min')">min</button></span><input type="hidden" data-bloque-descanso-unidad-val="${grupo}" value="seg"><span class="descanso-badge" id="desc-badge-${grupo}" style="display:none"></span></div>`;
+/* ── Descanso por serie ── */
+function formatearTiempo(seg) {
+    seg = parseInt(seg) || 0;
+    if (seg === 0) return '–';
+    const m = Math.floor(seg / 60), s = seg % 60;
+    if (m === 0) return s + 's';
+    if (s === 0) return m + 'm';
+    return m + 'm ' + s + 's';
+}
+function onDescChange(el, grupo, s) {
+    const segInput = document.querySelector(`[data-desc-seg="${grupo}-${s}"]`);
+    if (segInput && el === segInput) {
+        let segVal = parseInt(segInput.value) || 0;
+        if (segVal > 59) { segInput.value = 59; segInput.classList.add('error'); setTimeout(() => segInput.classList.remove('error'), 800); }
+        else { segInput.classList.remove('error'); }
+    }
+    const m = parseInt(document.querySelector(`[data-desc-min="${grupo}-${s}"]`)?.value) || 0;
+    const seg = parseInt(segInput?.value) || 0;
+    const total = m * 60 + seg;
+    const prev = document.getElementById(`desc-prev-${grupo}-${s}`);
+    if (!prev) return;
+    prev.textContent = formatearTiempo(total);
+    prev.className = 'desc-preview ' + (total > 0 ? 'has-val' : 'no-val');
+}
+function htmlDescSerieCell(grupo, s, segTotal) {
+    segTotal = parseInt(segTotal) || 0;
+    const minVal = Math.floor(segTotal / 60), segVal = segTotal % 60;
+    let optsMin = '';
+    for (let m = 0; m <= 10; m++) optsMin += `<option value="${m}" ${m===minVal?'selected':''}>${m}m</option>`;
+    const preview = formatearTiempo(segTotal), prevClass = segTotal > 0 ? 'has-val' : 'no-val';
+    return `<div class="descanso-serie-cell">
+        <div class="desc-inputs">
+            <select class="desc-select-min" data-desc-min="${grupo}-${s}" onchange="onDescChange(this,'${grupo}','${s}')">${optsMin}</select>
+            <span class="desc-sep">:</span>
+            <input type="number" class="desc-input-seg" min="0" max="59" data-desc-seg="${grupo}-${s}" value="${segVal > 0 ? segVal : ''}" placeholder="00" oninput="onDescChange(this,'${grupo}','${s}')">
+        </div>
+        <div class="desc-preview ${prevClass}" id="desc-prev-${grupo}-${s}">${preview}</div>
+    </div>`;
+}
+function regenerarDescansoRow(grupo, numSeries, valores) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    if (!bloque) return;
+    bloque.querySelector('.descanso-row')?.remove();
+    if (numSeries < 1) return;
+    let celdas = '';
+    for (let s = 0; s < numSeries; s++) {
+        const seg = parseInt(valores?.[s]?.valor) || 0;
+        celdas += htmlDescSerieCell(grupo, s, seg);
+    }
+    const fila = `<div class="descanso-row" data-descanso-row="${grupo}">
+        <div class="descanso-row-label"><i class="ti ti-moon" style="font-size:13px"></i> Descanso</div>
+        <div class="descanso-row-cols">${celdas}</div>
+    </div>`;
+    bloque.querySelector('.bloque-footer').insertAdjacentHTML('beforebegin', fila);
+}
+
+function bloqueFooterHTML() {
+    return `<div class="bloque-footer">
+        <span style="font-size:0.68rem;color:var(--muted);">
+            <i class="ti ti-info-circle" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>
+            Descanso configurado por serie
+        </span>
+    </div>`;
 }
 
 function htmlSerieCol(ex={}) {
@@ -550,16 +786,25 @@ function generarSeriesBloque(input, grupo, cantidad) {
         container.innerHTML='';
         for(let s=0;s<n;s++) container.insertAdjacentHTML('beforeend',htmlSerieCol(exArr[s]??{}));
     }
+    const bloqueEl = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    const valoresDescPrevios = [];
+    bloqueEl?.querySelectorAll('.descanso-serie-cell').forEach((cell, s) => {
+        const m = parseInt(cell.querySelector(`[data-desc-min="${grupo}-${s}"]`)?.value) || 0;
+        const seg = parseInt(cell.querySelector(`[data-desc-seg="${grupo}-${s}"]`)?.value) || 0;
+        valoresDescPrevios.push({ valor: m * 60 + seg });
+    });
+    regenerarDescansoRow(grupo, n, valoresDescPrevios);
 }
 
-function agregarBloque(tipo, cantidad, dia, grupo=null, ejercsData=null) {
+function agregarBloque(tipo, cantidad, dia, grupo=null, ejercsData=null, descansosSerie=null) {
     const g=grupo??('G'+contador++);
     const contenedor=document.getElementById(`bloques-dia-${dia}`);
     if(!contenedor) return;
     const opts=Object.keys(ejerciciosPorGrupo).map(s=>`<option value="${s}">${s}</option>`).join('');
-    let html=`<div class="bloque" data-grupo="${g}" data-tipo="${tipo}" data-dia="${dia}">
+    let html=`<div class="bloque" data-grupo="${g}" data-tipo="${tipo}" data-dia="${dia}" style="position:relative;">
+        <div class="bloque-toast blue" id="toast-${g}"></div>
         <div class="bloque-header">
-            <span class="bloque-tipo tipo-${tipo.toLowerCase()}">${tipo.toUpperCase()}${tipo==='circuito'?`<span style="opacity:.7;font-size:.55rem"> · ${cantidad} ej.</span>`:''}</span>
+            <span class="bloque-tipo tipo-${tipo.toLowerCase()}" onclick="toggleTipoDropdown(this,'${g}',${cantidad})">${tipo.toUpperCase()}${tipo==='circuito'?`<span class="circuito-cant" style="opacity:.7;font-size:.55rem"> · ${cantidad} ej.</span>`:''}<i class="ti ti-chevron-down" style="font-size:0.55rem;margin-left:2px;vertical-align:1px"></i></span>
             <div class="bloque-series-count">Series:<input type="number" min="1" placeholder="–" onchange="generarSeriesBloque(this,'${g}',${cantidad})"></div>
             <button type="button" class="btn-remove" onclick="this.closest('.bloque').remove();actualizarOrden(${dia});">✕</button>
         </div>
@@ -571,11 +816,10 @@ function agregarBloque(tipo, cantidad, dia, grupo=null, ejercsData=null) {
         const ejsSegmento=ejerciciosPorGrupo[ej?.segmento]??[];
         const ejActual=ej?ejsSegmento.find(e=>String(e.id)===String(ej.ejercicio_id)):null;
         const ejNombre=ejActual?ejActual.nombre:'-- Ejercicio --';
-        const R2_URL = "{{ env('AWS_URL') }}";
+        const ejImagen = imgUrl(ejActual?.imagen);
         const optsSegmento=ej?Object.keys(ejerciciosPorGrupo).map(s=>`<option value="${s}" ${s===ej.segmento?'selected':''}>${s}</option>`).join(''):opts;
-        const ejImagen = ejActual && ejActual.imagen ? R2_URL + ejActual.imagen : '';
         const optsEjs=ej?ejsSegmento.map(e=>{
-            const url = e.imagen ? R2_URL + e.imagen : '';
+            const url = imgUrl(e.imagen);
             const sel=String(e.id)===String(ej.ejercicio_id)?'selected':'';
             return `<div class="ej-select-option ${sel}" data-value="${e.id}" data-nombre="${e.nombre}" data-imagen="${url}" onclick="seleccionarEjercicio(this)">${url?`<img src="${url}" alt="${e.nombre}">`:'<div class="ej-no-img">Sin img</div>'}<span>${e.nombre}</span></div>`;
         }).join(''):'';
@@ -608,18 +852,21 @@ function agregarBloque(tipo, cantidad, dia, grupo=null, ejercsData=null) {
         </div>`;
     }
 
-    html+=bloqueFooterHTML(g)+'</div>';
+    html+=bloqueFooterHTML()+'</div>';
     contenedor.insertAdjacentHTML('beforeend',html);
     if(ejercsData){
+        let numSeriesFinal = 0;
         Object.entries(ejercsData).forEach(([i,ej])=>{
             const container=document.querySelector(`.series-cols[data-grupo="${g}"][data-ej="${i}"]`);
             if(!container) return;
             const series=ej.series??[];
+            numSeriesFinal = Math.max(numSeriesFinal, series.length);
             actualizarHeader(g,series.length);
             const seriesInput=document.querySelector(`.bloque[data-grupo="${g}"] .bloque-series-count input`);
             if(seriesInput) seriesInput.value=series.length;
             series.forEach(serie=>container.insertAdjacentHTML('beforeend',htmlSerieCol(serie)));
         });
+        regenerarDescansoRow(g, numSeriesFinal, descansosSerie || []);
     }
     contenedor.querySelectorAll('.nota-ej-input').forEach(el=>{
         autoExpandNota(el);
@@ -627,8 +874,247 @@ function agregarBloque(tipo, cantidad, dia, grupo=null, ejercsData=null) {
     });
     actualizarOrden(dia);
 }
+
+function precargarBloque(grupo, bloque, dia) {
+    agregarBloque(
+        bloque.tipo,
+        Object.keys(bloque.ejercicios ?? {}).length,
+        dia,
+        grupo,
+        bloque.ejercicios ?? {},
+        bloque.descansos_serie ?? []
+    );
+}
+
+/* ── Toast ── */
+function showBloqueToast(grupo, msg, color) {
+    const t = document.getElementById(`toast-${grupo}`);
+    if (!t) return;
+    t.textContent = msg; t.className = `bloque-toast ${color} show`;
+    setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ── Cambiar tipo de bloque ── */
+const TIPO_CONFIG = {
+    monoserie: { label:'LINEAL',    cls:'tipo-monoserie', max:1  },
+    biserie:   { label:'BISERIE',   cls:'tipo-biserie',   max:2  },
+    triserie:  { label:'TRISERIE',  cls:'tipo-triserie',  max:3  },
+    circuito:  { label:'CIRCUITO',  cls:'tipo-circuito',  max:12 },
+};
+let _pendingCircuitoCambio = null;
+let _tipoDropdownGrupo = null;
+
+function toggleTipoDropdown(badge, grupo, cantidad) {
+    const dd = document.getElementById('tipo-dd-global');
+    const isOpen = dd.classList.contains('open') && _tipoDropdownGrupo === grupo;
+    dd.classList.remove('open');
+    _tipoDropdownGrupo = null;
+    if (isOpen) return;
+
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    const tipoActual = bloque?.dataset.tipo ?? '';
+    const cantActual = bloque?.querySelectorAll('.ejercicio-row').length ?? cantidad;
+
+    const tipos = [
+        { key:'monoserie', label:'Lineal',   dot:'#dbeafe', max:1 },
+        { key:'biserie',   label:'Biserie',  dot:'#d1fae5', max:2 },
+        { key:'triserie',  label:'Triserie', dot:'#fef3c7', max:3 },
+        { key:'circuito',  label:'Circuito', dot:'#fce7f3', max:12, isCircuito:true },
+    ];
+
+    dd.innerHTML = tipos.map(t => {
+        const activo = tipoActual === t.key;
+        const clases = ['tipo-dropdown-item', activo ? 'activo' : '', t.isCircuito ? 'circuito-item' : ''].filter(Boolean).join(' ');
+        return `<div class="${clases}" onclick="cambiarTipoBloque('${grupo}','${t.key}',${t.max},${cantActual})">
+            <span class="tipo-dot" style="background:${t.dot}"></span> ${t.label}
+        </div>`;
+    }).join('');
+
+    const rect = badge.getBoundingClientRect();
+    dd.style.top  = (rect.bottom + 4) + 'px';
+    dd.style.left = rect.left + 'px';
+    dd.classList.add('open');
+    _tipoDropdownGrupo = grupo;
+}
+document.addEventListener('click', e => {
+    if (!e.target.closest('#tipo-dd-global') && !e.target.closest('.bloque-tipo')) {
+        document.getElementById('tipo-dd-global')?.classList.remove('open');
+        _tipoDropdownGrupo = null;
+    }
+});
+window.addEventListener('scroll', () => {
+    document.getElementById('tipo-dd-global')?.classList.remove('open');
+    _tipoDropdownGrupo = null;
+}, true);
+
+function cambiarTipoBloque(grupo, nuevoTipo, nuevaCantidad, cantidadActual) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    if (!bloque) return;
+    document.getElementById('tipo-dd-global')?.classList.remove('open');
+    _tipoDropdownGrupo = null;
+
+    const tipoActual = bloque.dataset.tipo;
+    if (nuevoTipo !== 'circuito' && tipoActual === nuevoTipo) return;
+
+    const actualCount = bloque.querySelectorAll('.ejercicio-row').length;
+
+    if (nuevoTipo === 'circuito') {
+        _pendingCircuitoCambio = { grupo, cantidadActual: actualCount };
+        setTimeout(() => {
+            document.getElementById('circuitoNum').value = Math.max(2, actualCount);
+            document.getElementById('modalCircuito').classList.add('open');
+            setTimeout(() => document.getElementById('circuitoNum').focus(), 50);
+        }, 50);
+        return;
+    }
+
+    if (nuevaCantidad >= actualCount) {
+        aplicarCambioTipo(grupo, nuevoTipo, nuevaCantidad, actualCount);
+        return;
+    }
+
+    abrirModalEliminarParaReducir(grupo, nuevoTipo, nuevaCantidad);
+}
+
+function abrirModalEliminarParaReducir(grupo, tipoDestino, targetN) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    if (!bloque) return;
+    const lista = document.getElementById('eliminar-ej-lista');
+    lista.innerHTML = '';
+    const letrasColors = [
+        {bg:'#eff6ff',color:'#1d4ed8'},{bg:'#f0fdf4',color:'#065f46'},
+        {bg:'#fffbeb',color:'#92400e'},{bg:'#fdf2f8',color:'#9d174d'},
+        {bg:'#e0f2fe',color:'#1d4ed8'},{bg:'#dcfce7',color:'#065f46'},
+        {bg:'#fef9c3',color:'#92400e'},{bg:'#fce7f3',color:'#9d174d'},
+        {bg:'#dbeafe',color:'#1e40af'},{bg:'#d1fae5',color:'#166534'},
+        {bg:'#fef3c7',color:'#854d0e'},{bg:'#fdf2f8',color:'#831843'},
+    ];
+    bloque.querySelectorAll('.ejercicio-row').forEach((row, i) => {
+        const nombre = row.querySelector('.ej-trigger-nombre')?.textContent
+            || row.querySelector('.ej-trigger-placeholder')?.textContent
+            || `Ejercicio ${i+1}`;
+        const segmento = row.querySelector('.segmento-select')?.value || '';
+        const lc = letrasColors[i] || letrasColors[0];
+        const letraLabel = ['A','B','C','D','E','F','G','H','I','J','K','L'][i] || (i+1);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ej-eliminar-btn';
+        btn.innerHTML = `
+            <span class="ej-eliminar-letra" style="background:${lc.bg};color:${lc.color}">${letraLabel}</span>
+            <span><strong style="display:block;font-size:0.78rem">${nombre}</strong>
+            <span style="font-size:0.65rem;color:var(--muted)">${segmento}</span></span>
+            <i class="ti ti-trash" style="font-size:13px;color:#ef4444;margin-left:auto" aria-hidden="true"></i>`;
+        const idx = i;
+        btn.onclick = () => {
+            cerrarModalEliminar();
+            eliminarEjRow(grupo, idx);
+            const remaining = bloque.querySelectorAll('.ejercicio-row').length;
+            if (remaining > targetN) {
+                setTimeout(() => abrirModalEliminarParaReducir(grupo, tipoDestino, targetN), 200);
+            } else {
+                aplicarCambioTipo(grupo, tipoDestino, targetN, remaining);
+            }
+        };
+        lista.appendChild(btn);
+    });
+    document.getElementById('modalEliminarEj').classList.add('open');
+}
+
+function eliminarEjRow(grupo, idx) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    const rows = bloque?.querySelectorAll('.ejercicio-row');
+    if (rows && rows[idx]) rows[idx].remove();
+    const newRows = bloque.querySelectorAll('.ejercicio-row');
+    newRows.forEach((row, i) => {
+        const letra = row.querySelector('.ej-letra');
+        if (letra) { letra.className = `ej-letra ${LETRAS[i] || 'ej-letra-a'}`; letra.textContent = NUMS[i] || (i+1); }
+        row.className = `ejercicio-row ${BGS[i] || 'ej-bg-a'}`;
+    });
+}
+
+function aplicarCambioTipo(grupo, nuevoTipo, nuevaCantidad, actualCount) {
+    const bloque = document.querySelector(`.bloque[data-grupo="${grupo}"]`);
+    if (!bloque) return;
+    const cfg = TIPO_CONFIG[nuevoTipo];
+
+    bloque.dataset.tipo = nuevoTipo;
+
+    const badge = bloque.querySelector('.bloque-tipo');
+    if (badge) {
+        Object.values(TIPO_CONFIG).forEach(c => badge.classList.remove(c.cls));
+        badge.classList.add(cfg.cls);
+        const labelNode = [...badge.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+        if (labelNode) labelNode.textContent = cfg.label + ' ';
+        let spanCant = badge.querySelector('.circuito-cant');
+        if (nuevoTipo === 'circuito') {
+            if (!spanCant) {
+                spanCant = document.createElement('span');
+                spanCant.className = 'circuito-cant';
+                spanCant.style.cssText = 'opacity:.7;font-size:.55rem';
+                const chevron = badge.querySelector('.ti-chevron-down');
+                if (chevron) chevron.before(spanCant); else badge.appendChild(spanCant);
+            }
+            spanCant.textContent = ` · ${nuevaCantidad} ej.`;
+        } else {
+            spanCant?.remove();
+        }
+    }
+
+    const ejRows = bloque.querySelectorAll('.ejercicio-row');
+    const numSeries = bloque.querySelector('.bloque-series-count input')?.value || 0;
+    const opts = Object.keys(ejerciciosPorGrupo).map(s => `<option value="${s}">${s}</option>`).join('');
+    const dia = bloque.dataset.dia;
+
+    for (let i = ejRows.length; i < nuevaCantidad; i++) {
+        const ejId = `ej-${grupo}-${i}`;
+        const lClass = LETRAS[i % LETRAS.length];
+        const bgClass = BGS[i % BGS.length];
+        let newRow = `<div class="ejercicio-row ${bgClass}">
+            <div class="ej-letra ${lClass}">${NUMS[i] ?? (i+1)}</div>
+            <div class="col-segmento"><div class="field-label">Segmento</div>
+                <select class="segmento-select" data-ej="${ejId}" onchange="onSegmentoChange(this)">
+                    <option value="">-- Segmento --</option>${opts}
+                </select>
+            </div>
+            <div class="col-ejercicio"><div class="field-label">Ejercicio</div>
+                <input type="hidden" id="${ejId}" class="ejercicio-id-input" value="">
+                <div class="ej-select-wrapper" data-target="${ejId}">
+                    <div class="ej-select-trigger" onclick="toggleDropdown(this)">
+                        <img src="" alt="" style="display:none;">
+                        <span class="ej-trigger-placeholder">-- Ejercicio --</span>
+                        <span class="ej-trigger-arrow">▼</span>
+                    </div>
+                    <div class="ej-select-dropdown"></div>
+                </div>
+                <div class="nota-ej-input-wrap">
+                    <i class="ti ti-pencil"></i>
+                    <textarea class="nota-ej-input" placeholder="nota…"></textarea>
+                </div>
+            </div>
+            <div class="col-series"><div class="series-cols" data-grupo="${grupo}" data-ej="${i}"></div></div>
+        </div>`;
+        const anchor = bloque.querySelector('.descanso-row, .bloque-footer');
+        anchor.insertAdjacentHTML('beforebegin', newRow);
+        const container = bloque.querySelector(`.series-cols[data-grupo="${grupo}"][data-ej="${i}"]`);
+        if (container) {
+            for (let s = 0; s < numSeries; s++) container.insertAdjacentHTML('beforeend', htmlSerieCol({}));
+        }
+    }
+
+    bloque.querySelectorAll('.ejercicio-row').forEach((row, i) => {
+        const letra = row.querySelector('.ej-letra');
+        if (letra) { letra.className = `ej-letra ${LETRAS[i]||'ej-letra-a'}`; letra.textContent = NUMS[i]||(i+1); }
+        row.className = `ejercicio-row ${BGS[i]||'ej-bg-a'}`;
+    });
+
+    bloque.querySelectorAll('.nota-ej-input').forEach(el => {
+        autoExpandNota(el);
+        if (!el._expandBound) { el.addEventListener('input', () => autoExpandNota(el)); el._expandBound = true; }
+    });
+
+    if (dia) actualizarOrden(parseInt(dia));
+    showBloqueToast(grupo, `Cambiado a ${cfg.label.toLowerCase()}`, 'blue');
+}
 </script>
-
-
 
 @endsection

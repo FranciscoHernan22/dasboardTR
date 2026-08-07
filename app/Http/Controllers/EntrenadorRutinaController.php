@@ -247,6 +247,78 @@ class EntrenadorRutinaController extends Controller
     }
 
     /**
+     * Intercambia el contenido completo (bloques, ejercicios, series, nota
+     * de sesión y estado de día completado) entre dos días de la misma
+     * semana. Se usa para el drag & drop del nav de días en el editor.
+     */
+    public function moverDia(Request $request, User $cliente)
+    {
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'semana'      => 'required|integer|min:1',
+            'dia_origen'  => 'required|integer|min:1|max:7',
+            'dia_destino' => 'required|integer|min:1|max:7',
+        ]);
+
+        $semana = (int) $request->semana;
+        $diaA   = (int) $request->dia_origen;
+        $diaB   = (int) $request->dia_destino;
+
+        if ($diaA === $diaB) {
+            return response()->json(['success' => false, 'message' => 'Selecciona dos días distintos.'], 422);
+        }
+
+        $plan = $cliente->plan;
+        $fechaFor = function ($dia) use ($plan, $semana) {
+            if ($plan && $plan->fecha_inicio) {
+                return Carbon::parse($plan->fecha_inicio)
+                    ->addDays(($semana - 1) * 7 + ($dia - 1))
+                    ->toDateString();
+            }
+            return now()->toDateString();
+        };
+
+        // Día temporal (-1) para poder intercambiar A <-> B sin colisiones
+        // de la restricción semana+dia mientras se hace el swap.
+        Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $diaA)
+            ->update(['dia' => -1]);
+
+        Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $diaB)
+            ->update(['dia' => $diaA, 'fecha' => $fechaFor($diaA)]);
+
+        Rutina::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', -1)
+            ->update(['dia' => $diaB, 'fecha' => $fechaFor($diaB)]);
+
+        // Lo mismo para el estado de "día completado" marcado por el cliente,
+        // para que ese estado viaje junto con el contenido que le corresponde.
+        DiaCompletado::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $diaA)
+            ->update(['dia' => -1]);
+
+        DiaCompletado::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', $diaB)
+            ->update(['dia' => $diaA]);
+
+        DiaCompletado::where('user_id', $cliente->id)
+            ->where('semana', $semana)
+            ->where('dia', -1)
+            ->update(['dia' => $diaB]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Copia todos los días de una semana (con sus bloques/ejercicios/series)
      * hacia otra semana del mismo cliente. Sobrescribe lo que exista en destino.
      */

@@ -1,4 +1,4 @@
- @extends('layouts.entrenador')
+@extends('layouts.entrenador')
 @section('titulo','Editar Rutina')
 @section('contenido')
 @php $r2Url = env('AWS_URL'); @endphp
@@ -281,6 +281,12 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     cursor:pointer; font-family:'DM Sans',sans-serif; width:100%;
 }
 .modal-eliminar-cancel:hover { background:#f3f4f6; }
+
+/* ── Drag & drop de días (nav superior) ── */
+#wp-nav a[data-dia] { cursor:grab; transition:outline .1s, background-color .1s; }
+#wp-nav a[data-dia]:active { cursor:grabbing; }
+#wp-nav a[data-dia].dia-drag-over { outline:2px solid #2563eb; outline-offset:-2px; background-color:#eff6ff; }
+#wp-nav a[data-dia].dia-dragging { opacity:.35; }
 </style>
 
 {{-- MODAL MÉTODOS --}}
@@ -497,6 +503,9 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         @foreach($diasCortoNav as $i => $letra)
             @php $numDia=$i+1; $esActivo=$numDia==(int)$dia; $tiene=in_array($semana.'-'.$numDia,$diasConRutina??[]); @endphp
             <a href="{{ route('entrenador.rutina.editar',[$cliente->id,$semana,$numDia]) }}"
+               data-dia="{{ $numDia }}"
+               draggable="true"
+               title="Arrastra para intercambiar el contenido con otro día"
                class="flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-md transition-colors
                       {{ $esActivo ? 'border border-blue-400 bg-blue-50' : 'border border-transparent hover:bg-gray-50 hover:border-gray-200' }}">
                 <span class="text-[9px] uppercase tracking-wide leading-none {{ $esActivo ? 'text-blue-600 font-bold' : 'text-gray-400' }}">{{ $letra }}</span>
@@ -524,6 +533,95 @@ document.addEventListener('click',()=>{
     document.getElementById('semDropdown')?.classList.add('hidden');
     document.getElementById('semChevron').style.transform='';
 });
+</script>
+
+{{-- ── Drag & drop para intercambiar días ── --}}
+<script>
+(function(){
+    const CLICK_DRAG_THRESHOLD = 6; // px — si movió más de esto, fue drag y no click
+    let diaDragged   = null;
+    let dragStarted  = false;
+    let downX = 0, downY = 0;
+
+    const links = document.querySelectorAll('#wp-nav a[data-dia]');
+
+    links.forEach(el => {
+        el.addEventListener('mousedown', e => {
+            downX = e.clientX; downY = e.clientY; dragStarted = false;
+        });
+
+        el.addEventListener('dragstart', e => {
+            diaDragged = el.dataset.dia;
+            dragStarted = true;
+            e.dataTransfer.effectAllowed = 'move';
+            try { e.dataTransfer.setData('text/plain', diaDragged); } catch(err) {}
+            el.classList.add('dia-dragging');
+        });
+
+        el.addEventListener('dragend', () => {
+            el.classList.remove('dia-dragging');
+            links.forEach(l => l.classList.remove('dia-drag-over'));
+        });
+
+        el.addEventListener('dragover', e => {
+            e.preventDefault();
+            if (el.dataset.dia !== diaDragged) el.classList.add('dia-drag-over');
+        });
+
+        el.addEventListener('dragleave', () => {
+            el.classList.remove('dia-drag-over');
+        });
+
+        el.addEventListener('drop', e => {
+            e.preventDefault();
+            el.classList.remove('dia-drag-over');
+            const diaDestino = el.dataset.dia;
+            if (!diaDragged || diaDragged === diaDestino) return;
+            moverDiaDragDrop(diaDragged, diaDestino);
+        });
+
+        // Evita que un drag corto se interprete además como click-navegación
+        el.addEventListener('click', e => {
+            if (dragStarted) {
+                e.preventDefault();
+                dragStarted = false;
+            }
+        });
+    });
+
+    window.moverDiaDragDrop = function(diaOrigen, diaDestino) {
+        const letras = ['','L','M','X','J','V','S','D'];
+        const nombreOrigen  = letras[diaOrigen]  || diaOrigen;
+        const nombreDestino = letras[diaDestino] || diaDestino;
+
+        if (!confirm(`¿Intercambiar el contenido del día ${nombreOrigen} (${diaOrigen}) con el día ${nombreDestino} (${diaDestino})?`)) {
+            return;
+        }
+
+        fetch("{{ route('entrenador.rutina.moverDia', $cliente->id) }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                semana: {{ $semana }},
+                dia_origen: diaOrigen,
+                dia_destino: diaDestino,
+            }),
+        })
+        .then(async r => {
+            const data = await r.json().catch(() => ({}));
+            if (r.ok && data.success) {
+                window.location.href = "{{ url('/entrenador/rutina/'.$cliente->id) }}/{{ $semana }}/" + diaDestino;
+            } else {
+                alert(data.message || 'No se pudo mover el día. Intenta de nuevo.');
+            }
+        })
+        .catch(() => alert('Error al mover el día. Intenta de nuevo.'));
+    };
+})();
 </script>
 
 <form method="POST" action="{{ route('entrenador.rutina.guardar', [$cliente->id,$semana,$dia]) }}" id="form-rutina">
@@ -1705,7 +1803,7 @@ function cerrarModalEliminar() {
     _pendingCircuitoCambio = null;
 }
 
-/* ── Drag & drop ── */
+/* ── Drag & drop de BLOQUES (mover el orden de bloques dentro del mismo día) ── */
 (function(){
     let dragged = null, scrollInterval = null;
     function startScroll(dir) { if(scrollInterval) return; scrollInterval=setInterval(()=>window.scrollBy(0,dir*10),16); }

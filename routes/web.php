@@ -196,6 +196,11 @@ Route::delete('/rutina/{cliente}/semana/{semana}', [EntrenadorRutinaController::
     ->name('entrenador.rutina.vaciarSemana');
 
 
+    Route::delete('/entrenador/clientes/{cliente}/progreso/1rm/{ejercicio}', [EntrenadorProgresoController::class, 'resetear1RM'])
+    ->name('entrenador.progreso.resetear1rm');
+ 
+
+
 
 });
 

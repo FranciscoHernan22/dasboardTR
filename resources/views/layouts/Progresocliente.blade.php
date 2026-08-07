@@ -160,6 +160,84 @@
 {{-- ── TAB: RENDIMIENTO ── --}}
 <div id="tab-rendimiento" class="tab-panel">
 
+    {{-- Alerta de estancamientos --}}
+    @if(count($estancamientos) > 0)
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+        <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+            </svg>
+            <div class="flex-1">
+                <p class="text-sm font-bold text-amber-800 mb-1.5">
+                    {{ count($estancamientos) }} {{ count($estancamientos) === 1 ? 'ejercicio estancado' : 'ejercicios estancados' }}
+                </p>
+                <div class="flex flex-col gap-1">
+                    @foreach($estancamientos as $e)
+                    <p class="text-xs text-amber-700">
+                        <strong>{{ $e['nombre'] }}</strong> — sin mejorar hace {{ $e['semanas'] }} {{ $e['semanas'] === 1 ? 'semana' : 'semanas' }}
+                        (1RM actual: {{ rtrim(rtrim(number_format($e['valor_1rm'], 1), '0'), '.') }} kg)
+                    </p>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Total 1RM + comparativa por segmento --}}
+    @if($estimaciones1RM->isNotEmpty())
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <p class="text-xs text-gray-400 mb-1">1RM total (suma de todos los ejercicios)</p>
+            <div class="flex items-end gap-2">
+                <p class="text-2xl font-bold text-gray-900">{{ number_format($total1RM['total_hoy_kg'], 1) }} kg</p>
+                @if($total1RM['cambio_pct'] !== null)
+                    <span class="text-xs font-semibold mb-1 {{ $total1RM['cambio_pct'] >= 0 ? 'text-green-600' : 'text-red-500' }}">
+                        {{ $total1RM['cambio_pct'] > 0 ? '+' : '' }}{{ $total1RM['cambio_pct'] }}% (30 días)
+                    </span>
+                @endif
+            </div>
+            <p class="text-[11px] text-gray-400 mt-0.5">{{ $total1RM['ejercicios'] }} {{ $total1RM['ejercicios'] === 1 ? 'ejercicio' : 'ejercicios' }} con 1RM calculado</p>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <p class="text-xs text-gray-400 mb-2">Mejora por grupo muscular (30 días)</p>
+            @if(count($comparativaSegmentos) === 0)
+                <p class="text-xs text-gray-400">Sin datos suficientes todavía.</p>
+            @else
+                <div class="flex flex-col gap-1.5">
+                    @foreach($comparativaSegmentos as $seg)
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-700 font-medium">{{ $seg['segmento'] }}</span>
+                        @if($seg['cambio_pct'] === null)
+                            <span class="text-[11px] text-gray-300 font-semibold">sin datos (30d)</span>
+                        @else
+                            <span class="text-xs font-bold px-1.5 py-0.5 rounded {{ $seg['cambio_pct'] >= 0 ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50' }}">
+                                {{ $seg['cambio_pct'] > 0 ? '+' : '' }}{{ $seg['cambio_pct'] }}%
+                            </span>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- Filtro por segmento --}}
+    @if($segmentosDisponibles->isNotEmpty())
+    <div class="flex items-center gap-2 mb-4">
+        <label class="text-xs font-semibold text-gray-500">Filtrar por grupo muscular:</label>
+        <select id="filtroSegmentoProgreso" onchange="filtrarPorSegmento(this.value)"
+            class="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500 bg-white text-gray-700">
+            <option value="">Todos</option>
+            @foreach($segmentosDisponibles as $seg)
+                <option value="{{ $seg }}">{{ $seg }}</option>
+            @endforeach
+        </select>
+    </div>
+    @endif
+
     {{-- 1RM vigente por ejercicio --}}
     <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4">
         <h2 class="text-sm font-bold text-gray-900 mb-3">1RM estimado por ejercicio</h2>
@@ -170,7 +248,7 @@
             </p>
         @else
             <div class="overflow-x-auto -mx-1">
-                <table class="w-full text-xs min-w-[520px]">
+                <table class="w-full text-xs min-w-[560px]">
                     <thead>
                         <tr class="text-gray-400">
                             <th class="text-left font-medium pb-2 px-1">Ejercicio</th>
@@ -178,18 +256,20 @@
                             <th class="text-center font-medium pb-2 px-1">Confianza</th>
                             <th class="text-right font-medium pb-2 px-1">Basado en</th>
                             <th class="text-right font-medium pb-2 px-1">Actualizado</th>
+                            <th class="text-right font-medium pb-2 px-1"></th>
                         </tr>
                     </thead>
-                    <tbody class="text-gray-700">
+                    <tbody class="text-gray-700" id="tbody1RM">
                         @foreach($estimaciones1RM as $est)
                         @php
+                            $segmentoEst = $est->ejercicio->segmento ?? 'Otro';
                             $nivelInfo = [
                                 'A' => ['label' => 'Alta',  'bg' => 'bg-green-100',  'text' => 'text-green-700'],
                                 'B' => ['label' => 'Media', 'bg' => 'bg-amber-100',  'text' => 'text-amber-700'],
                                 'C' => ['label' => 'Baja',  'bg' => 'bg-gray-100',   'text' => 'text-gray-500'],
                             ][$est->nivel_confianza] ?? ['label' => $est->nivel_confianza, 'bg' => 'bg-gray-100', 'text' => 'text-gray-500'];
                         @endphp
-                        <tr class="border-t border-gray-50">
+                        <tr class="border-t border-gray-50 fila-1rm" data-segmento="{{ $segmentoEst }}">
                             <td class="py-2 px-1 font-medium text-gray-900">{{ $est->ejercicio->nombre ?? 'Ejercicio eliminado' }}</td>
                             <td class="text-right px-1 font-bold text-gray-900">{{ rtrim(rtrim(number_format($est->valor_1rm_kg, 1), '0'), '.') }} kg</td>
                             <td class="text-center px-1">
@@ -199,10 +279,25 @@
                             </td>
                             <td class="text-right px-1 text-gray-500">{{ $est->reps_base }} reps × {{ rtrim(rtrim(number_format($est->peso_base, 1), '0'), '.') }} {{ $est->unidad_base }}</td>
                             <td class="text-right px-1 text-gray-400">{{ $est->fecha_calculo?->diffForHumans() }}</td>
+                            <td class="text-right px-1">
+                                <form method="POST"
+                                      action="{{ route('entrenador.progreso.resetear1rm', [$cliente->id, $est->ejercicio_id]) }}"
+                                      onsubmit="return confirm('¿Reiniciar el 1RM de {{ addslashes($est->ejercicio->nombre ?? 'este ejercicio') }}? Se volverá a calcular desde cero con la próxima serie que el cliente complete.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" title="Reiniciar 1RM"
+                                        class="text-[11px] font-semibold text-gray-400 hover:text-red-500 transition-colors">
+                                        Reiniciar
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
                 </table>
+                <p id="sinResultadosSegmento" class="hidden text-sm text-gray-400 text-center py-6">
+                    Ningún ejercicio con 1RM en ese grupo muscular.
+                </p>
             </div>
         @endif
     </div>
@@ -484,6 +579,42 @@ new Chart(document.getElementById('chartFisico'), {
     }
 });
 @endif
+
+// ── Filtro por segmento (tabla de 1RM + selector de la gráfica) ──
+@if($historialPesoPorEjercicio)
+const segmentoPorEjercicio = {!! json_encode(collect($historialPesoPorEjercicio)->mapWithKeys(
+    fn ($data, $ejercicioId) => [$ejercicioId => $data['segmento']]
+)) !!};
+@else
+const segmentoPorEjercicio = {};
+@endif
+
+function filtrarPorSegmento(segmento) {
+    // Filtrar filas de la tabla de 1RM
+    let visibles = 0;
+    document.querySelectorAll('.fila-1rm').forEach(fila => {
+        const coincide = !segmento || fila.dataset.segmento === segmento;
+        fila.style.display = coincide ? '' : 'none';
+        if (coincide) visibles++;
+    });
+    const sinResultados = document.getElementById('sinResultadosSegmento');
+    if (sinResultados) sinResultados.classList.toggle('hidden', visibles !== 0);
+
+    // Filtrar opciones del selector de la gráfica de evolución
+    const select = document.getElementById('selectEjercicioProgreso');
+    if (!select) return;
+    let primeraVisible = null;
+    Array.from(select.options).forEach(opt => {
+        const segEj = segmentoPorEjercicio[opt.value];
+        const coincide = !segmento || segEj === segmento;
+        opt.hidden = !coincide;
+        if (coincide && primeraVisible === null) primeraVisible = opt.value;
+    });
+    if (primeraVisible !== null && select.options[select.selectedIndex]?.hidden) {
+        select.value = primeraVisible;
+        cambiarEjercicioProgreso(primeraVisible);
+    }
+}
 
 // ── Evolución de peso por ejercicio (pestaña Rendimiento) ──
 @if(count($historialPesoPorEjercicio) > 0)

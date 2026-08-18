@@ -19,6 +19,9 @@ use App\Http\Controllers\EntrenadorEjercicioController;
 use App\Http\Controllers\EntrenadorProgresoController;
 use App\Http\Controllers\Api\PlanApiController;
 use App\Http\Controllers\Api\RutinaApiController;
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PlantillaEjercicioWebController;
 
 /*
 |--------------------------------------------------------------------------
@@ -208,5 +211,22 @@ Route::post('/entrenador/rutina/{cliente}/mover-dia', [EntrenadorRutinaControlle
 
 
 
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    Route::middleware('admin.web')->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::patch('/entrenadores/{entrenador}/estado', [DashboardController::class, 'actualizarEstado'])
+            ->name('entrenadores.estado');
+
+        Route::get('/plantilla', [PlantillaEjercicioWebController::class, 'index'])->name('plantilla.index');
+        Route::get('/plantilla/crear', [PlantillaEjercicioWebController::class, 'create'])->name('plantilla.create');
+        Route::post('/plantilla', [PlantillaEjercicioWebController::class, 'store'])->name('plantilla.store');
+        Route::get('/plantilla/{ejercicio}/editar', [PlantillaEjercicioWebController::class, 'edit'])->name('plantilla.edit');
+        Route::put('/plantilla/{ejercicio}', [PlantillaEjercicioWebController::class, 'update'])->name('plantilla.update');
+        Route::delete('/plantilla/{ejercicio}', [PlantillaEjercicioWebController::class, 'destroy'])->name('plantilla.destroy');
+    });
+});
   

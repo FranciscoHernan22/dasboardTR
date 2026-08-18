@@ -17,15 +17,25 @@ class Entrenador extends Authenticatable
         'username',
         'email',
         'password',
+        'role',
+        'activo',
+        'ultimo_pago',
+        'vence_el',
+        'notas_pago',
     ];
 
     protected $hidden = [
         'password',
     ];
 
-    public function users()
-{
-    return $this->hasMany(User::class, 'entrenador_id');
-}
-}
+    protected $casts = [
+        'activo'      => 'boolean',
+        'ultimo_pago' => 'date',
+        'vence_el'    => 'date',
+    ];
 
+    public function users()
+    {
+        return $this->hasMany(User::class, 'entrenador_id');
+    }
+}

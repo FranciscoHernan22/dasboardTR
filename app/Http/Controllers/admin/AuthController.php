@@ -20,14 +20,14 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (! Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors(['email' => 'Credenciales incorrectas.'])->onlyInput('email');
         }
 
-        $entrenador = Auth::guard('admin')->user();
+        $entrenador = Auth::guard('web')->user();
 
         if ($entrenador->role !== 'admin') {
-            Auth::guard('admin')->logout();
+            Auth::guard('web')->logout();
             return back()->withErrors(['email' => 'Esta cuenta no tiene permisos de administrador.']);
         }
 
@@ -38,7 +38,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::guard('admin')->logout();
+        Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

@@ -224,11 +224,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('entrenadores.estado');
 
         Route::get('/plantilla', [PlantillaEjercicioWebController::class, 'index'])->name('plantilla.index');
-        Route::get('/plantilla/crear', [PlantillaEjercicioWebController::class, 'create'])->name('plantilla.create');
         Route::post('/plantilla', [PlantillaEjercicioWebController::class, 'store'])->name('plantilla.store');
-        Route::get('/plantilla/{ejercicio}/editar', [PlantillaEjercicioWebController::class, 'edit'])->name('plantilla.edit');
         Route::put('/plantilla/{ejercicio}', [PlantillaEjercicioWebController::class, 'update'])->name('plantilla.update');
         Route::delete('/plantilla/{ejercicio}', [PlantillaEjercicioWebController::class, 'destroy'])->name('plantilla.destroy');
     });
 });
-  

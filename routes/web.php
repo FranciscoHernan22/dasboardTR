@@ -27,7 +27,7 @@ use App\Http\Controllers\Admin\PlantillaEjercicioWebController;
 
 /*
 |--------------------------------------------------------------------------
-| Rutas públicas (sin autenticación)
+| Rutas públicas (sin autenticación) s
 |--------------------------------------------------------------------------
 */
 

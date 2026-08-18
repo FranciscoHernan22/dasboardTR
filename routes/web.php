@@ -19,6 +19,8 @@ use App\Http\Controllers\EntrenadorEjercicioController;
 use App\Http\Controllers\EntrenadorProgresoController;
 use App\Http\Controllers\Api\PlanApiController;
 use App\Http\Controllers\Api\RutinaApiController;
+
+
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PlantillaEjercicioWebController;

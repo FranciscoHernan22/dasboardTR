@@ -8,7 +8,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-    @auth('admin')
+    @auth('web')
     <nav class="bg-slate-900 text-white">
         <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
             <div class="flex items-center gap-6">

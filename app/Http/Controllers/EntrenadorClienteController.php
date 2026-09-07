@@ -21,50 +21,44 @@ class EntrenadorClienteController extends Controller
     }
 
     public function guardarPlan(Request $request, $clienteId)
-    {
-        $cliente = User::findOrFail($clienteId);
+{
+    $cliente = User::findOrFail($clienteId);
 
-        // Seguridad: que el cliente pertenezca a este entrenador
-        if ($cliente->entrenador_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $request->validate([
-            'semanas'      => 'required|integer|min:1|max:52',
-            // La fecha de inicio la elige el entrenador y nunca puede ser anterior a hoy.
-            'fecha_inicio' => 'required|date|after_or_equal:' . Carbon::today()->toDateString(),
-        ]);
-
-        $semanas = (int) $request->semanas;
-        $nuevaFechaInicio = Carbon::parse($request->fecha_inicio);
- 
-        // Reemplazo total: la Semana 1 / Día 1 del plan siempre coincide
-        // con la fecha que eligió el entrenador. Esto evita que un plan
-        // nuevo arrastre fechas de un plan anterior (por ejemplo después
-        // de borrar el historial).
-        Plan::updateOrCreate(
-            ['user_id' => $clienteId],
-            [
-                'semanas'       => $semanas,
-                'semana_inicio' => 1,
-                'fecha_inicio'  => $request->fecha_inicio,
-            ]
-        );
-
-         // Recalcular fechas de TODAS las rutinas existentes para que
-         // queden alineadas con el nuevo fecha_inicio del plan.
-         $rutinas = Rutina::where('user_id', $clienteId)->get();
-
-         foreach ($rutina as $r){
-            $r->fecha = $nuevaFechaInicio-copy()
-            ->addDays(($r->semana - 1) * 7 + ($r->dia - 1))
-            ->toDateStrimg();
-            $r->save();
-          }
-         
-        return redirect()->route('entrenador.rutina.menu', $cliente->id)
-            ->with('success', 'Plan de entrenamiento guardado correctamente.');
+    if ($cliente->entrenador_id !== Auth::id()) {
+        abort(403);
     }
+
+    $request->validate([
+        'semanas'      => 'required|integer|min:1|max:52',
+        'fecha_inicio' => 'required|date|after_or_equal:' . Carbon::today()->toDateString(),
+    ]);
+
+    $semanas = (int) $request->semanas;
+    $nuevaFechaInicio = Carbon::parse($request->fecha_inicio); // ✅ definida aquí
+
+    Plan::updateOrCreate(
+        ['user_id' => $clienteId],
+        [
+            'semanas'       => $semanas,
+            'semana_inicio' => 1,
+            'fecha_inicio'  => $request->fecha_inicio,
+        ]
+    );
+
+    // Recalcular fechas de TODAS las rutinas existentes para que
+    // queden alineadas con el nuevo fecha_inicio del plan.
+    $rutinas = Rutina::where('user_id', $clienteId)->get();
+
+    foreach ($rutinas as $r) {                          // ✅ $rutinas, no $rutina
+        $r->fecha = $nuevaFechaInicio->copy()           // ✅ -> en vez de -
+            ->addDays(($r->semana - 1) * 7 + ($r->dia - 1))
+            ->toDateString();                            // ✅ corregido el typo
+        $r->save();
+    }
+
+    return redirect()->route('entrenador.rutina.menu', $cliente->id)
+        ->with('success', 'Plan de entrenamiento guardado correctamente.');
+}
 
     public function store(Request $request)
     {

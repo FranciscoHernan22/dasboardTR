@@ -361,7 +361,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
             <div style="display:flex;gap:10px;">
                 <div style="flex:1;">
                     <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Semana inicio</label>
-                    <input type="number" id="plantillaSemanaInicio" min="1" max="16" value="{{ $semana }}"
+                    <input type="number" id="plantillaSemanaInicio" min="1" max="{{ $totalSemanasPlan }}" value="{{ $semanaVisual }}"
                         style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.9rem;font-family:'DM Mono',monospace;color:#111827;text-align:center;">
                 </div>
                 <div style="flex:1;">
@@ -404,18 +404,20 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
             <h3 style="font-size:1rem;font-weight:700;margin:0;">📅 Copiar semana</h3>
             <button onclick="cerrarModalCopiarSemana()" style="width:28px;height:28px;border-radius:7px;background:#f3f4f6;border:none;cursor:pointer;font-size:1rem;color:#6b7280;">✕</button>
         </div>
-        <form method="POST" action="{{ route('entrenador.rutina.copiarSemana', $cliente->id) }}">
+        <form method="POST" action="{{ route('entrenador.rutina.copiarSemana', $cliente->id) }}" onsubmit="return prepararCopiarSemana(event)">
             @csrf
+            <input type="hidden" name="semana_origen" id="copiarSemanaOrigenReal">
+            <input type="hidden" name="semana_destino" id="copiarSemanaDestinoReal">
             <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px;">
                 <div style="display:flex;gap:10px;">
                     <div style="flex:1;">
                         <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Semana origen</label>
-                        <input type="number" name="semana_origen" min="1" max="52" value="{{ $semana }}" required
+                        <input type="number" id="copiarSemanaOrigenVisual" min="1" max="{{ $totalSemanasPlan }}" value="{{ $semanaVisual }}" required
                             style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.9rem;font-family:'DM Mono',monospace;color:#111827;text-align:center;">
                     </div>
                     <div style="flex:1;">
                         <label style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Semana destino</label>
-                        <input type="number" name="semana_destino" min="1" max="52" required
+                        <input type="number" id="copiarSemanaDestinoVisual" min="1" max="{{ $totalSemanasPlan }}" required
                             style="width:100%;border:1px solid #d0d5dd;border-radius:7px;padding:8px 10px;font-size:0.9rem;font-family:'DM Mono',monospace;color:#111827;text-align:center;">
                     </div>
                 </div>
@@ -1031,10 +1033,26 @@ function setDiaInicioPlantilla(dia, btn) {
 function submitPlantillaCompleta() {
     const plantillaId=document.getElementById('selectPlantilla').value;
     if(!plantillaId){ alert('Selecciona una plantilla'); return; }
-    document.getElementById('hiddenSemanaInicio').value=document.getElementById('plantillaSemanaInicio').value;
+    const semanaInicioPlan = {{ $semanaInicioPlan }};
+    const visual = parseInt(document.getElementById('plantillaSemanaInicio').value) || 1;
+    const real = visual + semanaInicioPlan - 1;
+    document.getElementById('hiddenSemanaInicio').value = real;
     document.getElementById('hiddenDiaInicio').value=document.getElementById('plantillaDiaInicio').value;
     const form=document.getElementById('formAplicarPlantilla');
     form.action=`/entrenador/plantillas/${plantillaId}/aplicar`; form.submit();
+}
+
+function prepararCopiarSemana(e) {
+    const semanaInicioPlan = {{ $semanaInicioPlan }};
+    const origenVisual  = parseInt(document.getElementById('copiarSemanaOrigenVisual').value) || 0;
+    const destinoVisual = parseInt(document.getElementById('copiarSemanaDestinoVisual').value) || 0;
+    if (origenVisual === destinoVisual) {
+        alert('La semana origen y destino no pueden ser la misma.');
+        return false;
+    }
+    document.getElementById('copiarSemanaOrigenReal').value  = origenVisual  + semanaInicioPlan - 1;
+    document.getElementById('copiarSemanaDestinoReal').value = destinoVisual + semanaInicioPlan - 1;
+    return true;
 }
 
 /* ── Auto-expand nota ── */

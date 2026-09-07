@@ -103,13 +103,14 @@ class EntrenadorRutinaController extends Controller
 
         // Calcular fecha real — siempre desde fecha_inicio de semana 1
         $plan = $cliente->plan;
-        if ($plan && $plan->fecha_inicio) {
-            $fecha = Carbon::parse($plan->fecha_inicio)
-                ->addDays(($semana - 1) * 7 + ($dia - 1))
-                ->toDateString();
-        } else {
-            $fecha = now()->toDateString();
-        }
+if ($plan && $plan->fecha_inicio) {
+    $fecha = Carbon::parse($plan->fecha_inicio)
+        ->addDays(($semana - $plan->semana_inicio) * 7 + ($dia - 1))
+        ->toDateString();
+} else {
+    $fecha = now()->toDateString();
+}
+
 
         Rutina::where('user_id', $cliente->id)
             ->where('semana', $semana)
@@ -272,14 +273,14 @@ class EntrenadorRutinaController extends Controller
         }
 
         $plan = $cliente->plan;
-        $fechaFor = function ($dia) use ($plan, $semana) {
-            if ($plan && $plan->fecha_inicio) {
-                return Carbon::parse($plan->fecha_inicio)
-                    ->addDays(($semana - 1) * 7 + ($dia - 1))
-                    ->toDateString();
-            }
-            return now()->toDateString();
-        };
+$fechaFor = function ($dia) use ($plan, $semana) {
+    if ($plan && $plan->fecha_inicio) {
+        return Carbon::parse($plan->fecha_inicio)
+            ->addDays(($semana - $plan->semana_inicio) * 7 + ($dia - 1))
+            ->toDateString();
+    }
+    return now()->toDateString();
+};
 
         // Día temporal (-1) para poder intercambiar A <-> B sin colisiones
         // de la restricción semana+dia mientras se hace el swap.
@@ -365,13 +366,13 @@ class EntrenadorRutinaController extends Controller
             ->delete();
 
         foreach ($rutinasOrigen as $r) {
-            $fecha = $r->fecha;
-            if ($plan && $plan->fecha_inicio) {
-                $fecha = Carbon::parse($plan->fecha_inicio)
-                    ->addDays(($destino - 1) * 7 + ($r->dia - 1))
-                    ->toDateString();
-            }
-
+    $fecha = $r->fecha;
+    if ($plan && $plan->fecha_inicio) {
+        $fecha = Carbon::parse($plan->fecha_inicio)
+            ->addDays(($destino - $plan->semana_inicio) * 7 + ($r->dia - 1))
+            ->toDateString();
+    }
+ 
             $series          = is_string($r->series) ? json_decode($r->series, true) : $r->series;
             $descansosSerie  = is_string($r->descansos_serie) ? json_decode($r->descansos_serie, true) : $r->descansos_serie;
 

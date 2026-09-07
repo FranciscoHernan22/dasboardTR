@@ -464,7 +464,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 {{-- ══ PÁGINA ══ --}}
 <div class="page-header">
     <h2>{{ $cliente->name }}</h2>
-    <span class="badge">Semana {{ $semana }} · Día {{ $dia }}</span>
+<span class="badge">Semana {{ $semana - ($cliente->plan->semana_inicio ?? 1) + 1 }} · Día {{ $dia }}</span>
     <button class="btn-metodos" onclick="abrirModal()">❓ Métodos</button>
     <button class="btn-metodos" onclick="abrirModalPlantilla()" style="border-color:#7c3aed;color:#7c3aed;">📋 Plantilla</button>
     <button class="btn-metodos" onclick="abrirModalCopiarSemana()" style="border-color:#059669;color:#059669;">📅 Copiar semana</button>
@@ -472,32 +472,40 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 </div>
 
 @php
-    $diasCortoNav = ['L','M','X','J','V','S','D'];
-    $totalSemanas = $cliente->plan->semanas ?? 16;
+    $diasCortoNav     = ['L','M','X','J','V','S','D'];
+    $plan             = $cliente->plan;
+    $semanaInicioPlan = $plan->semana_inicio ?? 1;
+    $totalSemanasPlan = $plan->semanas ?? 16;
+    $semanaFinPlan    = $semanaInicioPlan + $totalSemanasPlan - 1;
+    $semanaVisual     = $semana - $semanaInicioPlan + 1;
 @endphp
 
 <div class="flex items-center gap-1.5 mb-4 relative" id="wp-nav">
-    @php $prevDia=$dia-1; $prevSem=$semana; if($prevDia<1){$prevDia=7;$prevSem--;} @endphp
-    <a href="{{ $prevSem>=1 ? route('entrenador.rutina.editar',[$cliente->id,$prevSem,$prevDia]) : '#' }}"
-       class="w-6 h-6 flex items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors text-xs flex-shrink-0 {{ $prevSem<1 ? 'opacity-30 pointer-events-none' : '' }}">‹</a>
+@php $prevDia=$dia-1; $prevSem=$semana; if($prevDia<1){$prevDia=7;$prevSem--;} @endphp
+<a href="{{ $prevSem>=$semanaInicioPlan ? route('entrenador.rutina.editar',[$cliente->id,$prevSem,$prevDia]) : '#' }}"
+   class="... {{ $prevSem<$semanaInicioPlan ? 'opacity-30 pointer-events-none' : '' }}">‹</a>
 
+   
     <div id="semTrigger" onclick="toggleSemDropdown(event)"
-         class="flex items-center gap-1 px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50 cursor-pointer text-[11px] font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors flex-shrink-0 select-none whitespace-nowrap">
-        <span>Sem {{ $semana }}</span>
-        <i class="ti ti-chevron-down text-[10px] transition-transform duration-150" id="semChevron"></i>
-    </div>
+     class="...">
+    <span>Sem {{ $semanaVisual }}</span>
+    <i class="ti ti-chevron-down ..." id="semChevron"></i>
+</div>
 
-    <div id="semDropdown" onclick="event.stopPropagation()"
-         class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg p-1.5 grid grid-cols-4 gap-1 z-50 shadow-md min-w-[180px]">
-        @for($s=1; $s<=$totalSemanas; $s++)
-            @php $tieneSem = collect($diasConRutina ?? [])->contains(fn($c)=>str_starts_with($c,$s.'-')); @endphp
-            <a href="{{ route('entrenador.rutina.editar',[$cliente->id,$s,$dia]) }}"
-               class="text-center py-1.5 rounded border text-[11px] font-medium transition-colors
-                      {{ $s==$semana ? 'bg-blue-50 border-blue-300 text-blue-600' : ($tieneSem ? 'border-blue-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600' : 'border-gray-200 text-gray-400 hover:bg-gray-50') }}">
-                S{{ $s }}
-            </a>
-        @endfor
-    </div>
+  <div id="semDropdown" onclick="event.stopPropagation()"
+     class="...">
+    @for($s = $semanaInicioPlan; $s <= $semanaFinPlan; $s++)
+        @php
+            $tieneSem = collect($diasConRutina ?? [])->contains(fn($c)=>str_starts_with($c,$s.'-'));
+            $sVisual  = $s - $semanaInicioPlan + 1;
+        @endphp
+        <a href="{{ route('entrenador.rutina.editar',[$cliente->id,$s,$dia]) }}"
+           class="text-center py-1.5 rounded border text-[11px] font-medium transition-colors
+                  {{ $s==$semana ? 'bg-blue-50 border-blue-300 text-blue-600' : ($tieneSem ? 'border-blue-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600' : 'border-gray-200 text-gray-400 hover:bg-gray-50') }}">
+            S{{ $sVisual }}
+        </a>
+    @endfor
+</div>
 
     <div class="flex gap-1 flex-1">
         @foreach($diasCortoNav as $i => $letra)
@@ -515,10 +523,10 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         @endforeach
     </div>
 
-    @php $nextDia=$dia+1; $nextSem=$semana; if($nextDia>7){$nextDia=1;$nextSem++;} @endphp
-    <a href="{{ $nextSem<=$totalSemanas ? route('entrenador.rutina.editar',[$cliente->id,$nextSem,$nextDia]) : '#' }}"
-       class="w-6 h-6 flex items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors text-xs flex-shrink-0 {{ $nextSem>$totalSemanas ? 'opacity-30 pointer-events-none' : '' }}">›</a>
-</div>
+ @php $nextDia=$dia+1; $nextSem=$semana; if($nextDia>7){$nextDia=1;$nextSem++;} @endphp
+<a href="{{ $nextSem<=$semanaFinPlan ? route('entrenador.rutina.editar',[$cliente->id,$nextSem,$nextDia]) : '#' }}"
+   class="... {{ $nextSem>$semanaFinPlan ? 'opacity-30 pointer-events-none' : '' }}">›</a>
+    </div>
 
 <script>
     const R2_URL = "{{ env('AWS_URL') }}";

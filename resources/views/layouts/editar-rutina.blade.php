@@ -1,7 +1,14 @@
 @extends('layouts.entrenador')
 @section('titulo','Editar Rutina')
 @section('contenido')
-@php $r2Url = env('AWS_URL'); @endphp
+@php
+    $r2Url            = env('AWS_URL');
+    $plan             = $cliente->plan;
+    $semanaInicioPlan = $plan->semana_inicio ?? 1;
+    $totalSemanasPlan = $plan->semanas ?? 16;
+    $semanaFinPlan    = $semanaInicioPlan + $totalSemanasPlan - 1;
+    $semanaVisual     = $semana - $semanaInicioPlan + 1;
+@endphp
 
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -465,12 +472,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 
 {{-- ══ PÁGINA ══ --}}
 @php
-    $diasCortoNav     = ['L','M','X','J','V','S','D'];
-    $plan             = $cliente->plan;
-    $semanaInicioPlan = $plan->semana_inicio ?? 1;
-    $totalSemanasPlan = $plan->semanas ?? 16;
-    $semanaFinPlan    = $semanaInicioPlan + $totalSemanasPlan - 1;
-    $semanaVisual     = $semana - $semanaInicioPlan + 1;
+    $diasCortoNav = ['L','M','X','J','V','S','D'];
 @endphp
 
 <div class="page-header">

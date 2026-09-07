@@ -36,7 +36,8 @@ class EntrenadorClienteController extends Controller
         ]);
 
         $semanas = (int) $request->semanas;
-
+        $nuevaFechaInicio = Carbon::parse($request->fecha_inicio);
+ 
         // Reemplazo total: la Semana 1 / Día 1 del plan siempre coincide
         // con la fecha que eligió el entrenador. Esto evita que un plan
         // nuevo arrastre fechas de un plan anterior (por ejemplo después
@@ -50,6 +51,17 @@ class EntrenadorClienteController extends Controller
             ]
         );
 
+         // Recalcular fechas de TODAS las rutinas existentes para que
+         // queden alineadas con el nuevo fecha_inicio del plan.
+         $rutinas = Rutina::where('user_id', $clienteId)->get();
+
+         foreach ($rutina as $r){
+            $r->fecha = $nuevaFechaInicio-copy()
+            ->addDays(($r->semana - 1) * 7 + ($r->dia - 1))
+            ->toDateStrimg();
+            $r->save();
+          }
+         
         return redirect()->route('entrenador.rutina.menu', $cliente->id)
             ->with('success', 'Plan de entrenamiento guardado correctamente.');
     }

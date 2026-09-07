@@ -20,41 +20,54 @@ class EntrenadorClienteController extends Controller
         return view('layouts.listado-clientes', compact('clientes'));
     }
 
- public function guardarPlan(Request $request, $clienteId)
-{
-    $cliente = User::findOrFail($clienteId);
+    public function guardarPlan(Request $request, $clienteId)
+    {
+        $cliente = User::findOrFail($clienteId);
 
-    if ($cliente->entrenador_id !== Auth::id()) {
-        abort(403);
+        // Seguridad: que el cliente pertenezca a este entrenador
+        if ($cliente->entrenador_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // "Hoy" debe calcularse en la zona horaria del entrenador, no en
+        // la zona horaria del servidor (que por defecto en Laravel es UTC).
+        // Si no se hace esto, un entrenador en México puede seleccionar
+        // "hoy" en el date picker del navegador y el servidor lo rechaza
+        // porque para él (en UTC) ya es el día siguiente.
+        $hoyLocal = Carbon::now('America/Mazatlan')->startOfDay()->toDateString();
+
+        $request->validate([
+            'semanas'      => 'required|integer|min:1|max:52',
+            // La fecha de inicio la elige el entrenador y nunca puede ser anterior a hoy.
+            'fecha_inicio' => 'required|date|after_or_equal:' . $hoyLocal,
+        ]);
+
+        $semanasNuevas = (int) $request->semanas;
+        $planExistente = $cliente->plan;
+
+        // Si ya existía un plan, el nuevo ciclo arranca justo después
+        // de la última semana del ciclo anterior. Esas semanas viejas
+        // NO se tocan: quedan en Rutina como historial.
+        $nuevaSemanaInicio = $planExistente
+            ? $planExistente->semana_inicio + $planExistente->semanas
+            : 1;
+
+        // Reemplazo total: la Semana 1 / Día 1 del plan siempre coincide
+        // con la fecha que eligió el entrenador. Esto evita que un plan
+        // nuevo arrastre fechas de un plan anterior (por ejemplo después
+        // de borrar el historial).
+        Plan::updateOrCreate(
+            ['user_id' => $clienteId],
+            [
+                'semanas'       => $semanasNuevas,
+                'semana_inicio' => $nuevaSemanaInicio,
+                'fecha_inicio'  => $request->fecha_inicio,
+            ]
+        );
+
+        return redirect()->route('entrenador.rutina.menu', $cliente->id)
+            ->with('success', 'Plan de entrenamiento guardado correctamente.');
     }
-
-    $request->validate([
-        'semanas'      => 'required|integer|min:1|max:52',
-        'fecha_inicio' => 'required|date|after_or_equal:' . Carbon::today()->toDateString(),
-    ]);
-
-    $semanasNuevas = (int) $request->semanas;
-    $planExistente = $cliente->plan;
-
-    // Si ya existía un plan, el nuevo ciclo arranca justo después
-    // de la última semana del ciclo anterior. Esas semanas viejas
-    // NO se tocan: quedan en Rutina como historial.
-    $nuevaSemanaInicio = $planExistente
-        ? $planExistente->semana_inicio + $planExistente->semanas
-        : 1;
-
-    Plan::updateOrCreate(
-        ['user_id' => $clienteId],
-        [
-            'semanas'       => $semanasNuevas,
-            'semana_inicio' => $nuevaSemanaInicio,
-            'fecha_inicio'  => $request->fecha_inicio,
-        ]
-    );
-
-    return redirect()->route('entrenador.rutina.menu', $cliente->id)
-        ->with('success', 'Plan de entrenamiento guardado correctamente.');
-}
 
     public function store(Request $request)
     {

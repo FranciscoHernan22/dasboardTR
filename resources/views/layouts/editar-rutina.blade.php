@@ -481,16 +481,16 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 @endphp
 
 <div class="flex items-center gap-1.5 mb-4 relative" id="wp-nav">
-@php $prevDia=$dia-1; $prevSem=$semana; if($prevDia<1){$prevDia=7;$prevSem--;} @endphp
-<a href="{{ $prevSem>=$semanaInicioPlan ? route('entrenador.rutina.editar',[$cliente->id,$prevSem,$prevDia]) : '#' }}"
-   class="... {{ $prevSem<$semanaInicioPlan ? 'opacity-30 pointer-events-none' : '' }}">‹</a>
+    @php $prevDia=$dia-1; $prevSem=$semana; if($prevDia<1){$prevDia=7;$prevSem--;} @endphp
+    <a href="{{ $prevSem>=$semanaInicioPlan ? route('entrenador.rutina.editar',[$cliente->id,$prevSem,$prevDia]) : '#' }}"
+       class="w-6 h-6 flex items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors text-xs flex-shrink-0 {{ $prevSem<$semanaInicioPlan ? 'opacity-30 pointer-events-none' : '' }}">‹</a>
 
-   
     <div id="semTrigger" onclick="toggleSemDropdown(event)"
-     class="...">
-    <span>Sem {{ $semanaVisual }}</span>
-    <i class="ti ti-chevron-down ..." id="semChevron"></i>
-</div>
+         class="flex items-center gap-1 px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50 cursor-pointer text-[11px] font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors flex-shrink-0 select-none whitespace-nowrap">
+        <span>Sem {{ $semanaVisual }}</span>
+        <i class="ti ti-chevron-down text-[10px] transition-transform duration-150" id="semChevron"></i>
+    </div>
+    
 
   <div id="semDropdown" onclick="event.stopPropagation()"
      class="...">

@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Services\Calculador1RM;
 
-
 class EntrenadorProgresoController extends Controller
 {
     /** Semanas sin actualizar el 1RM para considerarlo "estancado". */

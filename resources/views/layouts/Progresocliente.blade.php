@@ -272,6 +272,31 @@
                                     </button>
                                 </form>
                             </td>
+                            <td class="text-right px-1">
+    <div class="flex items-center justify-end gap-2">
+        <button type="button"
+            onclick="abrirModalEditar1RM(
+                {{ $est->ejercicio_id }},
+                '{{ addslashes($est->ejercicio->nombre ?? 'este ejercicio') }}',
+                {{ $est->valor_1rm_kg }}
+            )"
+            title="Editar 1RM"
+            class="text-[11px] font-semibold text-blue-500 hover:text-blue-600 transition-colors">
+            Editar
+        </button>
+
+        <form method="POST"
+              action="{{ route('entrenador.progreso.resetear1rm', [$cliente->id, $est->ejercicio_id]) }}"
+              onsubmit="return confirm('¿Reiniciar el 1RM de {{ addslashes($est->ejercicio->nombre ?? 'este ejercicio') }}? Se volverá a calcular desde cero con la próxima serie que el cliente complete.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" title="Reiniciar 1RM"
+                class="text-[11px] font-semibold text-gray-400 hover:text-red-500 transition-colors">
+                Reiniciar
+            </button>
+        </form>
+    </div>
+</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -523,6 +548,60 @@
     </div>
 </div>
 
+{{-- ── Modal: editar 1RM manualmente ── --}}
+<div id="modalEditar1RM" onclick="if(event.target===this)this.style.display='none'" style="display:none;"
+    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-900">Editar 1RM — <span id="edit1RMNombreEj"></span></h3>
+            <button onclick="document.getElementById('modalEditar1RM').style.display='none'"
+                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-400 text-sm">✕</button>
+        </div>
+
+        <form id="formEditar1RM" method="POST" class="p-5 flex flex-col gap-3">
+            @csrf
+
+            <div class="flex bg-gray-100 rounded-lg p-1 mb-1">
+                <button type="button" onclick="cambiarModo1RM('directo')" id="btnModoDirecto"
+                    class="flex-1 py-1.5 rounded-md text-xs font-semibold">1RM directo</button>
+                <button type="button" onclick="cambiarModo1RM('reps')" id="btnModoReps"
+                    class="flex-1 py-1.5 rounded-md text-xs font-semibold">Peso × reps</button>
+            </div>
+            <input type="hidden" name="modo" id="edit1RMModo" value="directo">
+
+            <div id="bloqueModoDirecto" class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">1RM</label>
+                <input type="number" step="0.5" name="valor_1rm" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+
+            <div id="bloqueModoReps" class="hidden grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Peso</label>
+                    <input type="number" step="0.5" name="peso" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Reps</label>
+                    <input type="number" min="1" max="20" name="reps" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Unidad</label>
+                <select name="unidad" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="kg">kg</option>
+                    <option value="lb">lb</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="document.getElementById('modalEditar1RM').style.display='none'"
+                    class="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold text-white">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
     .tab-btn.active { background: #2563eb; color: white; }
@@ -655,6 +734,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (primerId) dibujarChartProgresoPeso(primerId);
 });
 @endif
+
+
+function abrirModalEditar1RM(ejercicioId, nombreEj, valorActualKg) {
+    document.getElementById('edit1RMNombreEj').textContent = nombreEj;
+    document.getElementById('formEditar1RM').action =
+        `/entrenador/clientes/{{ $cliente->id }}/progreso/1rm/${ejercicioId}/editar`;
+    document.querySelector('#bloqueModoDirecto input[name="valor_1rm"]').value = valorActualKg;
+    cambiarModo1RM('directo');
+    document.getElementById('modalEditar1RM').style.display = 'flex';
+}
+
+function cambiarModo1RM(modo) {
+    document.getElementById('edit1RMModo').value = modo;
+    document.getElementById('bloqueModoDirecto').classList.toggle('hidden', modo !== 'directo');
+    document.getElementById('bloqueModoReps').classList.toggle('hidden', modo !== 'reps');
+    document.getElementById('btnModoDirecto').classList.toggle('bg-white', modo === 'directo');
+    document.getElementById('btnModoDirecto').classList.toggle('shadow-sm', modo === 'directo');
+    document.getElementById('btnModoDirecto').classList.toggle('text-gray-900', modo === 'directo');
+    document.getElementById('btnModoDirecto').classList.toggle('text-gray-400', modo !== 'directo');
+    document.getElementById('btnModoReps').classList.toggle('bg-white', modo === 'reps');
+    document.getElementById('btnModoReps').classList.toggle('shadow-sm', modo === 'reps');
+    document.getElementById('btnModoReps').classList.toggle('text-gray-900', modo === 'reps');
+    document.getElementById('btnModoReps').classList.toggle('text-gray-400', modo !== 'reps');
+}
+
+
 </script>
 
 @endsection

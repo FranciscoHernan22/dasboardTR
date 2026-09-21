@@ -479,4 +479,70 @@ class EntrenadorProgresoController extends Controller
 
         return back()->with('success', 'Nota agregada correctamente.');
     }
+
+
+
+
+public function editar1RM(Request $request, $clienteId, $ejercicioId)
+{
+    $data = $request->validate([
+        'modo'      => 'required|in:directo,reps',
+        'valor_1rm' => 'required_if:modo,directo|nullable|numeric|min:0.1',
+        'peso'      => 'required_if:modo,reps|nullable|numeric|min:0.1',
+        'reps'      => 'required_if:modo,reps|nullable|integer|min:1|max:20',
+        'unidad'    => 'required|in:kg,lb',
+    ]);
+ 
+    if ($data['modo'] === 'directo') {
+        $valor1RM = (float) $data['valor_1rm'];
+        $pesoBase = $valor1RM;
+        $repsBase = 1;
+    } else {
+        $peso = (float) $data['peso'];
+        $reps = (int) $data['reps'];
+ 
+        $valor1RM = Calculador1RM::estimar1RM($peso, $reps);
+        if ($valor1RM === null) {
+            return back()->withErrors(['reps' => 'Repeticiones fuera de rango (1-20).']);
+        }
+ 
+        $pesoBase = $peso;
+        $repsBase = $reps;
+    }
+ 
+    $valor1RMKg = round(Calculador1RM::aKg($valor1RM, $data['unidad']), 2);
+    $ahora      = now();
+ 
+    // Nivel 'A': se trata como la máxima confianza posible porque es
+    // una corrección explícita del entrenador, no una estimación
+    // automática — así series futuras débiles (B/C) no la pisan por
+    // accidente, pero un PR real y más pesado sí la sigue superando.
+    EstimacionUnoRm::updateOrCreate(
+        ['user_id' => $clienteId, 'ejercicio_id' => $ejercicioId],
+        [
+            'valor_1rm_kg'    => $valor1RMKg,
+            'nivel_confianza' => 'A',
+            'reps_base'       => $repsBase,
+            'peso_base'       => $pesoBase,
+            'unidad_base'     => $data['unidad'],
+            'fecha_calculo'   => $ahora,
+        ]
+    );
+ 
+    // Se registra en el historial para trazabilidad, igual que
+    // cualquier otro cálculo — se puede ver de dónde salió este valor.
+    EstimacionUnoRmHistorial::create([
+        'user_id'             => $clienteId,
+        'ejercicio_id'        => $ejercicioId,
+        'valor_1rm_kg'        => $valor1RMKg,
+        'nivel_confianza'     => 'A',
+        'reps_base'           => $repsBase,
+        'peso_base'           => $pesoBase,
+        'unidad_base'         => $data['unidad'],
+        'se_uso_como_vigente' => true,
+        'fecha_calculo'       => $ahora,
+    ]);
+ 
+    return back()->with('success', 'Se actualizó el 1RM manualmente.');
+}
 }

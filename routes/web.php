@@ -229,3 +229,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/plantilla/{ejercicio}', [PlantillaEjercicioWebController::class, 'destroy'])->name('plantilla.destroy');
     });
 });
+
+
+
+Route::post('/entrenador/clientes/{cliente}/progreso/1rm/{ejercicio}/editar', [EntrenadorProgresoController::class, 'editar1RM'])
+    ->name('entrenador.progreso.editar1rm');

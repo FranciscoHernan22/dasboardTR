@@ -191,62 +191,97 @@ class RutinaApiController extends Controller
         return $serie;
     }
 
-    public function guardarPesos(Request $request, $clienteId, $semana, $dia)
-    {
-        $bloques = $request->input('bloques', []);
 
-        foreach ($bloques as $bloqueData) {
-            $orden = $bloqueData['orden'];
+    public function __construct(
+    private readonly \App\Services\RecalculadorHistorial1RMService $recalculadorHistorial
+) {}
+ 
 
-            foreach ($bloqueData['ejercicios'] ?? [] as $ejData) {
-                $rutina = Rutina::where('user_id', $clienteId)
-                    ->where('semana', $semana)
-                    ->where('dia', $dia)
-                    ->where('orden', $orden)
-                    ->where('nombre', $ejData['nombre'])
-                    ->first();
-
-                if (!$rutina) continue;
-
-                $seriesAnteriores = $rutina->series ?? [];
-                if (is_string($seriesAnteriores)) {
-                    $seriesAnteriores = json_decode($seriesAnteriores, true) ?? [];
-                }
-
-                $seriesNuevas = $ejData['series'] ?? [];
-
-                // Solo registrar en el 1RM las series que ACABAN de pasar
-                // a completada=true (evita recalcular en cada autosave,
-                // ya que el cliente reenvía todo el bloque cada vez que
-                // cambia cualquier campo).
-                foreach ($seriesNuevas as $i => $serieNueva) {
-                    $completadaAntes = !empty($seriesAnteriores[$i]['completada'] ?? null);
-                    $completadaAhora = !empty($serieNueva['completada'] ?? null);
-
-                    if ($completadaAhora && !$completadaAntes) {
-                        $metodo = $serieNueva['metodo'] ?? 'normal';
-                        [$peso, $reps, $unidad] = $this->extraerPesoRepsParaUnoRM($serieNueva, $metodo);
-
-                        if ($peso !== null && $reps !== null) {
-                            Calculador1RM::registrarSerie(
-                                userId: (int) $clienteId,
-                                ejercicioId: (int) $rutina->ejercicio_id,
-                                metodo: $metodo,
-                                peso: $peso,
-                                reps: $reps,
-                                unidad: $unidad
-                            );
-                        }
+   public function guardarPesos(Request $request, $clienteId, $semana, $dia)
+{
+    $bloques = $request->input('bloques', []);
+ 
+    // Ejercicios cuyo historial completo hay que reconstruir porque se
+    // editó el peso de una serie que YA estaba completada (no una
+    // recién completada ahora, que sigue el camino normal de abajo).
+    $ejerciciosParaRecalcular = [];
+ 
+    foreach ($bloques as $bloqueData) {
+        $orden = $bloqueData['orden'];
+ 
+        foreach ($bloqueData['ejercicios'] ?? [] as $ejData) {
+            $rutina = Rutina::where('user_id', $clienteId)
+                ->where('semana', $semana)
+                ->where('dia', $dia)
+                ->where('orden', $orden)
+                ->where('nombre', $ejData['nombre'])
+                ->first();
+ 
+            if (!$rutina) continue;
+ 
+            $seriesAnteriores = $rutina->series ?? [];
+            if (is_string($seriesAnteriores)) {
+                $seriesAnteriores = json_decode($seriesAnteriores, true) ?? [];
+            }
+ 
+            $seriesNuevas = $ejData['series'] ?? [];
+ 
+            foreach ($seriesNuevas as $i => $serieNueva) {
+                $serieAnterior   = $seriesAnteriores[$i] ?? [];
+                $completadaAntes = !empty($serieAnterior['completada'] ?? null);
+                $completadaAhora = !empty($serieNueva['completada'] ?? null);
+                $metodo          = $serieNueva['metodo'] ?? 'normal';
+ 
+                if ($completadaAhora && !$completadaAntes) {
+                    // Caso ya existente: serie recién completada ahora.
+                    [$peso, $reps, $unidad] = $this->extraerPesoRepsParaUnoRM($serieNueva, $metodo);
+ 
+                    if ($peso !== null && $reps !== null) {
+                        Calculador1RM::registrarSerie(
+                            userId: (int) $clienteId,
+                            ejercicioId: (int) $rutina->ejercicio_id,
+                            metodo: $metodo,
+                            peso: $peso,
+                            reps: $reps,
+                            unidad: $unidad
+                        );
+                    }
+                } elseif ($completadaAhora && $completadaAntes) {
+                    // Caso NUEVO: la serie ya estaba completada y se editó
+                    // el peso/reps. registrarSerie() por sí solo NO alcanza
+                    // acá porque la comparación de niveles/reemplazo en
+                    // Calculador1RM asume que se está agregando una serie
+                    // nueva al final de la historia, no corrigiendo una
+                    // que ya existe en el medio — así que marcamos el
+                    // ejercicio para reconstruir todo su historial después.
+                    [$pesoNuevo, $repsNuevo, $unidadNuevo] = $this->extraerPesoRepsParaUnoRM($serieNueva, $metodo);
+                    [$pesoViejo, $repsViejo, $unidadViejo] = $this->extraerPesoRepsParaUnoRM($serieAnterior, $metodo);
+ 
+                    $cambioReal =
+                        $pesoNuevo !== $pesoViejo ||
+                        $repsNuevo !== $repsViejo ||
+                        $unidadNuevo !== $unidadViejo;
+ 
+                    if ($cambioReal) {
+                        $ejerciciosParaRecalcular[(int) $rutina->ejercicio_id] = true;
                     }
                 }
-
-                $rutina->series = $seriesNuevas;
-                $rutina->save();
             }
+ 
+            $rutina->series = $seriesNuevas;
+            $rutina->save();
         }
-
-        return response()->json(['ok' => true]);
     }
+ 
+    // Recalcular DESPUÉS de guardar todo, para que el recálculo lea
+    // los valores ya corregidos desde la base de datos.
+    $recalculos = [];
+    foreach (array_keys($ejerciciosParaRecalcular) as $ejercicioId) {
+        $recalculos[] = $this->recalculadorHistorial->recalcular((int) $clienteId, $ejercicioId);
+    }
+ 
+    return response()->json(['ok' => true, 'recalculos' => $recalculos]);
+}
 
     /**
      * Extrae el peso/reps/unidad que representan mejor "una serie

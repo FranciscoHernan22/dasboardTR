@@ -189,7 +189,8 @@ class Calculador1RM
         string $metodo,
         float $peso,
         int $reps,
-        string $unidad = 'kg'
+        string $unidad = 'kg',
+        ?Carbon $fechaEvento = null   // ← NUEVO
     ): ?array {
         if (!in_array($metodo, self::METODOS_CONFIABLES, true) || $peso <= 0 || $reps <= 0) {
             return null;
@@ -211,7 +212,7 @@ class Calculador1RM
             ->first();
 
         $reemplaza = self::debeReemplazar($vigente, $nivel, $candidato1RMKg);
-        $ahora = Carbon::now();
+        $ahora = $fechaEvento ?? Carbon::now();
 
         // El historial siempre se registra, haya reemplazado o no.
         EstimacionUnoRmHistorial::create([

@@ -108,6 +108,7 @@
             <tr class="bg-gray-50 border-b border-gray-200">
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Cliente</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Estado</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Progreso</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Acciones</th>
             </tr>
         </thead>
@@ -146,49 +147,53 @@
                         Sin plan
                     </span>
                     @endif
+                </td>
+                <td class="px-4 py-3">
+                    @if(!$cliente->plan)
+                        <span class="text-xs text-gray-300">—</span>
 
-                    @if($cliente->progreso)
-    @php $p = $cliente->progreso; @endphp
+                    @elseif($cliente->progreso['estado'] === 'no_iniciado')
+                        <div class="flex items-center gap-2 w-36">
+                            <span class="text-[11px] font-medium text-gray-400 whitespace-nowrap">
+                                Inicia {{ $cliente->progreso['fecha_inicio']->translatedFormat('d M') }}
+                            </span>
+                        </div>
 
-    @if($p['estado'] === 'no_iniciado')
-        <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-semibold">
-            Inicia {{ $p['fecha_inicio']->translatedFormat('d M') }}
-        </span>
-
-    @elseif($p['estado'] === 'finalizado')
-        <div class="mt-1.5 flex items-center gap-2 flex-wrap">
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold
-                {{ $p['porcentaje'] === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
-                {{ $p['porcentaje'] === 100 ? '✓ Finalizado' : 'Finalizó · ' . $p['porcentaje'] . '%' }}
-            </span>
-            @if(count($p['semanas_sin_entrenar']) > 0)
-            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold"
-                title="Semana(s) {{ implode(', ', $p['semanas_sin_entrenar']) }} sin ningún día entrenado">
-                ⚠ {{ count($p['semanas_sin_entrenar']) === 1 ? '1 semana' : count($p['semanas_sin_entrenar']).' semanas' }} en 0
-            </span>
-            @endif
-        </div>
-
-    @else {{-- en_curso --}}
-        <div class="mt-1.5 flex items-center gap-2 flex-wrap">
-            <span class="text-[11px] font-semibold text-blue-700 whitespace-nowrap">
-                Sem. {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
-                @if($p['porcentaje'] !== null) · {{ $p['porcentaje'] }}% @endif
-            </span>
-            @if($p['dias_asignados'] > 0)
-            <div class="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div class="h-full bg-blue-500 rounded-full" style="width: {{ $p['porcentaje'] }}%"></div>
-            </div>
-            @endif
-            @if(count($p['semanas_sin_entrenar']) > 0)
-            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold"
-                title="Semana(s) {{ implode(', ', $p['semanas_sin_entrenar']) }} sin ningún día entrenado">
-                ⚠ {{ count($p['semanas_sin_entrenar']) === 1 ? '1 semana' : count($p['semanas_sin_entrenar']).' semanas' }} en 0
-            </span>
-            @endif
-        </div>
-    @endif
-@endif
+                    @else
+                        @php
+                            $p = $cliente->progreso;
+                            $colorBarra = $p['estado'] === 'finalizado'
+                                ? ($p['porcentaje'] === 100 ? 'bg-green-500' : 'bg-amber-500')
+                                : 'bg-blue-500';
+                            $colorTexto = $p['estado'] === 'finalizado'
+                                ? ($p['porcentaje'] === 100 ? 'text-green-600' : 'text-amber-600')
+                                : 'text-blue-600';
+                        @endphp
+                        <div class="flex flex-col gap-1 w-36">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-semibold text-gray-600">
+                                    @if($p['estado'] === 'finalizado')
+                                        {{ $p['porcentaje'] === 100 ? '✓ Finalizado' : 'Finalizado' }}
+                                    @else
+                                        Semana {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
+                                    @endif
+                                </span>
+                                <span class="text-[11px] font-bold {{ $colorTexto }}">
+                                    {{ $p['porcentaje'] ?? 0 }}%
+                                </span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full {{ $colorBarra }} transition-all"
+                                     style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
+                            </div>
+                            @if(count($p['semanas_sin_entrenar']) > 0)
+                            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-red-500"
+                                title="Semana(s) {{ implode(', ', $p['semanas_sin_entrenar']) }} sin ningún día entrenado">
+                                ⚠ {{ count($p['semanas_sin_entrenar']) === 1 ? '1 semana' : count($p['semanas_sin_entrenar']).' semanas' }} en 0
+                            </span>
+                            @endif
+                        </div>
+                    @endif
                 </td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-1.5">
@@ -259,7 +264,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="3" class="px-4 py-14 text-center">
+                <td colspan="4" class="px-4 py-14 text-center">
                     <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.7M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
                     </svg>
@@ -268,7 +273,7 @@
             </tr>
         @endforelse
         <tr id="filaSinResultados" class="hidden">
-            <td colspan="3" class="px-4 py-14 text-center">
+            <td colspan="4" class="px-4 py-14 text-center">
                 <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
                 </svg>
@@ -283,7 +288,7 @@
 <div class="sm:hidden bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100 shadow-sm">
 @forelse($clientes as $cliente)
 <div class="swipe-wrapper relative overflow-hidden"
-     style="height:64px;"
+     style="height:78px;"
      data-id="{{ $cliente->id }}"
      data-nombre="{{ strtolower($cliente->name) }}"
      data-email="{{ strtolower($cliente->email) }}"
@@ -356,46 +361,40 @@
             <div class="flex-1 min-w-0">
                 <div class="text-sm font-semibold text-gray-900 truncate">{{ $cliente->name }}</div>
                 <div class="text-xs text-gray-500 truncate">{{ $cliente->email }}</div>
+
                 @if(!$cliente->plan)
-                <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
-                    Sin plan
-                </span>
+                    <span class="inline-block mt-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
+                        Sin plan
+                    </span>
+
+                @elseif($cliente->progreso['estado'] === 'no_iniciado')
+                    <span class="inline-block mt-1 text-[10px] text-gray-400 font-medium">
+                        Inicia {{ $cliente->progreso['fecha_inicio']->translatedFormat('d M') }}
+                    </span>
+
+                @else
+                    @php
+                        $p = $cliente->progreso;
+                        $colorBarra = $p['estado'] === 'finalizado'
+                            ? ($p['porcentaje'] === 100 ? 'bg-green-500' : 'bg-amber-500')
+                            : 'bg-blue-500';
+                    @endphp
+                    <div class="flex items-center gap-1.5 mt-1.5">
+                        <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[70px]">
+                            <div class="h-full rounded-full {{ $colorBarra }}" style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 whitespace-nowrap">
+                            @if($p['estado'] === 'finalizado')
+                                {{ $p['porcentaje'] === 100 ? '✓ 100%' : $p['porcentaje'].'%' }}
+                            @else
+                                S{{ $p['semana_actual'] }}/{{ $p['semanas_total'] }} · {{ $p['porcentaje'] }}%
+                            @endif
+                        </span>
+                        @if(count($p['semanas_sin_entrenar']) > 0)
+                        <span class="text-[10px] text-red-500 font-bold" title="{{ count($p['semanas_sin_entrenar']) }} semana(s) en 0">⚠</span>
+                        @endif
+                    </div>
                 @endif
-
-
-                @if($cliente->progreso)
-    @php $p = $cliente->progreso; @endphp
-
-    @if($p['estado'] === 'no_iniciado')
-        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold">
-            Inicia {{ $p['fecha_inicio']->translatedFormat('d M') }}
-        </span>
-
-    @elseif($p['estado'] === 'finalizado')
-        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold
-            {{ $p['porcentaje'] === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
-            {{ $p['porcentaje'] === 100 ? '✓ Finalizado' : 'Finalizó · ' . $p['porcentaje'] . '%' }}
-        </span>
-        @if(count($p['semanas_sin_entrenar']) > 0)
-        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold">
-            ⚠ {{ count($p['semanas_sin_entrenar']) }} sem. en 0
-        </span>
-        @endif
-
-    @else
-        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-semibold">
-            Sem. {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
-            @if($p['porcentaje'] !== null) · {{ $p['porcentaje'] }}% @endif
-        </span>
-        @if(count($p['semanas_sin_entrenar']) > 0)
-        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold">
-            ⚠ {{ count($p['semanas_sin_entrenar']) }} sem. en 0
-        </span>
-        @endif
-    @endif
-@endif
-
-
             </div>
             <div class="w-2 h-2 rounded-full flex-shrink-0 {{ $cliente->status === 'activo' ? 'bg-green-500' : 'bg-gray-400' }}"></div>
             {{-- Hint de swipe --}}

@@ -146,6 +146,49 @@
                         Sin plan
                     </span>
                     @endif
+
+                    @if($cliente->progreso)
+    @php $p = $cliente->progreso; @endphp
+
+    @if($p['estado'] === 'no_iniciado')
+        <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-semibold">
+            Inicia {{ $p['fecha_inicio']->translatedFormat('d M') }}
+        </span>
+
+    @elseif($p['estado'] === 'finalizado')
+        <div class="mt-1.5 flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold
+                {{ $p['porcentaje'] === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+                {{ $p['porcentaje'] === 100 ? '✓ Finalizado' : 'Finalizó · ' . $p['porcentaje'] . '%' }}
+            </span>
+            @if(count($p['semanas_sin_entrenar']) > 0)
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold"
+                title="Semana(s) {{ implode(', ', $p['semanas_sin_entrenar']) }} sin ningún día entrenado">
+                ⚠ {{ count($p['semanas_sin_entrenar']) === 1 ? '1 semana' : count($p['semanas_sin_entrenar']).' semanas' }} en 0
+            </span>
+            @endif
+        </div>
+
+    @else {{-- en_curso --}}
+        <div class="mt-1.5 flex items-center gap-2 flex-wrap">
+            <span class="text-[11px] font-semibold text-blue-700 whitespace-nowrap">
+                Sem. {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
+                @if($p['porcentaje'] !== null) · {{ $p['porcentaje'] }}% @endif
+            </span>
+            @if($p['dias_asignados'] > 0)
+            <div class="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 rounded-full" style="width: {{ $p['porcentaje'] }}%"></div>
+            </div>
+            @endif
+            @if(count($p['semanas_sin_entrenar']) > 0)
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold"
+                title="Semana(s) {{ implode(', ', $p['semanas_sin_entrenar']) }} sin ningún día entrenado">
+                ⚠ {{ count($p['semanas_sin_entrenar']) === 1 ? '1 semana' : count($p['semanas_sin_entrenar']).' semanas' }} en 0
+            </span>
+            @endif
+        </div>
+    @endif
+@endif
                 </td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-1.5">
@@ -318,6 +361,41 @@
                     Sin plan
                 </span>
                 @endif
+
+
+                @if($cliente->progreso)
+    @php $p = $cliente->progreso; @endphp
+
+    @if($p['estado'] === 'no_iniciado')
+        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold">
+            Inicia {{ $p['fecha_inicio']->translatedFormat('d M') }}
+        </span>
+
+    @elseif($p['estado'] === 'finalizado')
+        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold
+            {{ $p['porcentaje'] === 100 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+            {{ $p['porcentaje'] === 100 ? '✓ Finalizado' : 'Finalizó · ' . $p['porcentaje'] . '%' }}
+        </span>
+        @if(count($p['semanas_sin_entrenar']) > 0)
+        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold">
+            ⚠ {{ count($p['semanas_sin_entrenar']) }} sem. en 0
+        </span>
+        @endif
+
+    @else
+        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-semibold">
+            Sem. {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
+            @if($p['porcentaje'] !== null) · {{ $p['porcentaje'] }}% @endif
+        </span>
+        @if(count($p['semanas_sin_entrenar']) > 0)
+        <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-semibold">
+            ⚠ {{ count($p['semanas_sin_entrenar']) }} sem. en 0
+        </span>
+        @endif
+    @endif
+@endif
+
+
             </div>
             <div class="w-2 h-2 rounded-full flex-shrink-0 {{ $cliente->status === 'activo' ? 'bg-green-500' : 'bg-gray-400' }}"></div>
             {{-- Hint de swipe --}}

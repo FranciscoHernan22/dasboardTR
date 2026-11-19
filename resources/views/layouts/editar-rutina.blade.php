@@ -296,121 +296,29 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 #wp-nav a[data-dia].dia-dragging { opacity:.35; }
 
 /* ════════════════════════════════════════════════════════════
-   MÓVIL (≤ 640px) — escritorio no cambia
-   Las series pasan de columnas a filas (una debajo de otra)
+   MÓVIL (≤ 640px) — vista simplificada. Escritorio no cambia.
+   En celular se oculta #contenedor-bloques (sigue siendo la fuente
+   de datos para guardar) y se muestra #vista-movil + paneles.
    ════════════════════════════════════════════════════════════ */
-.btn-serie-movil { display:none; }
+#vista-movil, #mv-panel, #mv-sheet { display:none; }
 
 @media (max-width: 640px) {
+    #contenedor-bloques { display:none; }
+    #vista-movil { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+    #mv-panel.open { display:flex; }
+    #mv-sheet.open { display:block; }
 
     /* Evita el zoom automático de iOS al tocar un campo (< 16px) */
-    #form-rutina input,
-    #form-rutina select,
-    #form-rutina textarea { font-size:16px !important; }
+    #form-rutina input, #form-rutina select, #form-rutina textarea,
+    #mv-panel input, #mv-panel select, #mv-panel textarea,
+    #mv-sheet input, #mv-sheet select, #mv-sheet textarea { font-size:16px !important; }
 
-    /* ── Encabezado: nombre arriba, botones en cuadrícula 2×2 ── */
     .page-header { gap:8px; }
     .page-header h2 { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .page-header .btn-metodos { flex:1 1 calc(50% - 4px); justify-content:center; padding:8px 10px; }
 
-    /* ── Cabecera del bloque ── */
-    .bloque-header { gap:6px; padding:8px 10px; }
-    .btn-remove { width:30px; height:30px; }
+    .add-block-btn { flex:1 1 calc(50% - 4px); padding:11px 4px; font-size:0.8rem; }
 
-    /* Encabezados S1/S2… de columnas: no aplican en vista vertical */
-    .series-header-row { display:none; }
-
-    /* ── Fila de ejercicio: segmento + ejercicio arriba, series abajo ── */
-    .ejercicio-row { flex-wrap:wrap; }
-    .col-segmento,
-    .col-ejercicio { flex:1 1 0; width:auto; min-width:0; }
-    .col-ejercicio { border-right:none; }
-    .col-series { flex:0 0 100%; padding:8px; border-top:1px dashed var(--border); }
-    .ej-select-dropdown { width:min(260px, calc(100vw - 32px)); }
-
-    /* ── Series en filas ── */
-    .series-cols { flex-direction:column; gap:6px; counter-reset:serie; }
-
-    .serie-col {
-        counter-increment:serie;
-        display:grid;
-        grid-template-columns:30px 1fr 1fr;
-        column-gap:8px; row-gap:6px;
-        align-items:start;
-        padding:8px 10px 8px 8px;
-        width:100%;
-    }
-    /* Número de serie a la izquierda */
-    .serie-col::before {
-        content:counter(serie);
-        grid-column:1; grid-row:1 / span 3;
-        align-self:stretch;
-        display:flex; align-items:center; justify-content:center;
-        border-radius:6px; background:var(--accent-l); color:var(--accent);
-        font-size:0.85rem; font-weight:800; font-family:'DM Mono',monospace;
-    }
-
-    /* Fila 1: método */
-    .serie-col > .metodo-select {
-        grid-column:2 / 4; grid-row:1;
-        text-align:left; padding:6px 8px; border-radius:6px;
-        color:var(--text); font-weight:600;
-    }
-
-    /* Fila 2: campos del método, uno al lado del otro */
-    .serie-col > .metodo-fields { grid-column:2 / 4; grid-row:2; }
-    .serie-col > .metodo-fields.active { flex-direction:row; flex-wrap:wrap; gap:8px; }
-    .serie-col .campo-wrap { flex:1 1 72px; align-items:stretch; gap:3px; }
-    .serie-col .campo-wrap label { font-size:0.62rem; text-align:left; }
-    .serie-col .campo-input { padding:8px 6px; border-radius:6px; }
-    .serie-col .unidad-select { width:44px; padding:8px 0; border-radius:6px; }
-    .serie-col .campo-wrap:has(.peso-group) { flex-basis:118px; }   /* peso + unidad necesitan más ancho */
-    .serie-col input[type=number] { -moz-appearance:textfield; }
-    .serie-col input[type=number]::-webkit-inner-spin-button,
-    .serie-col input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
-    .serie-col .tempo-input { padding:6px 2px; }
-    .serie-col .metodo-nota { flex:1 1 100%; font-size:0.68rem; padding:3px 6px; }
-
-    /* Fila 3: tempo y RIR, mitad y mitad */
-    .serie-col > .tempo-wrap { grid-column:2; grid-row:3; margin-top:0; }
-    .serie-col > .rir-wrap   { grid-column:3; grid-row:3; margin-top:0; }
-    .tempo-toggle, .rir-toggle { padding:7px 6px; font-size:0.72rem; border-radius:6px; }
-    .tempo-label { font-size:0.55rem; }
-    .tempo-unit, .rir-scale { font-size:0.58rem; }
-    .rir-mode-btn { padding:6px 2px; font-size:0.72rem; }
-
-    /* ── Descanso: una fila por serie ── */
-    .descanso-row { flex-direction:column; }
-    .descanso-row-label { width:100%; border-right:none; border-bottom:1px solid #bbf7d0; padding:8px 10px; }
-    .descanso-row-cols { flex-direction:column; gap:6px; padding:8px; counter-reset:desc; }
-    .descanso-serie-cell {
-        counter-increment:desc;
-        flex-direction:row; justify-content:flex-start; gap:10px;
-        padding:6px 10px 6px 8px;
-        background:white; border:1px solid #bbf7d0; border-radius:6px;
-    }
-    .descanso-serie-cell::before {
-        content:'Serie ' counter(desc);
-        font-size:0.72rem; font-weight:700; color:#065f46; white-space:nowrap; width:56px;
-    }
-    .descanso-serie-cell .desc-inputs { flex:1; max-width:170px; }
-    .desc-select-min, .desc-input-seg { padding:7px 4px; }
-    .descanso-serie-cell .desc-preview { margin-left:auto; }
-
-    /* ── Pie del bloque: botón "+ Agregar serie" ── */
-    .bloque-footer { flex-wrap:wrap; padding:8px 10px; }
-    .btn-serie-movil {
-        display:flex; align-items:center; justify-content:center; gap:5px;
-        width:100%; padding:10px; order:-1;
-        border:1.5px dashed var(--accent); border-radius:8px;
-        background:var(--accent-l); color:var(--accent);
-        font-size:0.85rem; font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer;
-    }
-
-    /* ── Barra de agregar bloques: 2×2 ── */
-    .add-block-btn { flex:1 1 calc(50% - 4px); padding:10px 4px; font-size:0.78rem; }
-
-    /* ── Botones finales: PDF a lo ancho, Guardar fijo abajo ── */
     #form-rutina { padding-bottom:84px; }
     .btn-pdf { display:flex; justify-content:center; width:100%; margin-left:0; }
     .btn-guardar {
@@ -419,9 +327,110 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
         justify-content:center; padding:13px 20px; font-size:0.95rem;
     }
     .btn-guardar:hover { transform:none; }
-
     .modal-box { max-height:92vh; }
 }
+
+/* ── Lista del día ── */
+.mv-bloque { background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.mv-bloque-top { display:flex; align-items:center; justify-content:space-between; padding:4px 6px 4px 12px; background:#f5f6f8; border-bottom:1px solid var(--border); }
+.mv-tipo { font-size:.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+.mv-mas { width:38px; height:32px; border:none; background:transparent; color:var(--muted); font-size:1.15rem; border-radius:6px; cursor:pointer; }
+.mv-ej { display:flex; align-items:center; gap:12px; width:100%; padding:12px; border:none; border-bottom:1px solid var(--border); background:#fff; text-align:left; font-family:'DM Sans',sans-serif; cursor:pointer; }
+.mv-ej:last-child { border-bottom:none; }
+.mv-ej:active { background:var(--accent-l); }
+.mv-num { min-width:32px; height:32px; padding:0 4px; border-radius:8px; background:var(--accent-l); color:var(--accent); font-size:.8rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.mv-ej-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.mv-ej-nom { font-size:.95rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mv-ej-nom.mv-pend { color:var(--accent); }
+.mv-ej-res { font-size:.78rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mv-chev { color:#cbd5e1; font-size:1.1rem; flex-shrink:0; }
+.mv-vacio { background:#fff; border:1.5px dashed var(--border2); border-radius:var(--radius); padding:22px 16px; text-align:center; font-size:.85rem; color:var(--muted); line-height:1.5; }
+
+/* ── Panel de un ejercicio (pantalla completa) ── */
+#mv-panel { position:fixed; inset:0; z-index:9500; background:var(--bg); flex-direction:column; font-family:'DM Sans',sans-serif; }
+.mv-panel-head { display:flex; align-items:center; gap:10px; padding:10px 12px; padding-top:calc(10px + env(safe-area-inset-top)); background:#fff; border-bottom:1px solid var(--border); }
+.mv-back { width:38px; height:38px; border:none; background:#f3f4f6; border-radius:9px; font-size:1.15rem; color:var(--text); cursor:pointer; flex-shrink:0; }
+.mv-panel-tit { flex:1; min-width:0; font-size:1rem; font-weight:700; color:var(--text); }
+.mv-sub { font-size:.72rem; font-weight:500; color:var(--muted); }
+.mv-listo { border:none; background:var(--accent); color:#fff; font-weight:700; padding:9px 16px; border-radius:9px; font-size:.9rem; font-family:inherit; cursor:pointer; flex-shrink:0; }
+.mv-tabs { display:flex; gap:6px; padding:8px 12px; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
+.mv-tab { flex-shrink:0; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border:1.5px solid var(--border2); background:#fff; border-radius:99px; padding:6px 12px; font-size:.78rem; font-weight:600; color:var(--muted); font-family:inherit; cursor:pointer; }
+.mv-tab.sel { border-color:var(--accent); color:var(--accent); background:var(--accent-l); }
+.mv-panel-body { flex:1; overflow-y:auto; padding:12px; padding-bottom:calc(28px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:12px; }
+.mv-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:12px; }
+
+/* Segmento / ejercicio / nota (los elementos originales, movidos aquí) */
+#mv-sel { display:flex; flex-direction:column; gap:10px; }
+#mv-sel .col-segmento, #mv-sel .col-ejercicio { width:auto; padding:0; border:none; flex:none; }
+#mv-sel .field-label { font-size:.66rem; margin-bottom:4px; }
+#mv-sel .segmento-select { padding:9px 8px; border-radius:8px; }
+#mv-sel .ej-select-trigger { min-height:46px; padding:6px 8px; border-radius:8px; }
+#mv-sel .ej-select-trigger img { width:36px; height:36px; }
+#mv-sel .ej-trigger-nombre, #mv-sel .ej-trigger-placeholder { font-size:.92rem; }
+#mv-sel .ej-select-dropdown { width:100%; }
+#mv-sel .ej-select-option { padding:8px 10px; font-size:.9rem; }
+#mv-sel .nota-ej-input-wrap { margin-top:10px; padding:8px 10px; align-items:center; }
+#mv-sel .nota-ej-input { min-height:24px; font-size:16px; }
+#mv-sel .nota-ej-input::placeholder { color:#c08a3e; }
+
+/* Tabla de series */
+.mv-filas { display:flex; flex-direction:column; gap:7px; }
+.mv-grid { display:grid; grid-template-columns:24px minmax(0,1fr) minmax(0,1.35fr) minmax(0,1.05fr) 26px; gap:6px; align-items:center; }
+.mv-grid-h span { font-size:.62rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; text-align:center; }
+.mv-sn { font-family:'DM Mono',monospace; font-weight:700; font-size:.9rem; color:var(--accent); text-align:center; }
+.mv-in { width:100%; height:44px; border:1px solid var(--border2); border-radius:8px; background:#fff; text-align:center; font-family:'DM Mono',monospace; color:var(--text); padding:0 4px; -moz-appearance:textfield; }
+.mv-in::-webkit-inner-spin-button, .mv-in::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+.mv-in:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-l); }
+.mv-peso { display:flex; align-items:center; height:44px; border:1px solid var(--border2); border-radius:8px; background:#fff; overflow:hidden; }
+.mv-peso:focus-within { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-l); }
+.mv-peso .mv-in { border:none; height:42px; flex:1; min-width:0; box-shadow:none; }
+.mv-unidad { height:100%; padding:0 7px; border:none; border-left:1px solid var(--border); background:#f8f9fb; font-size:.7rem; font-weight:700; color:var(--muted); font-family:inherit; cursor:pointer; }
+.mv-desc { width:100%; height:44px; border:1px solid #a7f3d0; border-radius:8px; background:#f0fdf4; color:#065f46; font-family:'DM Mono',monospace; text-align:center; text-align-last:center; padding:0 2px; -webkit-appearance:none; appearance:none; }
+.mv-opc { width:26px; height:44px; border:none; background:transparent; color:var(--muted); font-size:1.15rem; cursor:pointer; padding:0; }
+.mv-na { text-align:center; color:#cbd5e1; font-weight:700; }
+.mv-chips { display:flex; flex-wrap:wrap; gap:4px; padding-left:30px; margin-top:-2px; }
+.mv-chip { font-size:.66rem; font-weight:700; padding:2px 8px; border-radius:99px; background:#fef3c7; color:#92400e; }
+.mv-acciones { display:flex; gap:8px; margin-top:4px; }
+.mv-add { flex:1; padding:12px; border:1.5px dashed var(--accent); background:var(--accent-l); color:var(--accent); border-radius:9px; font-weight:700; font-size:.88rem; font-family:inherit; cursor:pointer; }
+.mv-quitar { padding:12px; border:1px solid var(--border2); background:#fff; color:var(--muted); border-radius:9px; font-weight:600; font-size:.8rem; font-family:inherit; cursor:pointer; }
+.mv-aviso { font-size:.72rem; color:var(--muted); line-height:1.5; margin:0; }
+
+/* ── Hoja inferior (opciones de serie / de bloque) ── */
+#mv-sheet { position:fixed; inset:0; z-index:9600; font-family:'DM Sans',sans-serif; }
+.mv-sheet-fondo { position:absolute; inset:0; background:rgba(0,0,0,.45); }
+.mv-sheet-box { position:absolute; left:0; right:0; bottom:0; max-height:88vh; display:flex; flex-direction:column; background:#fff; border-radius:16px 16px 0 0; animation:mvSube .18s ease; }
+@keyframes mvSube { from { transform:translateY(30px); opacity:0; } to { transform:none; opacity:1; } }
+.mv-sheet-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); font-weight:700; font-size:1rem; color:var(--text); }
+.mv-sheet-body { overflow-y:auto; padding:14px 16px; padding-bottom:calc(18px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; }
+.mv-sec { font-size:.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
+.mv-btn { width:100%; padding:13px 14px; border:1px solid var(--border2); background:#fff; border-radius:10px; font-size:.9rem; font-weight:600; color:var(--text); text-align:left; display:flex; align-items:center; gap:10px; font-family:inherit; cursor:pointer; }
+.mv-btn i { font-size:1.1rem; color:var(--muted); }
+.mv-btn:disabled { opacity:.4; }
+.mv-btn.peligro { color:var(--danger); border-color:#fecaca; }
+.mv-btn.peligro i { color:var(--danger); }
+.mv-tipos { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mv-tipo-btn { padding:12px; border:1.5px solid var(--border2); border-radius:9px; background:#fff; font-weight:600; font-size:.88rem; color:var(--text); font-family:inherit; cursor:pointer; }
+.mv-tipo-btn.sel { border-color:var(--accent); background:var(--accent-l); color:var(--accent); }
+
+/* La serie original movida a la hoja: formulario vertical */
+.mv-sheet-body .serie-col { border:none; padding:0; background:none; align-items:stretch; gap:10px; }
+.mv-sheet-body .metodo-select { padding:10px; text-align:left; color:var(--text); font-weight:600; border-radius:8px; }
+.mv-sheet-body .metodo-fields.active { flex-direction:row; flex-wrap:wrap; gap:8px; }
+.mv-sheet-body .campo-wrap { flex:1 1 90px; align-items:stretch; gap:3px; }
+.mv-sheet-body .campo-wrap:has(.peso-group) { flex-basis:140px; }
+.mv-sheet-body .campo-wrap label { font-size:.66rem; text-align:left; }
+.mv-sheet-body .campo-input { padding:10px 6px; border-radius:8px; }
+.mv-sheet-body .unidad-select { width:52px; padding:10px 0; border-radius:8px; }
+.mv-sheet-body .metodo-nota { flex-basis:100%; font-size:.75rem; padding:5px; }
+.mv-sheet-body .tempo-wrap, .mv-sheet-body .rir-wrap { margin-top:0; }
+.mv-sheet-body .tempo-toggle, .mv-sheet-body .rir-toggle { padding:11px; font-size:.85rem; border-radius:8px; }
+.mv-sheet-body .tempo-label { font-size:.6rem; }
+.mv-sheet-body .tempo-unit, .mv-sheet-body .rir-scale { font-size:.66rem; }
+.mv-sheet-body .tempo-preview, .mv-sheet-body .rir-preview { font-size:.75rem; padding:4px; }
+.mv-sheet-body .rir-mode-btn { padding:9px; font-size:.82rem; }
+.mv-sheet-body input[type=number] { -moz-appearance:textfield; }
+.mv-sheet-body input[type=number]::-webkit-inner-spin-button,
+.mv-sheet-body input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
 </style>
 
 {{-- MODAL MÉTODOS --}}
@@ -776,6 +785,8 @@ document.addEventListener('click',()=>{
         placeholder="Contexto del día, observaciones generales, indicaciones para el cliente…">{{ $notaSesion ?? '' }}</textarea>
 </div>
 
+<div id="vista-movil" aria-live="polite"></div>
+
 <div id="contenedor-bloques">
 @foreach($bloques as $grupo => $rutinasGrupo)
 @php
@@ -1034,7 +1045,6 @@ document.addEventListener('click',()=>{
     @endif
 
     <div class="bloque-footer">
-        <button type="button" class="btn-serie-movil" onclick="agregarSerieMovil(this)">＋ Agregar serie</button>
         <span style="font-size:0.68rem;color:var(--muted);">
             <i class="ti ti-info-circle" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>
             Descanso configurado por serie
@@ -1054,6 +1064,10 @@ document.addEventListener('click',()=>{
 <a href="{{ route('entrenador.rutina.pdf', [$cliente->id,$semana,$dia]) }}" target="_blank" class="btn-pdf">📄 Exportar PDF</a>
 <button type="button" onclick="guardarRutina()" class="btn-guardar" id="btn-guardar">💾 &nbsp;Guardar rutina</button>
 </form>
+
+{{-- ── Vista móvil: panel de ejercicio y hoja de opciones ── --}}
+<div id="mv-panel" role="dialog" aria-modal="true" aria-label="Editar ejercicio"></div>
+<div id="mv-sheet" role="dialog" aria-modal="true"></div>
 
 <script>
 const ejerciciosPorGrupo = @json($ejerciciosPorGrupo);
@@ -1578,7 +1592,6 @@ function htmlSerieCol(ex={}) {
 
 function bloqueFooterHTML() {
     return `<div class="bloque-footer">
-        <button type="button" class="btn-serie-movil" onclick="agregarSerieMovil(this)">＋ Agregar serie</button>
         <span style="font-size:0.68rem;color:var(--muted);">
             <i class="ti ti-info-circle" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>
             Descanso configurado por serie
@@ -1988,19 +2001,408 @@ function cerrarModalEliminar() {
     document.addEventListener('dragend', stopScroll);
 })();
 
-/* ── Móvil: "+ Agregar serie" ── */
-function agregarSerieMovil(btn) {
-    const bloque = btn.closest('.bloque');
-    const input  = bloque?.querySelector('.bloque-series-count input');
-    if (!input) return;
-    input.value = (parseInt(input.value) || 0) + 1;
-    input.dispatchEvent(new Event('change'));   // dispara generarSeriesBloque()
-    // Lleva la vista a la nueva serie del primer ejercicio
-    setTimeout(() => {
-        const ultima = bloque.querySelector('.ejercicio-row .series-cols [data-serie]:last-child');
-        ultima?.scrollIntoView({ behavior:'smooth', block:'center' });
-    }, 50);
-}
+/* ════════════════════════════════════════════════════════════
+   VISTA MÓVIL SIMPLIFICADA
+   Lee y escribe en los mismos campos de #contenedor-bloques, así que
+   guardarRutina() y el resto de funciones siguen funcionando igual.
+   ════════════════════════════════════════════════════════════ */
+(function () {
+    const MQ      = window.matchMedia('(max-width: 640px)');
+    const esMovil = () => MQ.matches;
+
+    const vista = document.getElementById('vista-movil');
+    const panel = document.getElementById('mv-panel');
+    const sheet = document.getElementById('mv-sheet');
+
+    // Qué campos son "reps", "peso" y "unidad" según el método de la serie
+    const KEYS = {
+        normal:    { r:'reps',       p:'peso',     u:'unidad' },
+        '888':     { r:'reps_888',   p:'peso1',    u:'unidad1' },
+        restpause: { r:'reps_rp',    p:'peso_rp',  u:'unidad_rp' },
+        '21s':     { r:'reps_21s',   p:'peso_21s', u:'unidad_21s' },
+        '10_21':   { r:null,         p:'peso_10',  u:'unidad_10' },
+        isometria: { r:'reps_ambos', p:'peso_iso', u:'unidad_iso' },
+        forzadas:  { r:'reps_fz',    p:'peso_fz',  u:'unidad_fz' },
+        parciales: { r:'reps_pc',    p:'peso_pc',  u:'unidad_pc' },
+        negativas: { r:'reps_ng',    p:'peso_ng',  u:'unidad_ng' },
+    };
+    const METODO = { normal:'Normal', '888':'Descendente', restpause:'Rest-pause', '21s':'3 rangos', '10_21':'10 + 21s',
+                     isometria:'Isometría', forzadas:'Forzadas', parciales:'Parciales', negativas:'Negativas' };
+    const TIPO   = { monoserie:'Lineal', biserie:'Biserie', triserie:'Triserie', circuito:'Circuito' };
+    const LETRA  = 'ABCDEFGHIJKL';
+    const DESCANSOS = [0, 15, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300, 360, 420, 480, 600];
+
+    let abierto = null;   // { bi, bloque, idx, row, movidos:[] }
+    let sheetCtx = null;  // { modo:'serie'|'bloque', ... , movido }
+
+    /* ── Utilidades ── */
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+    const bloques  = () => [...contenedor.querySelectorAll('.bloque')];
+    const filas    = b => [...b.querySelectorAll('.ejercicio-row')];
+    const series   = row => [...row.querySelectorAll('.series-cols [data-serie]')];
+    const metodoDe = col => col.querySelector('.metodo-select')?.value || 'normal';
+    const campo    = (col, key) => key ? col.querySelector(`[data-key="${key}"]`) : null;
+    const fmtDesc  = seg => { seg = parseInt(seg) || 0; return seg ? Math.floor(seg / 60) + ':' + String(seg % 60).padStart(2, '0') : '–'; };
+    const nombreEj = row => {
+        // Si el ejercicio está abierto, su selector está movido dentro del panel
+        const el = row.querySelector('.ej-trigger-nombre')
+            || (abierto && row === abierto.row ? panel.querySelector('#mv-sel .ej-trigger-nombre') : null);
+        return el?.textContent.trim() || '';
+    };
+    const etiqueta = (bi, i, multi) => (bi + 1) + (multi ? LETRA[i] : '');
+
+    function mover(el, destino, lista) {
+        if (!el) return;
+        lista.push({ el, parent: el.parentNode, next: el.nextSibling });
+        destino.appendChild(el);
+    }
+    function restaurar(lista) {
+        for (let k = lista.length - 1; k >= 0; k--) {
+            const { el, parent, next } = lista[k];
+            parent.insertBefore(el, next);
+        }
+        lista.length = 0;
+    }
+
+    function rango(valores, sufijo) {
+        const nums = valores.filter(v => v !== '' && v != null).map(Number).filter(n => !isNaN(n));
+        if (!nums.length) return '';
+        const mn = Math.min(...nums), mx = Math.max(...nums);
+        return (mn === mx ? mn : mn + '–' + mx) + sufijo;
+    }
+    function resumen(row) {
+        const cols = series(row);
+        if (!cols.length) return 'Sin series';
+        const reps = [], pesos = []; let unidad = 'kg';
+        cols.forEach(c => {
+            const k = KEYS[metodoDe(c)] || KEYS.normal;
+            reps.push(campo(c, k.r)?.value ?? '');
+            pesos.push(campo(c, k.p)?.value ?? '');
+            unidad = campo(c, k.u)?.value || unidad;
+        });
+        return [cols.length + (cols.length === 1 ? ' serie' : ' series'), rango(reps, ' reps'), rango(pesos, ' ' + unidad)]
+            .filter(Boolean).join(' · ');
+    }
+
+    /* Descanso: vive en la fila de descanso del bloque (uno por serie) */
+    function celdaDesc(bloque, s) { return bloque.querySelectorAll('.descanso-serie-cell')[s] || null; }
+    function leerDesc(bloque, s) {
+        const c = celdaDesc(bloque, s); if (!c) return 0;
+        return (parseInt(c.querySelector('.desc-select-min')?.value) || 0) * 60 + (parseInt(c.querySelector('.desc-input-seg')?.value) || 0);
+    }
+    function escribirDesc(bloque, s, total) {
+        const c = celdaDesc(bloque, s); if (!c) return;
+        const min = c.querySelector('.desc-select-min'), seg = c.querySelector('.desc-input-seg');
+        min.value = Math.min(10, Math.floor(total / 60));
+        seg.value = total % 60 ? total % 60 : '';
+        onDescChange(min, bloque.dataset.grupo, String(s));
+    }
+    function opcionesDesc(actual) {
+        const lista = DESCANSOS.includes(actual) ? DESCANSOS : [...DESCANSOS, actual].sort((a, b) => a - b);
+        return lista.map(v => `<option value="${v}" ${v === actual ? 'selected' : ''}>${fmtDesc(v)}</option>`).join('');
+    }
+
+    function etiquetasSerie(col) {
+        const m = metodoDe(col), out = [];
+        if (m !== 'normal') out.push(METODO[m] || m);
+        if (campo(col, 'tempo_activo')?.value === '1') {
+            out.push('Tempo ' + ['tempo_excentrica', 'tempo_pausa', 'tempo_concentrica'].map(k => campo(col, k)?.value || '0').join('-'));
+        }
+        const rv = campo(col, 'rir_valor')?.value;
+        if (campo(col, 'rir_activo')?.value === '1' && rv) out.push((campo(col, 'rir_modo')?.value === 'rpe' ? 'RPE ' : 'RIR ') + rv);
+        return out.map(t => `<span class="mv-chip">${esc(t)}</span>`).join('');
+    }
+
+    /* ════ 1. Lista del día ════ */
+    function render() {
+        if (!esMovil() || abierto) return;
+        const bs = bloques();
+        if (!bs.length) {
+            vista.innerHTML = '<div class="mv-vacio">Este día todavía no tiene ejercicios.<br>Agrega uno con los botones de abajo.</div>';
+            return;
+        }
+        vista.innerHTML = bs.map((b, bi) => {
+            const rows = filas(b), multi = rows.length > 1, tipo = b.dataset.tipo;
+            const items = rows.map((r, i) => {
+                const nom = nombreEj(r), seg = r.querySelector('.segmento-select')?.value || '';
+                return `<button type="button" class="mv-ej" data-b="${bi}" data-i="${i}">
+                    <span class="mv-num">${etiqueta(bi, i, multi)}</span>
+                    <span class="mv-ej-txt">
+                        <span class="mv-ej-nom ${nom ? '' : 'mv-pend'}">${esc(nom || 'Elegir ejercicio')}</span>
+                        <span class="mv-ej-res">${esc([seg, resumen(r)].filter(Boolean).join(' · '))}</span>
+                    </span>
+                    <i class="ti ti-chevron-right mv-chev" aria-hidden="true"></i>
+                </button>`;
+            }).join('');
+            return `<div class="mv-bloque">
+                <div class="mv-bloque-top">
+                    <span class="mv-tipo">${esc(TIPO[tipo] || tipo)}${tipo === 'circuito' ? ' · ' + rows.length + ' ejercicios' : ''}</span>
+                    <button type="button" class="mv-mas" data-menu="${bi}" aria-label="Opciones del bloque ${bi + 1}"><i class="ti ti-dots" aria-hidden="true"></i></button>
+                </div>${items}</div>`;
+        }).join('');
+    }
+
+    vista.addEventListener('click', e => {
+        const ej = e.target.closest('.mv-ej');
+        if (ej) { abrirEjercicio(+ej.dataset.b, +ej.dataset.i); return; }
+        const menu = e.target.closest('[data-menu]');
+        if (menu) abrirMenuBloque(+menu.dataset.menu);
+    });
+
+    /* ════ 2. Panel de un ejercicio ════ */
+    function abrirEjercicio(bi, idx) {
+        cerrarSheet();
+        cerrarEjercicio(false);
+        const bloque = bloques()[bi]; if (!bloque) return;
+        const rows = filas(bloque), row = rows[idx]; if (!row) return;
+        const multi = rows.length > 1, tipo = bloque.dataset.tipo;
+        abierto = { bi, bloque, idx, row, movidos: [] };
+
+        const tabs = multi ? `<div class="mv-tabs">${rows.map((r, j) =>
+            `<button type="button" class="mv-tab ${j === idx ? 'sel' : ''}" data-ir="${j}">${etiqueta(bi, j, true)} · ${esc(nombreEj(r) || 'Elegir')}</button>`
+        ).join('')}</div>` : '';
+
+        panel.innerHTML = `
+            <div class="mv-panel-head">
+                <button type="button" class="mv-back" data-cerrar-panel aria-label="Volver"><i class="ti ti-arrow-left" aria-hidden="true"></i></button>
+                <div class="mv-panel-tit">Ejercicio ${etiqueta(bi, idx, multi)}<div class="mv-sub">${esc(TIPO[tipo] || tipo)}</div></div>
+                <button type="button" class="mv-listo" data-cerrar-panel>Listo</button>
+            </div>
+            ${tabs}
+            <div class="mv-panel-body">
+                <div class="mv-card"><div id="mv-sel"></div></div>
+                <div class="mv-card" id="mv-tabla"></div>
+            </div>`;
+
+        const sel = panel.querySelector('#mv-sel');
+        mover(row.querySelector('.col-segmento'), sel, abierto.movidos);
+        mover(row.querySelector('.col-ejercicio'), sel, abierto.movidos);
+        sel.querySelectorAll('.nota-ej-input').forEach(el => { el.placeholder = 'Nota para este ejercicio (opcional)'; autoExpandNota(el); });
+
+        renderTabla();
+        panel.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        panel.querySelector('.mv-panel-body').scrollTop = 0;
+    }
+
+    function cerrarEjercicio(rerender = true) {
+        if (!abierto) return;
+        document.querySelectorAll('.ej-select-dropdown.open').forEach(d => d.classList.remove('open'));
+        panel.querySelectorAll('.nota-ej-input').forEach(el => { el.placeholder = 'nota…'; });
+        restaurar(abierto.movidos);
+        abierto = null;
+        panel.classList.remove('open');
+        panel.innerHTML = '';
+        document.body.style.overflow = '';
+        if (rerender) render();
+    }
+
+    function renderTabla() {
+        if (!abierto) return;
+        const { bloque, row } = abierto;
+        const cols = series(row), multi = filas(bloque).length > 1;
+        let html = '';
+        if (cols.length) {
+            html += `<div class="mv-filas">
+                <div class="mv-grid mv-grid-h"><span>Serie</span><span>Reps</span><span>Peso</span><span>Descanso</span><span></span></div>`;
+            cols.forEach((c, s) => {
+                const k = KEYS[metodoDe(c)] || KEYS.normal;
+                const r = campo(c, k.r), p = campo(c, k.p), u = campo(c, k.u);
+                html += `<div class="mv-grid">
+                    <span class="mv-sn">${s + 1}</span>
+                    ${r ? `<input class="mv-in" type="number" inputmode="numeric" data-s="${s}" data-k="${k.r}" value="${esc(r.value)}" placeholder="–" aria-label="Reps serie ${s + 1}">`
+                        : '<span class="mv-na" title="Ver opciones">—</span>'}
+                    <div class="mv-peso">
+                        <input class="mv-in" type="number" inputmode="decimal" step="0.5" data-s="${s}" data-k="${k.p}" value="${esc(p?.value ?? '')}" placeholder="–" aria-label="Peso serie ${s + 1}">
+                        <button type="button" class="mv-unidad" data-s="${s}" data-k="${k.u}">${esc(u?.value || 'kg')}</button>
+                    </div>
+                    <select class="mv-desc" data-s="${s}" aria-label="Descanso serie ${s + 1}">${opcionesDesc(leerDesc(bloque, s))}</select>
+                    <button type="button" class="mv-opc" data-opc="${s}" aria-label="Más opciones de la serie ${s + 1}"><i class="ti ti-dots-vertical" aria-hidden="true"></i></button>
+                </div>`;
+                const chips = etiquetasSerie(c);
+                if (chips) html += `<div class="mv-chips">${chips}</div>`;
+            });
+            html += '</div>';
+        } else {
+            html += '<p class="mv-aviso" style="text-align:center;padding:6px 0;">Este ejercicio todavía no tiene series.</p>';
+        }
+        html += `<div class="mv-acciones">
+            <button type="button" class="mv-add" data-add>＋ Agregar serie</button>
+            ${cols.length ? '<button type="button" class="mv-quitar" data-quitar>Quitar última</button>' : ''}
+        </div>`;
+        if (multi) html += '<p class="mv-aviso">El número de series y el descanso se comparten con los otros ejercicios del bloque.</p>';
+        panel.querySelector('#mv-tabla').innerHTML = html;
+    }
+
+    function cambiarNumSeries(delta) {
+        const input = abierto.bloque.querySelector('.bloque-series-count input');
+        if (!input) return;
+        const actual = series(abierto.row).length;
+        input.value = Math.max(0, actual + delta);
+        input.dispatchEvent(new Event('change'));   // → generarSeriesBloque()
+        renderTabla();
+        if (delta > 0) {
+            const filasTabla = panel.querySelectorAll('.mv-grid:not(.mv-grid-h)');
+            filasTabla[filasTabla.length - 1]?.querySelector('.mv-in')?.focus();
+        }
+    }
+
+    panel.addEventListener('input', e => {
+        const el = e.target.closest('.mv-in'); if (!el || !abierto) return;
+        const col = series(abierto.row)[+el.dataset.s];
+        const real = campo(col, el.dataset.k); if (!real) return;
+        real.value = el.value;
+        real.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    panel.addEventListener('change', e => {
+        const el = e.target.closest('.mv-desc'); if (!el || !abierto) return;
+        escribirDesc(abierto.bloque, +el.dataset.s, parseInt(el.value) || 0);
+    });
+    function actualizarTabs() {
+        if (!abierto) return;
+        panel.querySelectorAll('.mv-tab').forEach(tab => {
+            const j = +tab.dataset.ir, r = filas(abierto.bloque)[j];
+            tab.textContent = etiqueta(abierto.bi, j, true) + ' · ' + (nombreEj(r) || 'Elegir');
+        });
+    }
+
+    panel.addEventListener('click', e => {
+        const t = e.target;
+        if (t.closest('.ej-select-option')) { setTimeout(actualizarTabs, 0); return; }
+        if (t.closest('[data-cerrar-panel]')) { cerrarEjercicio(); return; }
+        const ir = t.closest('[data-ir]');
+        if (ir) { abrirEjercicio(abierto.bi, +ir.dataset.ir); return; }
+        if (t.closest('[data-add]'))    { cambiarNumSeries(1);  return; }
+        if (t.closest('[data-quitar]')) { cambiarNumSeries(-1); return; }
+        const uni = t.closest('.mv-unidad');
+        if (uni) {
+            const real = campo(series(abierto.row)[+uni.dataset.s], uni.dataset.k);
+            if (real) { real.value = real.value === 'lb' ? 'kg' : 'lb'; uni.textContent = real.value; }
+            return;
+        }
+        const opc = t.closest('[data-opc]');
+        if (opc) abrirSheetSerie(+opc.dataset.opc);
+    });
+
+    /* ════ 3. Hoja inferior ════ */
+    function abrirSheet(titulo, cuerpo) {
+        sheet.innerHTML = `
+            <div class="mv-sheet-fondo" data-cerrar-sheet></div>
+            <div class="mv-sheet-box">
+                <div class="mv-sheet-head"><span>${titulo}</span><button type="button" class="mv-listo" data-cerrar-sheet>Listo</button></div>
+                <div class="mv-sheet-body">${cuerpo}</div>
+            </div>`;
+        sheet.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarSheet() {
+        if (!sheetCtx) return;
+        if (sheetCtx.movidos) restaurar(sheetCtx.movidos);
+        const eraSerie = sheetCtx.modo === 'serie';
+        if (eraSerie) {
+            const col = sheetCtx.col, antes = KEYS[sheetCtx.metodoInicial], ahora = KEYS[metodoDe(col)];
+            if (antes && ahora && antes !== ahora) {
+                ['r', 'p', 'u'].forEach(x => {
+                    const viejo = campo(col, antes[x]), nuevo = campo(col, ahora[x]);
+                    if (viejo && nuevo && viejo.value !== '' && (nuevo.value === '' || x === 'u')) nuevo.value = viejo.value;
+                });
+            }
+        }
+        sheetCtx = null;
+        sheet.classList.remove('open');
+        sheet.innerHTML = '';
+        if (abierto) { if (eraSerie) renderTabla(); }
+        else { document.body.style.overflow = ''; render(); }
+    }
+
+    // Opciones de una serie: método, tempo, RIR (la serie original se muestra aquí)
+    function abrirSheetSerie(s) {
+        const col = series(abierto.row)[s]; if (!col) return;
+        sheetCtx = { modo: 'serie', s, col, metodoInicial: metodoDe(col), movidos: [] };
+        abrirSheet(`Serie ${s + 1} · opciones`, `
+            <div id="mv-serie-slot"></div>
+            <div class="mv-sec">Atajos (todo el bloque)</div>
+            ${s > 0 ? '<button type="button" class="mv-btn" data-igualar><i class="ti ti-copy" aria-hidden="true"></i> Igualar a la serie 1</button>' : ''}
+            <button type="button" class="mv-btn" data-copiar-todas><i class="ti ti-copy" aria-hidden="true"></i> Copiar serie 1 a todas</button>
+            <button type="button" class="mv-btn peligro" data-limpiar><i class="ti ti-eraser" aria-hidden="true"></i> Limpiar esta serie</button>`);
+        mover(col, sheet.querySelector('#mv-serie-slot'), sheetCtx.movidos);
+    }
+
+    // Opciones de un bloque: tipo, copiar, mover, eliminar
+    function abrirMenuBloque(bi) {
+        const bloque = bloques()[bi]; if (!bloque) return;
+        sheetCtx = { modo: 'bloque', bi, bloque };
+        const tipo = bloque.dataset.tipo, total = bloques().length;
+        const tipos = [['monoserie', 'Lineal', 1], ['biserie', 'Biserie', 2], ['triserie', 'Triserie', 3], ['circuito', 'Circuito', 12]];
+        abrirSheet(`Bloque ${bi + 1}`, `
+            <div class="mv-sec">Tipo de bloque</div>
+            <div class="mv-tipos">${tipos.map(([k, l, m]) =>
+                `<button type="button" class="mv-tipo-btn ${k === tipo ? 'sel' : ''}" data-tipo="${k}" data-max="${m}">${l}</button>`).join('')}</div>
+            <div class="mv-sec">Acciones</div>
+            <button type="button" class="mv-btn" data-acc="copiar"><i class="ti ti-copy" aria-hidden="true"></i> Copiar serie 1 a todas las series</button>
+            <button type="button" class="mv-btn" data-acc="subir" ${bi === 0 ? 'disabled' : ''}><i class="ti ti-arrow-up" aria-hidden="true"></i> Subir bloque</button>
+            <button type="button" class="mv-btn" data-acc="bajar" ${bi === total - 1 ? 'disabled' : ''}><i class="ti ti-arrow-down" aria-hidden="true"></i> Bajar bloque</button>
+            <button type="button" class="mv-btn peligro" data-acc="eliminar"><i class="ti ti-trash" aria-hidden="true"></i> Eliminar bloque</button>`);
+    }
+
+    sheet.addEventListener('click', e => {
+        const t = e.target;
+        if (t.closest('[data-cerrar-sheet]')) { cerrarSheet(); return; }
+        if (!sheetCtx) return;
+
+        if (sheetCtx.modo === 'serie') {
+            const { s } = sheetCtx, grupo = abierto.bloque.dataset.grupo, cant = filas(abierto.bloque).length;
+            if (t.closest('[data-igualar]'))       { cerrarSheet(); igualarSerieBloque(grupo, cant, s); renderTabla(); }
+            else if (t.closest('[data-copiar-todas]')) { cerrarSheet(); copiarS1ATodas(grupo, cant, 0); renderTabla(); }
+            else if (t.closest('[data-limpiar]')) { cerrarSheet(); resetSerieBloque(grupo, cant, s); renderTabla(); }
+            return;
+        }
+
+        // modo bloque
+        const { bloque } = sheetCtx, grupo = bloque.dataset.grupo, cant = filas(bloque).length;
+        const tb = t.closest('[data-tipo]');
+        if (tb) { cerrarSheet(); cambiarTipoBloque(grupo, tb.dataset.tipo, +tb.dataset.max, cant); setTimeout(render, 120); return; }
+        const acc = t.closest('[data-acc]')?.dataset.acc;
+        if (!acc) return;
+        if (acc === 'copiar')   { cerrarSheet(); copiarS1ATodas(grupo, cant, 0); render(); }
+        if (acc === 'subir')    { const prev = bloque.previousElementSibling; if (prev) contenedor.insertBefore(bloque, prev); actualizarOrden(); cerrarSheet(); }
+        if (acc === 'bajar')    { const next = bloque.nextElementSibling; if (next) contenedor.insertBefore(next, bloque); actualizarOrden(); cerrarSheet(); }
+        if (acc === 'eliminar') {
+            if (confirm('¿Eliminar este bloque y sus ejercicios?')) { bloque.remove(); actualizarOrden(); }
+            cerrarSheet();
+        }
+    });
+
+    /* ════ 4. Integración con el código existente ════ */
+    // Guardar: devolver primero los campos movidos a su lugar
+    const _guardar = window.guardarRutina;
+    window.guardarRutina = function () { cerrarSheet(); cerrarEjercicio(false); return _guardar.apply(this, arguments); };
+
+    // Al agregar un bloque en el celular, abrir directo su primer ejercicio
+    const _agregar = window.agregarBloque;
+    window.agregarBloque = function () {
+        const r = _agregar.apply(this, arguments);
+        if (esMovil()) { const n = bloques().length; render(); abrirEjercicio(n - 1, 0); }
+        return r;
+    };
+
+    // Cambios en los bloques (tipo, eliminar, etc.) → actualizar la lista
+    let t;
+    new MutationObserver(() => { clearTimeout(t); t = setTimeout(render, 80); })
+        .observe(contenedor, { childList: true, subtree: true });
+
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (sheetCtx) cerrarSheet(); else if (abierto) cerrarEjercicio();
+    });
+
+    // Al pasar a escritorio (girar tablet, redimensionar) devolver todo
+    MQ.addEventListener('change', e => { if (!e.matches) { cerrarSheet(); cerrarEjercicio(false); } else render(); });
+
+    render();
+})();
+
 </script>
 
 @endsection

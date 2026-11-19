@@ -297,9 +297,11 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 
 /* ════════════════════════════════════════════════════════════
    MÓVIL (≤ 640px) — escritorio no cambia
+   Las series pasan de columnas a filas (una debajo de otra)
    ════════════════════════════════════════════════════════════ */
+.btn-serie-movil { display:none; }
+
 @media (max-width: 640px) {
-    :root { --serie-w: 116px; }
 
     /* Evita el zoom automático de iOS al tocar un campo (< 16px) */
     #form-rutina input,
@@ -315,50 +317,95 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     .bloque-header { gap:6px; padding:8px 10px; }
     .btn-remove { width:30px; height:30px; }
 
+    /* Encabezados S1/S2… de columnas: no aplican en vista vertical */
+    .series-header-row { display:none; }
+
     /* ── Fila de ejercicio: segmento + ejercicio arriba, series abajo ── */
     .ejercicio-row { flex-wrap:wrap; }
     .col-segmento,
     .col-ejercicio { flex:1 1 0; width:auto; min-width:0; }
     .col-ejercicio { border-right:none; }
-    .col-series {
-        flex:0 0 100%; padding:6px 0;
-        border-top:1px dashed var(--border);
-    }
+    .col-series { flex:0 0 100%; padding:8px; border-top:1px dashed var(--border); }
     .ej-select-dropdown { width:min(260px, calc(100vw - 32px)); }
 
-    /* ── Series: carrusel horizontal sincronizado ── */
-    .series-cols,
-    .series-header-row .col-series-headers,
-    .descanso-row-cols {
-        overflow-x:auto; gap:5px; padding:0 8px;
-        -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    /* ── Series en filas ── */
+    .series-cols { flex-direction:column; gap:6px; counter-reset:serie; }
+
+    .serie-col {
+        counter-increment:serie;
+        display:grid;
+        grid-template-columns:30px 1fr 1fr;
+        column-gap:8px; row-gap:6px;
+        align-items:start;
+        padding:8px 10px 8px 8px;
+        width:100%;
     }
-    .series-cols::-webkit-scrollbar,
-    .col-series-headers::-webkit-scrollbar,
-    .descanso-row-cols::-webkit-scrollbar { display:none; }
-
-    .serie-col,
-    .serie-header-col,
-    .descanso-serie-cell { flex:0 0 var(--serie-w); min-width:var(--serie-w); }
-
-    .series-header-row .col-info-header { display:none; }
-    .serie-header-col { border-right:none; border-radius:6px; padding:5px 4px; }
-    .btn-igualar-serie, .btn-reset-serie { padding:4px 7px; font-size:0.62rem; }
-
-    /* Indicador "desliza" cuando hay más series de las que caben */
-    .series-header-row { position:relative; }
-    .series-header-row.tiene-mas::after {
-        content:'›'; position:absolute; right:0; top:0; bottom:0; width:30px;
-        display:flex; align-items:center; justify-content:flex-end; padding-right:6px;
-        font-size:1.2rem; font-weight:700; color:var(--accent); pointer-events:none;
-        background:linear-gradient(to right, rgba(240,242,245,0), #f0f2f5 70%);
+    /* Número de serie a la izquierda */
+    .serie-col::before {
+        content:counter(serie);
+        grid-column:1; grid-row:1 / span 3;
+        align-self:stretch;
+        display:flex; align-items:center; justify-content:center;
+        border-radius:6px; background:var(--accent-l); color:var(--accent);
+        font-size:0.85rem; font-weight:800; font-family:'DM Mono',monospace;
     }
 
-    /* ── Fila de descanso: etiqueta arriba, celdas abajo ── */
-    .descanso-row { flex-wrap:wrap; }
-    .descanso-row-label { width:100%; border-right:none; border-bottom:1px solid #bbf7d0; padding:6px 10px; }
-    .descanso-row-cols { padding:6px 8px; }
-    .descanso-serie-cell { border-right:none; background:white; border:1px solid #bbf7d0; border-radius:6px; }
+    /* Fila 1: método */
+    .serie-col > .metodo-select {
+        grid-column:2 / 4; grid-row:1;
+        text-align:left; padding:6px 8px; border-radius:6px;
+        color:var(--text); font-weight:600;
+    }
+
+    /* Fila 2: campos del método, uno al lado del otro */
+    .serie-col > .metodo-fields { grid-column:2 / 4; grid-row:2; }
+    .serie-col > .metodo-fields.active { flex-direction:row; flex-wrap:wrap; gap:8px; }
+    .serie-col .campo-wrap { flex:1 1 72px; align-items:stretch; gap:3px; }
+    .serie-col .campo-wrap label { font-size:0.62rem; text-align:left; }
+    .serie-col .campo-input { padding:8px 6px; border-radius:6px; }
+    .serie-col .unidad-select { width:44px; padding:8px 0; border-radius:6px; }
+    .serie-col .campo-wrap:has(.peso-group) { flex-basis:118px; }   /* peso + unidad necesitan más ancho */
+    .serie-col input[type=number] { -moz-appearance:textfield; }
+    .serie-col input[type=number]::-webkit-inner-spin-button,
+    .serie-col input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+    .serie-col .tempo-input { padding:6px 2px; }
+    .serie-col .metodo-nota { flex:1 1 100%; font-size:0.68rem; padding:3px 6px; }
+
+    /* Fila 3: tempo y RIR, mitad y mitad */
+    .serie-col > .tempo-wrap { grid-column:2; grid-row:3; margin-top:0; }
+    .serie-col > .rir-wrap   { grid-column:3; grid-row:3; margin-top:0; }
+    .tempo-toggle, .rir-toggle { padding:7px 6px; font-size:0.72rem; border-radius:6px; }
+    .tempo-label { font-size:0.55rem; }
+    .tempo-unit, .rir-scale { font-size:0.58rem; }
+    .rir-mode-btn { padding:6px 2px; font-size:0.72rem; }
+
+    /* ── Descanso: una fila por serie ── */
+    .descanso-row { flex-direction:column; }
+    .descanso-row-label { width:100%; border-right:none; border-bottom:1px solid #bbf7d0; padding:8px 10px; }
+    .descanso-row-cols { flex-direction:column; gap:6px; padding:8px; counter-reset:desc; }
+    .descanso-serie-cell {
+        counter-increment:desc;
+        flex-direction:row; justify-content:flex-start; gap:10px;
+        padding:6px 10px 6px 8px;
+        background:white; border:1px solid #bbf7d0; border-radius:6px;
+    }
+    .descanso-serie-cell::before {
+        content:'Serie ' counter(desc);
+        font-size:0.72rem; font-weight:700; color:#065f46; white-space:nowrap; width:56px;
+    }
+    .descanso-serie-cell .desc-inputs { flex:1; max-width:170px; }
+    .desc-select-min, .desc-input-seg { padding:7px 4px; }
+    .descanso-serie-cell .desc-preview { margin-left:auto; }
+
+    /* ── Pie del bloque: botón "+ Agregar serie" ── */
+    .bloque-footer { flex-wrap:wrap; padding:8px 10px; }
+    .btn-serie-movil {
+        display:flex; align-items:center; justify-content:center; gap:5px;
+        width:100%; padding:10px; order:-1;
+        border:1.5px dashed var(--accent); border-radius:8px;
+        background:var(--accent-l); color:var(--accent);
+        font-size:0.85rem; font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer;
+    }
 
     /* ── Barra de agregar bloques: 2×2 ── */
     .add-block-btn { flex:1 1 calc(50% - 4px); padding:10px 4px; font-size:0.78rem; }
@@ -373,7 +420,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
     }
     .btn-guardar:hover { transform:none; }
 
-    /* ── Modales ── */
     .modal-box { max-height:92vh; }
 }
 </style>
@@ -988,6 +1034,7 @@ document.addEventListener('click',()=>{
     @endif
 
     <div class="bloque-footer">
+        <button type="button" class="btn-serie-movil" onclick="agregarSerieMovil(this)">＋ Agregar serie</button>
         <span style="font-size:0.68rem;color:var(--muted);">
             <i class="ti ti-info-circle" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>
             Descanso configurado por serie
@@ -1531,6 +1578,7 @@ function htmlSerieCol(ex={}) {
 
 function bloqueFooterHTML() {
     return `<div class="bloque-footer">
+        <button type="button" class="btn-serie-movil" onclick="agregarSerieMovil(this)">＋ Agregar serie</button>
         <span style="font-size:0.68rem;color:var(--muted);">
             <i class="ti ti-info-circle" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>
             Descanso configurado por serie
@@ -1940,37 +1988,19 @@ function cerrarModalEliminar() {
     document.addEventListener('dragend', stopScroll);
 })();
 
-/* ── Móvil: desplazar juntas las series de un bloque ── */
-(function(){
-    const SEL = '.series-cols, .col-series-headers, .descanso-row-cols';
-    let sincronizando = false;
-
-    document.addEventListener('scroll', e => {
-        const el = e.target;
-        if (sincronizando || !(el instanceof Element) || !el.matches(SEL)) return;
-        const bloque = el.closest('.bloque');
-        if (!bloque) return;
-        sincronizando = true;
-        bloque.querySelectorAll(SEL).forEach(o => { if (o !== el) o.scrollLeft = el.scrollLeft; });
-        requestAnimationFrame(() => { sincronizando = false; });
-        marcarDeslizable(bloque);
-    }, true);
-
-    // Muestra "Desliza →" si hay series fuera de la pantalla
-    function marcarDeslizable(bloque) {
-        const hdr  = bloque.querySelector('.series-header-row');
-        const cols = bloque.querySelector('.col-series-headers');
-        if (!hdr || !cols) return;
-        const hayMas = cols.scrollWidth - cols.clientWidth - cols.scrollLeft > 4;
-        hdr.classList.toggle('tiene-mas', hayMas);
-    }
-    function marcarTodos() { document.querySelectorAll('.bloque').forEach(marcarDeslizable); }
-
-    document.addEventListener('DOMContentLoaded', marcarTodos);
-    window.addEventListener('resize', marcarTodos);
-    // Al cambiar el número de series o agregar bloques
-    new MutationObserver(marcarTodos).observe(contenedor, { childList:true, subtree:true });
-})();
+/* ── Móvil: "+ Agregar serie" ── */
+function agregarSerieMovil(btn) {
+    const bloque = btn.closest('.bloque');
+    const input  = bloque?.querySelector('.bloque-series-count input');
+    if (!input) return;
+    input.value = (parseInt(input.value) || 0) + 1;
+    input.dispatchEvent(new Event('change'));   // dispara generarSeriesBloque()
+    // Lleva la vista a la nueva serie del primer ejercicio
+    setTimeout(() => {
+        const ultima = bloque.querySelector('.ejercicio-row .series-cols [data-serie]:last-child');
+        ultima?.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 50);
+}
 </script>
 
 @endsection

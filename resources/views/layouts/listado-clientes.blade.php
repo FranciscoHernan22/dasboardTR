@@ -296,61 +296,35 @@
      data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}">
         {{-- Acciones detrás (se revelan con swipe) --}}
         <div class="swipe-actions absolute inset-y-0 right-0 flex items-stretch">
-            <button type="button"
-                onclick="abrirModalEditar({{ $cliente->id }}, @js($cliente->name), @js($cliente->email))"
-                class="w-16 flex flex-col items-center justify-center bg-sky-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
-                </svg>
-                Editar
-            </button>
-            <a href="{{ route('entrenador.historial.anio', $cliente->id) }}"
-                class="w-16 flex flex-col items-center justify-center bg-indigo-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/>
-                </svg>
-                Historial
-            </a>
-            <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}"
-                class="w-16 flex flex-col items-center justify-center bg-blue-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                Rutina
-            </a>
-            <button type="button"
-                onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 4 }})"
-                class="w-16 flex flex-col items-center justify-center bg-emerald-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
-                </svg>
-                Plan
-            </button>
-            <a href="{{ route('entrenador.progreso.index', $cliente->id) }}"
-                class="w-16 flex flex-col items-center justify-center bg-violet-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
-                </svg>
-                Progreso
-            </a>
-            <form action="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}" method="POST"
-                  class="form-toggle-estado w-16"
-                  data-nombre="{{ $cliente->name }}"
-                  data-accion="{{ $cliente->status === 'activo' ? 'desactivar' : 'activar' }}"
-                  onsubmit="return interceptarToggle(event, this)">
-                @csrf
-                @method('PATCH')
-                <button type="submit"
-                    class="w-16 h-full flex flex-col items-center justify-center {{ $cliente->status === 'activo' ? 'bg-red-500' : 'bg-amber-500' }} text-white text-xs font-semibold gap-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-                    </svg>
-                    {{ $cliente->status === 'activo' ? 'Desactivar' : 'Activar' }}
-                </button>
-            </form>
-        </div>
+    <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}"
+        class="w-16 flex flex-col items-center justify-center bg-blue-500 text-white text-xs font-semibold gap-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Rutina
+    </a>
+    <a href="{{ route('entrenador.progreso.index', $cliente->id) }}"
+        class="w-16 flex flex-col items-center justify-center bg-violet-500 text-white text-xs font-semibold gap-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+        </svg>
+        Progreso
+    </a>
+    <button type="button" onclick="abrirMenuCliente(this)"
+        data-id="{{ $cliente->id }}"
+        data-nombre="{{ $cliente->name }}"
+        data-email="{{ $cliente->email }}"
+        data-semanas="{{ $cliente->plan?->semanas ?? 4 }}"
+        data-activo="{{ $cliente->status === 'activo' ? '1' : '0' }}"
+        data-url-historial="{{ route('entrenador.historial.anio', $cliente->id) }}"
+        data-url-toggle="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}"
+        class="w-16 flex flex-col items-center justify-center bg-gray-500 text-white text-xs font-semibold gap-1">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+        </svg>
+        Más
+    </button>
+</div>
 
         {{-- Card del cliente (la que se desliza) --}}
         <div class="swipe-card absolute inset-0 flex items-center gap-3 px-4 bg-white"

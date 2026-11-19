@@ -294,6 +294,88 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 #wp-nav a[data-dia]:active { cursor:grabbing; }
 #wp-nav a[data-dia].dia-drag-over { outline:2px solid #2563eb; outline-offset:-2px; background-color:#eff6ff; }
 #wp-nav a[data-dia].dia-dragging { opacity:.35; }
+
+/* ════════════════════════════════════════════════════════════
+   MÓVIL (≤ 640px) — escritorio no cambia
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    :root { --serie-w: 116px; }
+
+    /* Evita el zoom automático de iOS al tocar un campo (< 16px) */
+    #form-rutina input,
+    #form-rutina select,
+    #form-rutina textarea { font-size:16px !important; }
+
+    /* ── Encabezado: nombre arriba, botones en cuadrícula 2×2 ── */
+    .page-header { gap:8px; }
+    .page-header h2 { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .page-header .btn-metodos { flex:1 1 calc(50% - 4px); justify-content:center; padding:8px 10px; }
+
+    /* ── Cabecera del bloque ── */
+    .bloque-header { gap:6px; padding:8px 10px; }
+    .btn-remove { width:30px; height:30px; }
+
+    /* ── Fila de ejercicio: segmento + ejercicio arriba, series abajo ── */
+    .ejercicio-row { flex-wrap:wrap; }
+    .col-segmento,
+    .col-ejercicio { flex:1 1 0; width:auto; min-width:0; }
+    .col-ejercicio { border-right:none; }
+    .col-series {
+        flex:0 0 100%; padding:6px 0;
+        border-top:1px dashed var(--border);
+    }
+    .ej-select-dropdown { width:min(260px, calc(100vw - 32px)); }
+
+    /* ── Series: carrusel horizontal sincronizado ── */
+    .series-cols,
+    .series-header-row .col-series-headers,
+    .descanso-row-cols {
+        overflow-x:auto; gap:5px; padding:0 8px;
+        -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    }
+    .series-cols::-webkit-scrollbar,
+    .col-series-headers::-webkit-scrollbar,
+    .descanso-row-cols::-webkit-scrollbar { display:none; }
+
+    .serie-col,
+    .serie-header-col,
+    .descanso-serie-cell { flex:0 0 var(--serie-w); min-width:var(--serie-w); }
+
+    .series-header-row .col-info-header { display:none; }
+    .serie-header-col { border-right:none; border-radius:6px; padding:5px 4px; }
+    .btn-igualar-serie, .btn-reset-serie { padding:4px 7px; font-size:0.62rem; }
+
+    /* Indicador "desliza" cuando hay más series de las que caben */
+    .series-header-row { position:relative; }
+    .series-header-row.tiene-mas::after {
+        content:'›'; position:absolute; right:0; top:0; bottom:0; width:30px;
+        display:flex; align-items:center; justify-content:flex-end; padding-right:6px;
+        font-size:1.2rem; font-weight:700; color:var(--accent); pointer-events:none;
+        background:linear-gradient(to right, rgba(240,242,245,0), #f0f2f5 70%);
+    }
+
+    /* ── Fila de descanso: etiqueta arriba, celdas abajo ── */
+    .descanso-row { flex-wrap:wrap; }
+    .descanso-row-label { width:100%; border-right:none; border-bottom:1px solid #bbf7d0; padding:6px 10px; }
+    .descanso-row-cols { padding:6px 8px; }
+    .descanso-serie-cell { border-right:none; background:white; border:1px solid #bbf7d0; border-radius:6px; }
+
+    /* ── Barra de agregar bloques: 2×2 ── */
+    .add-block-btn { flex:1 1 calc(50% - 4px); padding:10px 4px; font-size:0.78rem; }
+
+    /* ── Botones finales: PDF a lo ancho, Guardar fijo abajo ── */
+    #form-rutina { padding-bottom:84px; }
+    .btn-pdf { display:flex; justify-content:center; width:100%; margin-left:0; }
+    .btn-guardar {
+        position:fixed; left:12px; right:12px; z-index:900; margin:0;
+        bottom:calc(12px + env(safe-area-inset-bottom));
+        justify-content:center; padding:13px 20px; font-size:0.95rem;
+    }
+    .btn-guardar:hover { transform:none; }
+
+    /* ── Modales ── */
+    .modal-box { max-height:92vh; }
+}
 </style>
 
 {{-- MODAL MÉTODOS --}}
@@ -491,7 +573,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 
     <div id="semTrigger" onclick="toggleSemDropdown(event)"
          class="flex items-center gap-1 px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50 cursor-pointer text-[11px] font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors flex-shrink-0 select-none whitespace-nowrap">
-        <span>Sem {{ $semanaVisual }}</span>
+        <span>Semana {{ $semanaVisual }}</span>
         <i class="ti ti-chevron-down text-[10px] transition-transform duration-150" id="semChevron"></i>
     </div>
 
@@ -505,7 +587,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
             <a href="{{ route('entrenador.rutina.editar',[$cliente->id,$s,$dia]) }}"
                class="text-center py-1.5 rounded border text-[11px] font-medium transition-colors
                       {{ $s==$semana ? 'bg-blue-50 border-blue-300 text-blue-600' : ($tieneSem ? 'border-blue-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600' : 'border-gray-200 text-gray-400 hover:bg-gray-50') }}">
-                S{{ $sVisual }}
+                {{ $sVisual }}
             </a>
         @endfor
     </div>
@@ -1856,6 +1938,38 @@ function cerrarModalEliminar() {
     contenedor.addEventListener('dragleave', e => { const t=e.target.closest('.bloque'); if(t) t.classList.remove('drag-over'); });
     contenedor.addEventListener('drop', e => { e.preventDefault(); document.querySelectorAll('.bloque.drag-over').forEach(b=>b.classList.remove('drag-over')); stopScroll(); });
     document.addEventListener('dragend', stopScroll);
+})();
+
+/* ── Móvil: desplazar juntas las series de un bloque ── */
+(function(){
+    const SEL = '.series-cols, .col-series-headers, .descanso-row-cols';
+    let sincronizando = false;
+
+    document.addEventListener('scroll', e => {
+        const el = e.target;
+        if (sincronizando || !(el instanceof Element) || !el.matches(SEL)) return;
+        const bloque = el.closest('.bloque');
+        if (!bloque) return;
+        sincronizando = true;
+        bloque.querySelectorAll(SEL).forEach(o => { if (o !== el) o.scrollLeft = el.scrollLeft; });
+        requestAnimationFrame(() => { sincronizando = false; });
+        marcarDeslizable(bloque);
+    }, true);
+
+    // Muestra "Desliza →" si hay series fuera de la pantalla
+    function marcarDeslizable(bloque) {
+        const hdr  = bloque.querySelector('.series-header-row');
+        const cols = bloque.querySelector('.col-series-headers');
+        if (!hdr || !cols) return;
+        const hayMas = cols.scrollWidth - cols.clientWidth - cols.scrollLeft > 4;
+        hdr.classList.toggle('tiene-mas', hayMas);
+    }
+    function marcarTodos() { document.querySelectorAll('.bloque').forEach(marcarDeslizable); }
+
+    document.addEventListener('DOMContentLoaded', marcarTodos);
+    window.addEventListener('resize', marcarTodos);
+    // Al cambiar el número de series o agregar bloques
+    new MutationObserver(marcarTodos).observe(contenedor, { childList:true, subtree:true });
 })();
 </script>
 

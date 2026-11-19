@@ -310,16 +310,22 @@
                 </svg>
                 Progreso
             </a>
+            <button type="button"
+                onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 4 }})"
+                class="w-16 flex flex-col items-center justify-center bg-emerald-500 text-white text-xs font-semibold gap-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+                </svg>
+                Plan
+            </button>
             <button type="button" onclick="abrirMenuCliente(this)"
                 data-id="{{ $cliente->id }}"
                 data-nombre="{{ $cliente->name }}"
                 data-email="{{ $cliente->email }}"
-                data-semanas="{{ $cliente->plan?->semanas ?? 4 }}"
-                data-tiene-plan="{{ $cliente->plan ? '1' : '0' }}"
                 data-activo="{{ $cliente->status === 'activo' ? '1' : '0' }}"
                 data-url-historial="{{ route('entrenador.historial.anio', $cliente->id) }}"
                 data-url-toggle="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}"
-                class="w-16 flex flex-col items-center justify-center bg-gray-500 text-white text-xs font-semibold gap-1">
+                class="w-16 flex flex-col items-center justify-center bg-gray-100 text-gray-700 text-xs font-semibold gap-1">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
                 </svg>
@@ -638,30 +644,33 @@
 </div>
 @endif
 
-{{-- ── Menú "Más" (hoja inferior, solo móvil) ── --}}
-<div id="menuCliente" class="sm:hidden fixed inset-0 z-[9000] hidden" aria-hidden="true">
-    <div id="menuClienteFondo" data-cerrar
-         class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-200"></div>
+{{-- ── Menú "Más" (modal centrado) ── --}}
+<div id="menuCliente"
+    onclick="if(event.target===this)cerrarMenuCliente()"
+    style="display:none;"
+    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" aria-labelledby="menuClienteTitulo"
+         class="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl">
+        <div class="text-center mb-4">
+            <h3 id="menuClienteTitulo" class="text-base font-bold text-gray-900 truncate"></h3>
+            <p id="menuClienteEmail" class="text-xs text-gray-500 mt-0.5 truncate"></p>
+        </div>
 
-    <div id="menuClientePanel" role="dialog" aria-modal="true" aria-labelledby="menuClienteTitulo"
-         class="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl
-                translate-y-full transition-transform duration-200 ease-out">
-        <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-gray-300"></div>
-        <p id="menuClienteTitulo" class="text-center text-sm font-bold text-gray-900 mb-1 truncate"></p>
-
-        <div class="flex flex-col divide-y divide-gray-100">
-            <button type="button" id="mcEditar" class="flex items-center gap-3 py-3 text-left text-sm font-medium text-gray-800">
-                <span class="grid place-items-center w-9 h-9 rounded-full bg-sky-100 text-sky-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+        <div class="flex flex-col gap-2 mb-4">
+            <button type="button" id="mcEditar"
+                class="w-full flex items-center gap-3 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
                     </svg>
                 </span>
                 Editar datos
             </button>
 
-            <a id="mcHistorial" href="#" class="flex items-center gap-3 py-3 text-sm font-medium text-gray-800">
-                <span class="grid place-items-center w-9 h-9 rounded-full bg-indigo-100 text-indigo-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <a id="mcHistorial" href="#"
+                class="w-full flex items-center gap-3 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/>
@@ -670,22 +679,14 @@
                 Historial
             </a>
 
-            <button type="button" id="mcPlan" class="flex items-center gap-3 py-3 text-left text-sm font-medium text-gray-800">
-                <span class="grid place-items-center w-9 h-9 rounded-full bg-emerald-100 text-emerald-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
-                    </svg>
-                </span>
-                <span id="mcPlanTexto">Plan</span>
-            </button>
-
             <form id="mcToggle" method="POST" action="#"
                   onsubmit="cerrarMenuCliente(); return interceptarToggle(event, this)">
                 @csrf
                 @method('PATCH')
-                <button type="submit" id="mcToggleBtn" class="w-full flex items-center gap-3 py-3 text-left text-sm font-semibold">
-                    <span id="mcToggleIcono" class="grid place-items-center w-9 h-9 rounded-full">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                <button type="submit" id="mcToggleBtn"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+                    <span id="mcToggleIcono" class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
                         </svg>
                     </span>
@@ -694,8 +695,8 @@
             </form>
         </div>
 
-        <button type="button" data-cerrar
-            class="mt-2 w-full rounded-xl bg-gray-100 py-3 text-sm font-semibold text-gray-600">
+        <button type="button" onclick="cerrarMenuCliente()"
+            class="w-full py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
             Cancelar
         </button>
     </div>
@@ -760,10 +761,7 @@ document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
     }, { passive: true });
 });
 
-// ── Menú "Más" (hoja inferior) ───────────────────────────
-const menuCliente      = document.getElementById('menuCliente');
-const menuClientePanel = document.getElementById('menuClientePanel');
-const menuClienteFondo = document.getElementById('menuClienteFondo');
+// ── Menú "Más" (modal centrado) ─────────────────────────
 let _clienteMenu = null;
 
 function abrirMenuCliente(boton) {
@@ -774,9 +772,8 @@ function abrirMenuCliente(boton) {
     boton.closest('.swipe-wrapper')?._cerrar?.();
 
     document.getElementById('menuClienteTitulo').textContent = _clienteMenu.nombre;
+    document.getElementById('menuClienteEmail').textContent  = _clienteMenu.email;
     document.getElementById('mcHistorial').href = _clienteMenu.urlHistorial;
-    document.getElementById('mcPlanTexto').textContent =
-        _clienteMenu.tienePlan === '1' ? 'Cambiar plan' : 'Crear plan';
 
     const form = document.getElementById('mcToggle');
     form.action = _clienteMenu.urlToggle;
@@ -784,33 +781,19 @@ function abrirMenuCliente(boton) {
     form.dataset.accion = activo ? 'desactivar' : 'activar';
 
     document.getElementById('mcToggleTexto').textContent = activo ? 'Desactivar cliente' : 'Activar cliente';
-    document.getElementById('mcToggleBtn').classList.toggle('text-red-600', activo);
-    document.getElementById('mcToggleBtn').classList.toggle('text-green-600', !activo);
-    document.getElementById('mcToggleIcono').classList.toggle('bg-red-100', activo);
-    document.getElementById('mcToggleIcono').classList.toggle('bg-green-100', !activo);
+    const btn   = document.getElementById('mcToggleBtn');
+    const icono = document.getElementById('mcToggleIcono');
+    btn.classList.toggle('text-red-600', activo);
+    btn.classList.toggle('text-green-600', !activo);
+    icono.classList.toggle('bg-red-100', activo);
+    icono.classList.toggle('bg-green-100', !activo);
 
-    // Mostrar con animación
-    menuCliente.classList.remove('hidden');
-    menuCliente.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('overflow-hidden');
-    menuClientePanel.offsetHeight; // fuerza reflow para que la transición se vea
-    menuClienteFondo.classList.replace('opacity-0', 'opacity-100');
-    menuClientePanel.classList.remove('translate-y-full');
+    document.getElementById('menuCliente').style.display = 'flex';
 }
 
 function cerrarMenuCliente() {
-    if (menuCliente.classList.contains('hidden')) return;
-    menuClienteFondo.classList.replace('opacity-100', 'opacity-0');
-    menuClientePanel.classList.add('translate-y-full');
-    document.body.classList.remove('overflow-hidden');
-    setTimeout(() => {
-        menuCliente.classList.add('hidden');
-        menuCliente.setAttribute('aria-hidden', 'true');
-    }, 200);
+    document.getElementById('menuCliente').style.display = 'none';
 }
-
-menuCliente.querySelectorAll('[data-cerrar]').forEach(el =>
-    el.addEventListener('click', cerrarMenuCliente));
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') cerrarMenuCliente();
@@ -819,11 +802,6 @@ document.addEventListener('keydown', e => {
 document.getElementById('mcEditar').addEventListener('click', () => {
     cerrarMenuCliente();
     abrirModalEditar(Number(_clienteMenu.id), _clienteMenu.nombre, _clienteMenu.email);
-});
-
-document.getElementById('mcPlan').addEventListener('click', () => {
-    cerrarMenuCliente();
-    abrirModalSemanas(Number(_clienteMenu.id), Number(_clienteMenu.semanas));
 });
 
 // ── Modal semanas / plan ─────────────────────────────────

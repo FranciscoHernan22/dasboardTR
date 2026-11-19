@@ -5,77 +5,81 @@
 @php
     // Paleta de colores para variar los avatares de forma determinística por cliente
     $avatarPalette = [
-        ['bg-blue-100', 'text-blue-700'],
-        ['bg-violet-100', 'text-violet-700'],
-        ['bg-teal-100', 'text-teal-700'],
-        ['bg-rose-100', 'text-rose-700'],
-        ['bg-amber-100', 'text-amber-700'],
-        ['bg-indigo-100', 'text-indigo-700'],
+        ['bg-blue-50',   'text-blue-700'],
+        ['bg-violet-50', 'text-violet-700'],
+        ['bg-teal-50',   'text-teal-700'],
+        ['bg-rose-50',   'text-rose-700'],
+        ['bg-amber-50',  'text-amber-700'],
+        ['bg-indigo-50', 'text-indigo-700'],
     ];
     $avatarColor = fn($id) => $avatarPalette[$id % count($avatarPalette)];
+
+    // Clases compartidas
+    $labelCls   = 'text-xs font-medium text-gray-600';
+    $inputCls   = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition';
+    $btnPrimary = 'py-2.5 bg-gray-900 hover:bg-gray-800 rounded-lg text-sm font-medium text-white transition-colors';
+    $btnGhost   = 'py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors';
+    $iconBtn    = 'w-8 h-8 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 flex items-center justify-center transition-colors';
+    $modalWrap  = 'fixed inset-0 bg-gray-900/30 backdrop-blur-[2px] z-[10000] flex items-end sm:items-center justify-center sm:p-4';
+    $modalCard  = 'bg-white rounded-t-3xl sm:rounded-2xl w-full max-h-[92vh] overflow-y-auto shadow-xl pb-[env(safe-area-inset-bottom)]';
+
+    $totalActivos   = $clientes->where('status', 'activo')->count();
+    $totalInactivos = $clientes->where('status', 'inactivo')->count();
+    $sinPlanCount   = $clientes->whereNull('plan')->count();
 @endphp
 
 {{-- Header --}}
-<div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4 sm:mb-6">
     <div>
-        <h1 class="text-lg font-bold text-gray-900">Clientes</h1>
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-            <span class="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                {{ $clientes->count() }} registrados
-            </span>
-            <span class="inline-flex items-center gap-1.5 text-xs text-green-700">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                {{ $clientes->where('status', 'activo')->count() }} activos
-            </span>
-            <span class="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                {{ $clientes->where('status', 'inactivo')->count() }} inactivos
-            </span>
-            @php $sinPlanCount = $clientes->whereNull('plan')->count(); @endphp
+        <h1 class="text-2xl sm:text-xl font-semibold text-gray-900 tracking-tight">Clientes</h1>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ $clientes->count() }} registrados
+            <span class="text-gray-300 mx-1">·</span>
+            <span class="text-emerald-600">{{ $totalActivos }} activos</span>
+            <span class="text-gray-300 mx-1">·</span>
+            {{ $totalInactivos }} inactivos
             @if($sinPlanCount > 0)
-            <span class="inline-flex items-center gap-1.5 text-xs text-amber-700">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                {{ $sinPlanCount }} sin plan
-            </span>
+                <span class="text-gray-300 mx-1">·</span>
+                <span class="text-amber-600">{{ $sinPlanCount }} sin plan</span>
             @endif
-        </div>
+        </p>
     </div>
     <button
         onclick="document.getElementById('modalNuevoCliente').style.display='flex'"
-        class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
-        + Nuevo cliente
+        class="hidden sm:inline-flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-3.5 py-2 rounded-lg transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+        </svg>
+        Nuevo cliente
     </button>
 </div>
 
 {{-- Flash --}}
 @if(session('success'))
-<div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
-    <div class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-    <span class="text-sm text-green-700">{{ session('success') }}</span>
+<div class="flex items-center gap-2 border-l-2 border-emerald-500 bg-emerald-50/60 rounded-r-lg px-4 py-2.5 mb-4">
+    <span class="text-sm text-emerald-800">{{ session('success') }}</span>
 </div>
 @endif
 
 @if(session('error'))
-<div class="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
-    <div class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-    <span class="text-sm text-red-700">{{ session('error') }}</span>
+<div class="flex items-center gap-2 border-l-2 border-red-500 bg-red-50/60 rounded-r-lg px-4 py-2.5 mb-4">
+    <span class="text-sm text-red-800">{{ session('error') }}</span>
 </div>
 @endif
 
 @if($errors->has('fecha_inicio') || $errors->has('semanas'))
-<div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+<div class="border-l-2 border-red-500 bg-red-50/60 rounded-r-lg px-4 py-2.5 mb-4">
     @foreach($errors->get('fecha_inicio') as $error)
-        <p class="text-sm text-red-700">{{ $error }}</p>
+        <p class="text-sm text-red-800">{{ $error }}</p>
     @endforeach
     @foreach($errors->get('semanas') as $error)
-        <p class="text-sm text-red-700">{{ $error }}</p>
+        <p class="text-sm text-red-800">{{ $error }}</p>
     @endforeach
 </div>
 @endif
 
 {{-- Buscador + filtros --}}
-<div class="bg-white border border-gray-200 rounded-xl p-3 mb-4 flex flex-wrap gap-2">
+<div class="flex flex-wrap gap-2 mb-3 sm:mb-4">
     <div class="relative flex-1 min-w-[180px]">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -83,180 +87,176 @@
         <input
             id="buscadorClientes"
             type="text"
-            placeholder="Buscar cliente..."
+            placeholder="Buscar por nombre o correo"
             oninput="filtrarClientes()"
-            class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors">
+            class="{{ $inputCls }} pl-9 bg-white">
     </div>
     <select id="filtroEstado" onchange="filtrarClientes()"
-        class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 bg-gray-50 focus:bg-white text-gray-600 transition-colors">
+        class="hidden sm:block text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 bg-white text-gray-600 focus:outline-none focus:border-gray-400 transition">
         <option value="">Todos los estados</option>
-        <option value="activo">Activo</option>
-        <option value="inactivo">Inactivo</option>
+        <option value="activo">Activos</option>
+        <option value="inactivo">Inactivos</option>
     </select>
     <select id="filtroPlan" onchange="filtrarClientes()"
-        class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 bg-gray-50 focus:bg-white text-gray-600 transition-colors">
+        class="hidden sm:block text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 bg-white text-gray-600 focus:outline-none focus:border-gray-400 transition">
         <option value="">Todos los planes</option>
         <option value="con_plan">Con plan</option>
-        <option value="sin_plan">Pendiente de plan</option>
+        <option value="sin_plan">Sin plan</option>
     </select>
 </div>
 
+{{-- Filtros rápidos (solo móvil) --}}
+<div class="sm:hidden flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 mb-3" style="scrollbar-width:none;">
+    @foreach([
+        'todos'    => ['Todos',     $clientes->count()],
+        'activo'   => ['Activos',   $totalActivos],
+        'inactivo' => ['Inactivos', $totalInactivos],
+        'sin_plan' => ['Sin plan',  $sinPlanCount],
+    ] as $clave => [$texto, $num])
+    <button type="button" data-chip="{{ $clave }}" onclick="filtroChip('{{ $clave }}')"
+        class="chip-filtro flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-sm transition-colors">
+        {{ $texto }} <span class="chip-num tabular-nums">{{ $num }}</span>
+    </button>
+    @endforeach
+</div>
+
 {{-- ── DESKTOP: tabla ── --}}
-<div class="hidden sm:block bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+<div class="hidden sm:block bg-white border border-gray-200 rounded-xl overflow-hidden">
     <table class="w-full border-collapse">
         <thead>
-            <tr class="bg-gray-50 border-b border-gray-200">
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Cliente</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Estado</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Progreso</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Acciones</th>
+            <tr class="border-b border-gray-100">
+                <th class="px-4 py-2.5 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider">Cliente</th>
+                <th class="px-4 py-2.5 text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider">Plan</th>
+                <th class="px-4 py-2.5 text-right text-[11px] font-medium text-gray-400 uppercase tracking-wider"><span class="sr-only">Acciones</span></th>
             </tr>
         </thead>
         <tbody>
         @forelse($clientes as $cliente)
-            <tr class="border-b border-gray-100 hover:bg-gray-50 last:border-b-0 transition-colors"
+            @php
+                [$avatarBg, $avatarText] = $avatarColor($cliente->id);
+                $activo = $cliente->status === 'activo';
+                $p = $cliente->progreso ?? null;
+                $colorBarra = null; $completo = false; $semanasEnCero = 0;
+                if ($cliente->plan && $p && $p['estado'] !== 'no_iniciado') {
+                    $completo   = $p['estado'] === 'finalizado' && $p['porcentaje'] === 100;
+                    $colorBarra = $p['estado'] === 'finalizado'
+                        ? ($completo ? 'bg-emerald-500' : 'bg-amber-400')
+                        : 'bg-gray-900';
+                    $semanasEnCero = count($p['semanas_sin_entrenar'] ?? []);
+                }
+            @endphp
+            <tr class="group border-b border-gray-100 last:border-b-0 hover:bg-gray-50/70 transition-colors"
                 data-cliente
                 data-id="{{ $cliente->id }}"
                 data-nombre="{{ strtolower($cliente->name) }}"
                 data-email="{{ strtolower($cliente->email) }}"
                 data-estado="{{ $cliente->status }}"
                 data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}">
+
+                {{-- Cliente --}}
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full {{ $avatarColor($cliente->id)[0] }} {{ $avatarColor($cliente->id)[1] }} flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {{ strtoupper(substr($cliente->name, 0, 2)) }}
+                        <div class="relative flex-shrink-0">
+                            <div class="w-9 h-9 rounded-full {{ $avatarBg }} {{ $avatarText }} flex items-center justify-center text-xs font-semibold">
+                                {{ strtoupper(substr($cliente->name, 0, 2)) }}
+                            </div>
+                            <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-white {{ $activo ? 'bg-emerald-500' : 'bg-gray-300' }}"
+                                  title="{{ $activo ? 'Activo' : 'Inactivo' }}"></span>
                         </div>
-                        <div>
-                            <div class="text-sm font-medium text-gray-900">{{ $cliente->name }}</div>
-                            <div class="text-xs text-gray-500">{{ $cliente->email }}</div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium {{ $activo ? 'text-gray-900' : 'text-gray-400' }} truncate">{{ $cliente->name }}</div>
+                            <div class="text-xs text-gray-400 truncate">{{ $cliente->email }}</div>
                         </div>
                     </div>
                 </td>
-                <td class="px-4 py-3">
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-2 h-2 rounded-full {{ $cliente->status === 'activo' ? 'bg-green-500' : 'bg-gray-400' }}"></div>
-                        <span class="text-xs font-medium {{ $cliente->status === 'activo' ? 'text-green-700' : 'text-gray-500' }}">
-                            {{ $cliente->status === 'activo' ? 'Activo' : 'Inactivo' }}
-                        </span>
-                    </div>
-                    @if(!$cliente->plan)
-                    <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
-                        </svg>
-                        Sin plan
-                    </span>
-                    @endif
-                </td>
-                <td class="px-4 py-3">
-                    @if(!$cliente->plan)
-                        <span class="text-xs text-gray-300">—</span>
 
-                    @elseif($cliente->progreso['estado'] === 'no_iniciado')
-                        <div class="flex items-center gap-2 w-36">
-                            <span class="text-[11px] font-medium text-gray-400 whitespace-nowrap">
-                                Inicia {{ $cliente->progreso['fecha_inicio']->translatedFormat('d M') }}
-                            </span>
-                        </div>
+                {{-- Plan / progreso --}}
+                <td class="px-4 py-3">
+                    @if(!$cliente->plan)
+                        <span class="text-xs text-amber-600">Sin plan</span>
+
+                    @elseif($p['estado'] === 'no_iniciado')
+                        <span class="text-xs text-gray-400">
+                            Inicia {{ $p['fecha_inicio']->translatedFormat('d M') }}
+                        </span>
 
                     @else
-                        @php
-                            $p = $cliente->progreso;
-                            $colorBarra = $p['estado'] === 'finalizado'
-                                ? ($p['porcentaje'] === 100 ? 'bg-green-500' : 'bg-amber-500')
-                                : 'bg-blue-500';
-                            $colorTexto = $p['estado'] === 'finalizado'
-                                ? ($p['porcentaje'] === 100 ? 'text-green-600' : 'text-amber-600')
-                                : 'text-blue-600';
-                        @endphp
-                        <div class="flex flex-col gap-1 w-36">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-semibold text-gray-600">
+                        <div class="w-48">
+                            <div class="flex items-baseline justify-between mb-1.5">
+                                <span class="text-xs {{ $completo ? 'text-emerald-600' : 'text-gray-600' }}">
                                     @if($p['estado'] === 'finalizado')
-                                        {{ $p['porcentaje'] === 100 ? '✓ Finalizado' : 'Finalizado' }}
+                                        {{ $completo ? '✓ Completado' : 'Finalizado' }}
                                     @else
-                                        Semana {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
+                                        Semana {{ $p['semana_actual'] }} de {{ $p['semanas_total'] }}
                                     @endif
                                 </span>
-                                <span class="text-[11px] font-bold {{ $colorTexto }}">
-                                    {{ $p['porcentaje'] ?? 0 }}%
-                                </span>
+                                <span class="text-xs text-gray-400 tabular-nums">{{ $p['porcentaje'] ?? 0 }}%</span>
                             </div>
-                            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full {{ $colorBarra }} transition-all"
-                                     style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
+                            <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full {{ $colorBarra }}" style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
                             </div>
-                            @if(count($p['semanas_sin_entrenar']) > 0)
-                            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-red-500"
-                                title="Semana(s) {{ implode(', ', $p['semanas_sin_entrenar']) }} sin ningún día entrenado">
-                                ⚠ {{ count($p['semanas_sin_entrenar']) === 1 ? '1 semana' : count($p['semanas_sin_entrenar']).' semanas' }} en 0
-                            </span>
+                            @if($semanasEnCero > 0)
+                                <p class="text-[11px] text-red-500 mt-1"
+                                   title="Semana(s) {{ implode(', ', $p['semanas_sin_entrenar']) }} sin ningún día entrenado">
+                                    {{ $semanasEnCero === 1 ? '1 semana' : $semanasEnCero.' semanas' }} sin entrenar
+                                </p>
                             @endif
                         </div>
                     @endif
                 </td>
-                <td class="px-4 py-3">
-                    <div class="flex items-center gap-1.5">
-                        <button type="button"
-                            onclick="abrirModalEditar({{ $cliente->id }}, @js($cliente->name), @js($cliente->email))"
-                            title="Editar datos"
-                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+
+                {{-- Acciones --}}
+                <td class="px-3 py-3">
+                    <div class="flex items-center justify-end gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}" title="Rutina" class="{{ $iconBtn }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
-                        </button>
-                        <a href="{{ route('entrenador.historial.anio', $cliente->id) }}" title="Historial"
-                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                        </a>
+                        <a href="{{ route('entrenador.progreso.index', $cliente->id) }}" title="Progreso" class="{{ $iconBtn }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+                            </svg>
+                        </a>
+                        <a href="{{ route('entrenador.historial.anio', $cliente->id) }}" title="Historial" class="{{ $iconBtn }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/>
                             </svg>
                         </a>
-                        <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}" title="Rutina"
-                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                        </a>
                         <button type="button"
                             onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 4 }})"
-                            title="{{ $cliente->plan ? 'Cambiar plan' : 'Crear plan' }}"
-                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+                            title="{{ $cliente->plan ? 'Cambiar plan' : 'Crear plan' }}" class="{{ $iconBtn }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
                             </svg>
                         </button>
-                        <a href="{{ route('entrenador.progreso.index', $cliente->id) }}" title="Progreso"
-                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
-                            </svg>
-                        </a>
-                        <button title="Mensajes"
-                            class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                        <button title="Mensajes" class="{{ $iconBtn }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                             </svg>
                         </button>
+                        <button type="button"
+                            onclick="abrirModalEditar({{ $cliente->id }}, @js($cliente->name), @js($cliente->email))"
+                            title="Editar datos" class="{{ $iconBtn }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                            </svg>
+                        </button>
+                        <span class="w-px h-4 bg-gray-200 mx-1"></span>
                         <form action="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}" method="POST"
                               class="form-toggle-estado"
                               data-nombre="{{ $cliente->name }}"
-                              data-accion="{{ $cliente->status === 'activo' ? 'desactivar' : 'activar' }}"
+                              data-accion="{{ $activo ? 'desactivar' : 'activar' }}"
                               onsubmit="return interceptarToggle(event, this)">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" title="{{ $cliente->status === 'activo' ? 'Desactivar' : 'Activar' }}"
-                                class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
-                                @if($cliente->status === 'activo')
-                                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-                                    </svg>
-                                @else
-                                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-                                    </svg>
-                                @endif
+                            <button type="submit" title="{{ $activo ? 'Desactivar' : 'Activar' }}"
+                                class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors {{ $activo ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' : 'text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50' }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
+                                </svg>
                             </button>
                         </form>
                     </div>
@@ -264,228 +264,223 @@
             </tr>
         @empty
             <tr>
-                <td colspan="4" class="px-4 py-14 text-center">
-                    <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.7M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
-                    </svg>
-                    <p class="text-sm text-gray-400">No hay clientes registrados</p>
+                <td colspan="3" class="px-4 py-16 text-center">
+                    <p class="text-sm text-gray-500">Todavía no tienes clientes</p>
+                    <p class="text-xs text-gray-400 mt-1">Registra el primero con “Nuevo cliente”.</p>
                 </td>
             </tr>
         @endforelse
         <tr id="filaSinResultados" class="hidden">
-            <td colspan="4" class="px-4 py-14 text-center">
-                <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-                </svg>
-                <p class="text-sm text-gray-400">Ningún cliente coincide con los filtros</p>
+            <td colspan="3" class="px-4 py-16 text-center">
+                <p class="text-sm text-gray-500">Ningún cliente coincide con los filtros</p>
             </td>
         </tr>
         </tbody>
     </table>
 </div>
 
-{{-- ── MÓVIL: swipe cards ── --}}
-<div class="sm:hidden bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100 shadow-sm">
+{{-- ── MÓVIL: lista de tarjetas + menú inferior ── --}}
+<div class="sm:hidden flex flex-col gap-2 pb-24">
 @forelse($clientes as $cliente)
-<div class="swipe-wrapper relative overflow-hidden"
-     style="height:78px;"
+@php
+    [$avatarBg, $avatarText] = $avatarColor($cliente->id);
+    $activo = $cliente->status === 'activo';
+    $p = $cliente->progreso ?? null;
+    // Se reinician en cada vuelta del bucle para no arrastrar valores del cliente anterior
+    $colorBarra = null; $completo = false; $semanasEnCero = 0;
+    if ($cliente->plan && $p && $p['estado'] !== 'no_iniciado') {
+        $completo   = $p['estado'] === 'finalizado' && $p['porcentaje'] === 100;
+        $colorBarra = $p['estado'] === 'finalizado'
+            ? ($completo ? 'bg-emerald-500' : 'bg-amber-400')
+            : 'bg-gray-900';
+        $semanasEnCero = count($p['semanas_sin_entrenar'] ?? []);
+    }
+@endphp
+<div class="cliente-movil"
      data-id="{{ $cliente->id }}"
      data-nombre="{{ strtolower($cliente->name) }}"
      data-email="{{ strtolower($cliente->email) }}"
      data-estado="{{ $cliente->status }}"
-     data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}">
-        {{-- Acciones detrás (se revelan con swipe) --}}
-        <div class="swipe-actions absolute inset-y-0 right-0 flex items-stretch">
-            <button type="button"
-                onclick="abrirModalEditar({{ $cliente->id }}, @js($cliente->name), @js($cliente->email))"
-                class="w-16 flex flex-col items-center justify-center bg-sky-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
-                </svg>
-                Editar
-            </button>
-            <a href="{{ route('entrenador.historial.anio', $cliente->id) }}"
-                class="w-16 flex flex-col items-center justify-center bg-indigo-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/>
-                </svg>
-                Historial
-            </a>
-            <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}"
-                class="w-16 flex flex-col items-center justify-center bg-blue-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                Rutina
-            </a>
-            <button type="button"
-                onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 4 }})"
-                class="w-16 flex flex-col items-center justify-center bg-emerald-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
-                </svg>
-                Plan
-            </button>
-            <a href="{{ route('entrenador.progreso.index', $cliente->id) }}"
-                class="w-16 flex flex-col items-center justify-center bg-violet-500 text-white text-xs font-semibold gap-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
-                </svg>
-                Progreso
-            </a>
-            <form action="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}" method="POST"
-                  class="form-toggle-estado w-16"
-                  data-nombre="{{ $cliente->name }}"
-                  data-accion="{{ $cliente->status === 'activo' ? 'desactivar' : 'activar' }}"
-                  onsubmit="return interceptarToggle(event, this)">
-                @csrf
-                @method('PATCH')
-                <button type="submit"
-                    class="w-16 h-full flex flex-col items-center justify-center {{ $cliente->status === 'activo' ? 'bg-red-500' : 'bg-amber-500' }} text-white text-xs font-semibold gap-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-                    </svg>
-                    {{ $cliente->status === 'activo' ? 'Desactivar' : 'Activar' }}
-                </button>
-            </form>
-        </div>
+     data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}"
+     data-nombre-real="{{ $cliente->name }}"
+     data-email-real="{{ $cliente->email }}"
+     data-iniciales="{{ strtoupper(substr($cliente->name, 0, 2)) }}"
+     data-avatar="{{ $avatarBg }} {{ $avatarText }}"
+     data-semanas="{{ $cliente->plan?->semanas ?? 4 }}"
+     data-tiene-plan="{{ $cliente->plan ? '1' : '0' }}"
+     data-url-rutina="{{ route('entrenador.rutina.menu', $cliente->id) }}"
+     data-url-progreso="{{ route('entrenador.progreso.index', $cliente->id) }}"
+     data-url-historial="{{ route('entrenador.historial.anio', $cliente->id) }}"
+     data-url-toggle="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}">
 
-        {{-- Card del cliente (la que se desliza) --}}
-        <div class="swipe-card absolute inset-0 flex items-center gap-3 px-4 bg-white"
-             style="transition: transform 0.2s ease; will-change: transform;">
-            <div class="w-10 h-10 rounded-full {{ $avatarColor($cliente->id)[0] }} {{ $avatarColor($cliente->id)[1] }} flex items-center justify-center text-sm font-bold flex-shrink-0">
+    <button type="button" onclick="abrirSheet(this.parentElement)"
+        class="w-full flex items-center gap-3 px-4 py-3.5 bg-white border border-gray-200/80 rounded-2xl text-left active:scale-[0.99] active:bg-gray-50 transition">
+
+        <div class="relative flex-shrink-0">
+            <div class="w-11 h-11 rounded-full {{ $avatarBg }} {{ $avatarText }} flex items-center justify-center text-sm font-semibold">
                 {{ strtoupper(substr($cliente->name, 0, 2)) }}
             </div>
-            <div class="flex-1 min-w-0">
-                <div class="text-sm font-semibold text-gray-900 truncate">{{ $cliente->name }}</div>
-                <div class="text-xs text-gray-500 truncate">{{ $cliente->email }}</div>
-
-                @if(!$cliente->plan)
-                    <span class="inline-block mt-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
-                        Sin plan
-                    </span>
-
-                @elseif($cliente->progreso['estado'] === 'no_iniciado')
-                    <span class="inline-block mt-1 text-[10px] text-gray-400 font-medium">
-                        Inicia {{ $cliente->progreso['fecha_inicio']->translatedFormat('d M') }}
-                    </span>
-
-                @else
-                    @php
-                        $p = $cliente->progreso;
-                        $colorBarra = $p['estado'] === 'finalizado'
-                            ? ($p['porcentaje'] === 100 ? 'bg-green-500' : 'bg-amber-500')
-                            : 'bg-blue-500';
-                    @endphp
-                    <div class="flex items-center gap-1.5 mt-1.5">
-                        <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[70px]">
-                            <div class="h-full rounded-full {{ $colorBarra }}" style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
-                        </div>
-                        <span class="text-[10px] font-semibold text-gray-500 whitespace-nowrap">
-                            @if($p['estado'] === 'finalizado')
-                                {{ $p['porcentaje'] === 100 ? '✓ 100%' : $p['porcentaje'].'%' }}
-                            @else
-                                S{{ $p['semana_actual'] }}/{{ $p['semanas_total'] }} · {{ $p['porcentaje'] }}%
-                            @endif
-                        </span>
-                        @if(count($p['semanas_sin_entrenar']) > 0)
-                        <span class="text-[10px] text-red-500 font-bold" title="{{ count($p['semanas_sin_entrenar']) }} semana(s) en 0">⚠</span>
-                        @endif
-                    </div>
-                @endif
-            </div>
-            <div class="w-2 h-2 rounded-full flex-shrink-0 {{ $cliente->status === 'activo' ? 'bg-green-500' : 'bg-gray-400' }}"></div>
-            {{-- Hint de swipe --}}
-            <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-            </svg>
+            <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white {{ $activo ? 'bg-emerald-500' : 'bg-gray-300' }}"></span>
         </div>
 
-    </div>
-@empty
-    <div class="px-4 py-14 text-center">
-        <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.7M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+        <div class="flex-1 min-w-0">
+            <p class="text-[15px] font-medium leading-tight truncate {{ $activo ? 'text-gray-900' : 'text-gray-400' }}">{{ $cliente->name }}</p>
+
+            @if(!$cliente->plan)
+                <p class="text-[13px] text-amber-600 mt-0.5">Sin plan asignado</p>
+            @elseif($p['estado'] === 'no_iniciado')
+                <p class="text-[13px] text-gray-500 mt-0.5">Inicia el {{ $p['fecha_inicio']->translatedFormat('d \d\e F') }}</p>
+            @else
+                <div class="flex items-center gap-2 mt-1.5">
+                    <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full {{ $colorBarra }}" style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
+                    </div>
+                    <span class="text-xs tabular-nums whitespace-nowrap {{ $completo ? 'text-emerald-600' : 'text-gray-500' }}">
+                        @if($p['estado'] === 'finalizado')
+                            {{ $completo ? '✓ Completado' : 'Terminó · '.$p['porcentaje'].'%' }}
+                        @else
+                            Sem {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
+                        @endif
+                    </span>
+                </div>
+                @if($semanasEnCero > 0)
+                    <p class="text-xs text-red-500 mt-1">
+                        {{ $semanasEnCero === 1 ? '1 semana' : $semanasEnCero.' semanas' }} sin entrenar
+                    </p>
+                @endif
+            @endif
+        </div>
+
+        <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
         </svg>
-        <p class="text-sm text-gray-400">No hay clientes registrados</p>
+    </button>
+</div>
+@empty
+    <div class="px-4 py-16 text-center bg-white border border-gray-200/80 rounded-2xl">
+        <p class="text-sm text-gray-500">Todavía no tienes clientes</p>
+        <p class="text-xs text-gray-400 mt-1">Toca el botón + para registrar el primero.</p>
     </div>
 @endforelse
-<div id="mensajeSinResultadosMovil" class="hidden px-4 py-14 text-center">
-    <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-    </svg>
-    <p class="text-sm text-gray-400">Ningún cliente coincide con los filtros</p>
+<div id="mensajeSinResultadosMovil" class="hidden px-4 py-16 text-center">
+    <p class="text-sm text-gray-500">Ningún cliente coincide con la búsqueda</p>
 </div>
+</div>
+
+{{-- Botón flotante: nuevo cliente (solo móvil) --}}
+<button type="button"
+    onclick="document.getElementById('modalNuevoCliente').style.display='flex'"
+    class="sm:hidden fixed right-5 z-40 w-14 h-14 rounded-full bg-gray-900 text-white shadow-lg shadow-gray-900/20 flex items-center justify-center active:scale-95 transition"
+    style="bottom: max(1.25rem, env(safe-area-inset-bottom));"
+    aria-label="Nuevo cliente">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+    </svg>
+</button>
+
+{{-- Menú inferior con las acciones del cliente (solo móvil) --}}
+<div id="sheetCliente" class="sm:hidden fixed inset-0 z-[9999] hidden">
+    <div id="sheetFondo" class="absolute inset-0 bg-gray-900/30 opacity-0 transition-opacity duration-200" onclick="cerrarSheet()"></div>
+    <div id="sheetPanel"
+         class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl translate-y-full transition-transform duration-200 ease-out"
+         style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2.5"></div>
+
+        <div class="flex items-center gap-3 px-5 pt-4 pb-5">
+            <div id="sheetAvatar" class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"></div>
+            <div class="min-w-0">
+                <p id="sheetNombre" class="text-base font-semibold text-gray-900 truncate"></p>
+                <p id="sheetEmail" class="text-sm text-gray-500 truncate"></p>
+            </div>
+        </div>
+
+        @php $tile = 'flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl bg-gray-50 active:bg-gray-100 text-gray-800 text-[13px] font-medium transition'; @endphp
+        <div class="grid grid-cols-3 gap-2 px-4">
+            <a id="sheetRutina" href="#" class="{{ $tile }}">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Rutina
+            </a>
+            <a id="sheetProgreso" href="#" class="{{ $tile }}">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+                Progreso
+            </a>
+            <a id="sheetHistorial" href="#" class="{{ $tile }}">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/></svg>
+                Historial
+            </a>
+            <button id="sheetPlan" type="button" class="{{ $tile }}">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/></svg>
+                <span id="sheetPlanTxt">Plan</span>
+            </button>
+            <button id="sheetEditar" type="button" class="{{ $tile }}">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
+                Editar
+            </button>
+            <button type="button" class="{{ $tile }}">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Mensajes
+            </button>
+        </div>
+
+        <form id="sheetToggleForm" method="POST" action="#" class="form-toggle-estado px-4 pt-3"
+              onsubmit="cerrarSheet(); return interceptarToggle(event, this)">
+            @csrf
+            @method('PATCH')
+            <button id="sheetToggleBtn" type="submit" class="w-full py-3.5 rounded-2xl text-[15px] font-medium transition"></button>
+        </form>
+    </div>
 </div>
 
 {{-- ── Modal nuevo cliente ── --}}
 <div id="modalNuevoCliente"
     onclick="if(event.target===this)this.style.display='none'"
     style="display:none;"
-    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl">
-        <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+    class="{{ $modalWrap }}">
+    <div class="{{ $modalCard }} sm:max-w-md">
+        <div class="flex items-start justify-between px-6 pt-6 pb-2">
             <div>
-                <h3 class="text-base font-bold text-gray-900">Nuevo cliente</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Completa los datos para registrarlo</p>
+                <h3 class="text-base font-semibold text-gray-900">Nuevo cliente</h3>
+                <p class="text-sm text-gray-500 mt-0.5">Completa los datos para registrarlo.</p>
             </div>
             <button onclick="document.getElementById('modalNuevoCliente').style.display='none'"
-                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-400 text-sm transition-colors">✕</button>
+                class="w-8 h-8 -mr-2 -mt-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center transition-colors" aria-label="Cerrar">✕</button>
         </div>
-        <form method="POST" action="{{ route('entrenador.clientes.store') }}" class="p-5 flex flex-col gap-4">
+        <form method="POST" action="{{ route('entrenador.clientes.store') }}" class="px-6 pb-6 pt-4 flex flex-col gap-4">
             @csrf
             <div class="grid grid-cols-2 gap-3">
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre</label>
-                    <input name="name" type="text" required placeholder="Juan"
-                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                        value="{{ old('name') }}">
+                <div class="flex flex-col gap-1.5">
+                    <label class="{{ $labelCls }}">Nombre</label>
+                    <input name="name" type="text" required placeholder="Juan" class="{{ $inputCls }}" value="{{ old('name') }}">
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Apellido</label>
-                    <input name="apellido" type="text" required placeholder="García"
-                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                        value="{{ old('apellido') }}">
+                <div class="flex flex-col gap-1.5">
+                    <label class="{{ $labelCls }}">Apellido</label>
+                    <input name="apellido" type="text" required placeholder="García" class="{{ $inputCls }}" value="{{ old('apellido') }}">
                 </div>
             </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Correo electrónico</label>
-                <input name="email" type="email" required placeholder="cliente@email.com"
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    value="{{ old('email') }}">
+            <div class="flex flex-col gap-1.5">
+                <label class="{{ $labelCls }}">Correo electrónico</label>
+                <input name="email" type="email" required placeholder="cliente@email.com" class="{{ $inputCls }}" value="{{ old('email') }}">
             </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Contraseña temporal</label>
-                <input name="password" type="password" required placeholder="Mínimo 6 caracteres"
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            <div class="flex flex-col gap-1.5">
+                <label class="{{ $labelCls }}">Contraseña temporal</label>
+                <input name="password" type="password" required placeholder="Mínimo 6 caracteres" class="{{ $inputCls }}">
             </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    Teléfono <span class="normal-case font-normal text-gray-400">(opcional)</span>
-                </label>
-                <input name="telefono" type="tel" placeholder="+52 664 123 4567"
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    value="{{ old('telefono') }}">
+            <div class="flex flex-col gap-1.5">
+                <label class="{{ $labelCls }}">Teléfono <span class="text-gray-400 font-normal">· opcional</span></label>
+                <input name="telefono" type="tel" placeholder="+52 664 123 4567" class="{{ $inputCls }}" value="{{ old('telefono') }}">
             </div>
             @if($errors->any())
-            <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div class="border-l-2 border-red-500 bg-red-50/60 rounded-r-lg px-3 py-2">
                 @foreach($errors->all() as $error)
-                    <p class="text-xs text-red-600 mb-0.5">• {{ $error }}</p>
+                    <p class="text-xs text-red-700">{{ $error }}</p>
                 @endforeach
             </div>
             @endif
-            <div class="flex gap-2 pt-1">
+            <div class="flex gap-2 pt-2">
                 <button type="button"
                     onclick="document.getElementById('modalNuevoCliente').style.display='none'"
-                    class="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
-                    Cancelar
-                </button>
-                <button type="submit"
-                    class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold text-white transition-colors">
-                    Registrar cliente
-                </button>
+                    class="flex-1 {{ $btnGhost }}">Cancelar</button>
+                <button type="submit" class="flex-[2] {{ $btnPrimary }}">Registrar cliente</button>
             </div>
         </form>
     </div>
@@ -495,56 +490,42 @@
 <div id="modalEditarCliente"
     onclick="if(event.target===this)cerrarModalEditar()"
     style="display:none;"
-    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl">
-        <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+    class="{{ $modalWrap }}">
+    <div class="{{ $modalCard }} sm:max-w-md">
+        <div class="flex items-start justify-between px-6 pt-6 pb-2">
             <div>
-                <h3 class="text-base font-bold text-gray-900">Editar cliente</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Actualiza sus datos</p>
+                <h3 class="text-base font-semibold text-gray-900">Editar cliente</h3>
+                <p class="text-sm text-gray-500 mt-0.5">Actualiza sus datos.</p>
             </div>
             <button onclick="cerrarModalEditar()"
-                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-400 text-sm transition-colors">✕</button>
+                class="w-8 h-8 -mr-2 -mt-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center transition-colors" aria-label="Cerrar">✕</button>
         </div>
-        <form id="formEditarCliente" method="POST" action="#" class="p-5 flex flex-col gap-4">
+        <form id="formEditarCliente" method="POST" action="#" class="px-6 pb-6 pt-4 flex flex-col gap-4">
             @csrf
             @method('PUT')
             <input type="hidden" id="editClienteIdHidden" name="cliente_id_edit" value="{{ old('cliente_id_edit') }}">
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre completo</label>
-                <input name="name" id="editNombre" type="text" required
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    value="{{ old('name') }}">
+            <div class="flex flex-col gap-1.5">
+                <label class="{{ $labelCls }}">Nombre completo</label>
+                <input name="name" id="editNombre" type="text" required class="{{ $inputCls }}" value="{{ old('name') }}">
             </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Correo electrónico</label>
-                <input name="email" id="editEmail" type="email" required
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                    value="{{ old('email') }}">
+            <div class="flex flex-col gap-1.5">
+                <label class="{{ $labelCls }}">Correo electrónico</label>
+                <input name="email" id="editEmail" type="email" required class="{{ $inputCls }}" value="{{ old('email') }}">
             </div>
-            <div class="flex flex-col gap-1">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    Nueva contraseña <span class="normal-case font-normal text-gray-400">(opcional)</span>
-                </label>
-                <input name="password" type="password" placeholder="Dejar en blanco para no cambiarla"
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            <div class="flex flex-col gap-1.5">
+                <label class="{{ $labelCls }}">Nueva contraseña <span class="text-gray-400 font-normal">· opcional</span></label>
+                <input name="password" type="password" placeholder="Déjala en blanco para no cambiarla" class="{{ $inputCls }}">
             </div>
             @if($errors->editarCliente->any())
-            <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div class="border-l-2 border-red-500 bg-red-50/60 rounded-r-lg px-3 py-2">
                 @foreach($errors->editarCliente->all() as $error)
-                    <p class="text-xs text-red-600 mb-0.5">• {{ $error }}</p>
+                    <p class="text-xs text-red-700">{{ $error }}</p>
                 @endforeach
             </div>
             @endif
-            <div class="flex gap-2 pt-1">
-                <button type="button"
-                    onclick="cerrarModalEditar()"
-                    class="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
-                    Cancelar
-                </button>
-                <button type="submit"
-                    class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold text-white transition-colors">
-                    Guardar cambios
-                </button>
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="cerrarModalEditar()" class="flex-1 {{ $btnGhost }}">Cancelar</button>
+                <button type="submit" class="flex-[2] {{ $btnPrimary }}">Guardar cambios</button>
             </div>
         </form>
     </div>
@@ -554,37 +535,33 @@
 <div id="modalSemanas"
     onclick="if(event.target===this)cerrarModalSemanas()"
     style="display:none;"
-    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-xs max-h-[85vh] overflow-y-auto shadow-2xl p-6">
-        <h3 class="text-base font-bold text-gray-900 mb-1">Plan de entrenamiento</h3>
-        <p class="text-sm text-gray-500 mb-4">¿Cuántas semanas durará el plan?</p>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            @foreach([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] as $s)
+    class="{{ $modalWrap }}">
+    <div class="{{ $modalCard }} sm:max-w-sm p-6">
+        <h3 class="text-base font-semibold text-gray-900">Plan de entrenamiento</h3>
+        <p class="text-sm text-gray-500 mt-0.5 mb-5">Elige la duración y la fecha de inicio.</p>
+
+        <label class="{{ $labelCls }} block mb-2">Semanas</label>
+        <div class="grid grid-cols-8 gap-1.5 mb-5">
+            @foreach(range(1, 16) as $s)
             <button type="button"
                 onclick="seleccionarSemanas({{ $s }})"
                 id="btn-semana-{{ $s }}"
-                class="semana-btn py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                {{ $s }} {{ $s === 1 ? 'semana' : 'semanas' }}
+                class="semana-btn aspect-square border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:border-gray-400 transition-colors tabular-nums">
+                {{ $s }}
             </button>
             @endforeach
         </div>
 
-        <div class="flex flex-col gap-1 mb-4">
-            <label for="inputFechaInicioPlan" class="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Fecha de inicio (Semana 1 · Día 1)
-            </label>
-            <input type="date" id="inputFechaInicioPlan"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-            <p class="text-[11px] text-gray-400 mt-0.5">No puede ser anterior a hoy. Si el cliente ya tenía un plan, este lo reemplaza por completo.</p>
+        <div class="flex flex-col gap-1.5 mb-6">
+            <label for="inputFechaInicioPlan" class="{{ $labelCls }}">Inicio (semana 1 · día 1)</label>
+            <input type="date" id="inputFechaInicioPlan" class="{{ $inputCls }}">
+            <p class="text-xs text-gray-400">No puede ser anterior a hoy. Si el cliente ya tenía un plan, este lo reemplaza por completo.</p>
         </div>
 
         <div class="flex gap-2">
-            <button type="button" onclick="cerrarModalSemanas()"
-                class="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
-                Cancelar
-            </button>
+            <button type="button" onclick="cerrarModalSemanas()" class="flex-1 {{ $btnGhost }}">Cancelar</button>
             <button type="button" id="btnConfirmarPlan" onclick="confirmarPlan()"
-                class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                class="flex-[2] {{ $btnPrimary }} disabled:opacity-40 disabled:cursor-not-allowed">
                 Guardar plan
             </button>
         </div>
@@ -601,38 +578,31 @@
 <div id="modalConfirmarEstado"
     onclick="if(event.target===this)cerrarModalConfirmar()"
     style="display:none;"
-    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl text-center">
+    class="{{ $modalWrap }}">
+    <div class="{{ $modalCard }} sm:max-w-xs p-6 text-center">
 
-        {{-- Icono: variante desactivar (roja) --}}
-        <div id="iconoDesactivar" class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-red-100 text-red-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+        <div id="iconoDesactivar" class="w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-50 text-red-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
             </svg>
         </div>
-        {{-- Icono: variante activar (verde) --}}
-        <div id="iconoActivar" class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-green-100 text-green-600 hidden">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+        <div id="iconoActivar" class="w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-4 bg-emerald-50 text-emerald-600 hidden">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
             </svg>
         </div>
 
-        <h3 id="tituloConfirmarEstado" class="text-base font-bold text-gray-900 mb-2">¿Cambiar estado?</h3>
-        <p id="textoConfirmarEstado" class="text-sm text-gray-500 mb-5 leading-relaxed"></p>
+        <h3 id="tituloConfirmarEstado" class="text-base font-semibold text-gray-900 mb-1.5">¿Cambiar estado?</h3>
+        <p id="textoConfirmarEstado" class="text-sm text-gray-500 mb-6 leading-relaxed"></p>
 
         <div class="flex gap-2">
-            <button type="button" onclick="cerrarModalConfirmar()"
-                class="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
-                Cancelar
-            </button>
-            {{-- Botón: variante desactivar (roja) --}}
+            <button type="button" onclick="cerrarModalConfirmar()" class="flex-1 {{ $btnGhost }}">Cancelar</button>
             <button type="button" id="btnDesactivar" onclick="ejecutarAccionConfirmada()"
-                class="flex-[2] py-2.5 rounded-lg text-sm font-semibold text-white transition-colors bg-red-600 hover:bg-red-700">
+                class="flex-[2] py-2.5 rounded-lg text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700">
                 Desactivar
             </button>
-            {{-- Botón: variante activar (verde) --}}
             <button type="button" id="btnActivar" onclick="ejecutarAccionConfirmada()"
-                class="flex-[2] py-2.5 rounded-lg text-sm font-semibold text-white transition-colors bg-green-600 hover:bg-green-700 hidden">
+                class="flex-[2] py-2.5 rounded-lg text-sm font-medium text-white transition-colors bg-emerald-600 hover:bg-emerald-700 hidden">
                 Activar
             </button>
         </div>
@@ -643,20 +613,19 @@
 @if(session('sin_plan_cliente'))
 <div id="modalSinPlan"
     onclick="if(event.target===this)this.style.display='none'"
-    class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-7 text-center shadow-2xl">
-        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+    class="{{ $modalWrap }}">
+    <div class="{{ $modalCard }} sm:max-w-sm p-6 text-center">
+        <div class="w-11 h-11 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
             </svg>
         </div>
-        <h3 class="text-base font-bold text-gray-900 mb-2">Sin rutina asignada</h3>
-        <p class="text-sm text-gray-500 mb-5 leading-relaxed">
-            <strong class="text-gray-700">{{ session('sin_plan_cliente') }}</strong>
-            no tiene un plan todavía. Asígnale uno con el botón <strong class="text-gray-700">+</strong>.
+        <h3 class="text-base font-semibold text-gray-900 mb-1.5">Sin rutina asignada</h3>
+        <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+            <span class="text-gray-900 font-medium">{{ session('sin_plan_cliente') }}</span>
+            todavía no tiene un plan. Asígnale uno desde la opción <span class="text-gray-900 font-medium">Plan</span>.
         </p>
-        <button onclick="document.getElementById('modalSinPlan').style.display='none'"
-            class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors">
+        <button onclick="document.getElementById('modalSinPlan').style.display='none'" class="w-full {{ $btnPrimary }}">
             Entendido
         </button>
     </div>
@@ -664,64 +633,89 @@
 @endif
 
 <script>
-// ── Swipe ──────────────────────────────────────────────
-document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
-    const card    = wrapper.querySelector('.swipe-card');
-    const actions = wrapper.querySelector('.swipe-actions');
-    let startX = 0, currentX = 0, dragging = false, opened = false;
-    const THRESHOLD = 40;
+// ── Menú inferior del cliente (móvil) ───────────────────
+function abrirSheet(card) {
+    const d = card.dataset;
+    const activo = d.estado === 'activo';
 
-    function actionsWidth() { return actions.offsetWidth; }
+    const avatar = document.getElementById('sheetAvatar');
+    avatar.className = 'w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ' + d.avatar;
+    avatar.textContent = d.iniciales;
+    document.getElementById('sheetNombre').textContent = d.nombreReal;
+    document.getElementById('sheetEmail').textContent  = d.emailReal;
 
-    function snapTo(open) {
-        opened = open;
-        card.style.transition = 'transform 0.2s ease';
-        card.style.transform  = open ? `translateX(-${actionsWidth()}px)` : 'translateX(0)';
-    }
+    document.getElementById('sheetRutina').href    = d.urlRutina;
+    document.getElementById('sheetProgreso').href  = d.urlProgreso;
+    document.getElementById('sheetHistorial').href = d.urlHistorial;
+    document.getElementById('sheetPlanTxt').textContent = d.tienePlan === '1' ? 'Cambiar plan' : 'Crear plan';
 
-    function closeOthers() {
-        document.querySelectorAll('.swipe-card').forEach(c => {
-            if (c !== card) {
-                c.style.transition = 'transform 0.2s ease';
-                c.style.transform  = 'translateX(0)';
-                c.closest('.swipe-wrapper')._opened = false;
-            }
-        });
-    }
+    document.getElementById('sheetPlan').onclick = () => {
+        cerrarSheet();
+        abrirModalSemanas(Number(d.id), Number(d.semanas));
+    };
+    document.getElementById('sheetEditar').onclick = () => {
+        cerrarSheet();
+        abrirModalEditar(Number(d.id), d.nombreReal, d.emailReal);
+    };
 
-    card.addEventListener('touchstart', e => {
-        startX   = e.touches[0].clientX;
-        currentX = startX;
-        dragging = true;
-        card.style.transition = 'none';
-    }, { passive: true });
+    const form = document.getElementById('sheetToggleForm');
+    form.action         = d.urlToggle;
+    form.dataset.nombre = d.nombreReal;
+    form.dataset.accion = activo ? 'desactivar' : 'activar';
+    const btn = document.getElementById('sheetToggleBtn');
+    btn.textContent = activo ? 'Desactivar cliente' : 'Activar cliente';
+    btn.className = 'w-full py-3.5 rounded-2xl text-[15px] font-medium transition ' +
+        (activo ? 'text-red-600 active:bg-red-50' : 'text-emerald-700 bg-emerald-50 active:bg-emerald-100');
 
-    card.addEventListener('touchmove', e => {
-        if (!dragging) return;
-        currentX = e.touches[0].clientX;
-        let delta = currentX - startX;
-        if (opened) delta -= actionsWidth();
-        delta = Math.max(-actionsWidth(), Math.min(0, delta));
-        card.style.transform = `translateX(${delta}px)`;
-    }, { passive: true });
-
-    card.addEventListener('touchend', () => {
-        dragging = false;
-        const delta = currentX - startX;
-        if (!opened && delta < -THRESHOLD) {
-            closeOthers();
-            snapTo(true);
-        } else if (opened && delta > THRESHOLD) {
-            snapTo(false);
-        } else {
-            snapTo(opened);
-        }
+    const sheet = document.getElementById('sheetCliente');
+    sheet.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        document.getElementById('sheetFondo').classList.remove('opacity-0');
+        document.getElementById('sheetPanel').classList.remove('translate-y-full');
     });
+}
 
-    document.addEventListener('touchstart', e => {
-        if (opened && !wrapper.contains(e.target)) snapTo(false);
-    }, { passive: true });
-});
+function cerrarSheet() {
+    const sheet = document.getElementById('sheetCliente');
+    if (!sheet || sheet.classList.contains('hidden')) return;
+    document.getElementById('sheetFondo').classList.add('opacity-0');
+    document.getElementById('sheetPanel').classList.add('translate-y-full');
+    document.body.style.overflow = '';
+    setTimeout(() => sheet.classList.add('hidden'), 200);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarSheet(); });
+
+// ── Filtros rápidos (chips, móvil) ───────────────────────
+// Cada chip solo fija los dos <select> ocultos y reutiliza filtrarClientes()
+const CHIPS = {
+    todos:    { estado: '',         plan: '' },
+    activo:   { estado: 'activo',   plan: '' },
+    inactivo: { estado: 'inactivo', plan: '' },
+    sin_plan: { estado: '',         plan: 'sin_plan' },
+};
+const CHIP_ON  = ['bg-gray-900', 'border-gray-900', 'text-white'];
+const CHIP_OFF = ['bg-white', 'border-gray-200', 'text-gray-600'];
+
+function filtroChip(clave) {
+    document.getElementById('filtroEstado').value = CHIPS[clave].estado;
+    document.getElementById('filtroPlan').value   = CHIPS[clave].plan;
+    filtrarClientes();
+}
+
+function syncChips() {
+    const estado = document.getElementById('filtroEstado').value;
+    const plan   = document.getElementById('filtroPlan').value;
+    document.querySelectorAll('.chip-filtro').forEach(chip => {
+        const f = CHIPS[chip.dataset.chip];
+        const on = f.estado === estado && f.plan === plan;
+        chip.classList.remove(...(on ? CHIP_OFF : CHIP_ON));
+        chip.classList.add(...(on ? CHIP_ON : CHIP_OFF));
+        chip.querySelector('.chip-num').classList.toggle('text-gray-400', !on);
+        chip.querySelector('.chip-num').classList.toggle('text-white/60', on);
+    });
+}
 
 // ── Modal semanas / plan ─────────────────────────────────
 let _clienteIdPendiente   = null;
@@ -733,20 +727,22 @@ function hoyISO() {
     return new Date(d - tz).toISOString().slice(0, 10);
 }
 
+// Resalta el botón de semanas elegido
+const SEMANA_ON  = ['bg-gray-900', 'border-gray-900', 'text-white'];
+const SEMANA_OFF = ['border-gray-200', 'text-gray-600'];
+function marcarSemana(semanas) {
+    document.querySelectorAll('.semana-btn').forEach((btn, i) => {
+        const activo = (i + 1) === semanas;
+        btn.classList.remove(...(activo ? SEMANA_OFF : SEMANA_ON));
+        btn.classList.add(...(activo ? SEMANA_ON : SEMANA_OFF));
+    });
+}
+
 function abrirModalSemanas(clienteId, semanaActual) {
     _clienteIdPendiente = clienteId;
     _semanasSeleccionadas = semanaActual || null;
 
-    document.querySelectorAll('.semana-btn').forEach((btn, i) => {
-        const s = i + 1;
-        if (s === semanaActual) {
-            btn.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.remove('border-gray-200', 'text-gray-600');
-        } else {
-            btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.add('border-gray-200', 'text-gray-600');
-        }
-    });
+    marcarSemana(semanaActual);
 
     const inputFecha = document.getElementById('inputFechaInicioPlan');
     const hoy = hoyISO();
@@ -764,16 +760,7 @@ function cerrarModalSemanas() {
 
 function seleccionarSemanas(semanas) {
     _semanasSeleccionadas = semanas;
-    document.querySelectorAll('.semana-btn').forEach((btn, i) => {
-        const s = i + 1;
-        if (s === semanas) {
-            btn.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.remove('border-gray-200', 'text-gray-600');
-        } else {
-            btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.add('border-gray-200', 'text-gray-600');
-        }
-    });
+    marcarSemana(semanas);
 }
 
 function confirmarPlan() {
@@ -828,8 +815,10 @@ function interceptarToggle(event, form) {
 
     document.getElementById('tituloConfirmarEstado').textContent =
         esActivar ? 'Activar cliente' : 'Desactivar cliente';
-    document.getElementById('textoConfirmarEstado').innerHTML =
-        `¿Seguro que deseas <strong class="text-gray-700">${accion}</strong> a <strong class="text-gray-700">${nombre}</strong>?`;
+    // Se arma con nodos de texto para que un nombre con "<" o "&" no rompa el HTML
+    const p = document.getElementById('textoConfirmarEstado');
+    const fuerte = (t) => { const b = document.createElement('span'); b.className = 'text-gray-900 font-medium'; b.textContent = t; return b; };
+    p.replaceChildren('¿Seguro que deseas ', fuerte(accion), ' a ', fuerte(nombre), '?');
 
     document.getElementById('iconoActivar').classList.toggle('hidden', !esActivar);
     document.getElementById('iconoDesactivar').classList.toggle('hidden', esActivar);
@@ -922,7 +911,7 @@ function filtrarClientes() {
 
     // Móvil
     let visiblesMovil = 0;
-    document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
+    document.querySelectorAll('.cliente-movil').forEach(wrapper => {
         const nombre = wrapper.dataset.nombre?.toLowerCase() ?? '';
         const email  = wrapper.dataset.email?.toLowerCase()  ?? '';
         const est    = wrapper.dataset.estado ?? '';
@@ -936,8 +925,10 @@ function filtrarClientes() {
     });
     const mensajeSinResultadosMovil = document.getElementById('mensajeSinResultadosMovil');
     if (mensajeSinResultadosMovil) {
-        mensajeSinResultadosMovil.classList.toggle('hidden', visiblesMovil !== 0 || document.querySelectorAll('.swipe-wrapper').length === 0);
+        mensajeSinResultadosMovil.classList.toggle('hidden', visiblesMovil !== 0 || document.querySelectorAll('.cliente-movil').length === 0);
     }
+
+    syncChips();
 }
 
 // Restaurar filtros guardados al cargar la página

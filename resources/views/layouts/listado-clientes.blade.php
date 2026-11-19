@@ -296,35 +296,36 @@
      data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}">
         {{-- Acciones detrás (se revelan con swipe) --}}
         <div class="swipe-actions absolute inset-y-0 right-0 flex items-stretch">
-    <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}"
-        class="w-16 flex flex-col items-center justify-center bg-blue-500 text-white text-xs font-semibold gap-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-        </svg>
-        Rutina
-    </a>
-    <a href="{{ route('entrenador.progreso.index', $cliente->id) }}"
-        class="w-16 flex flex-col items-center justify-center bg-violet-500 text-white text-xs font-semibold gap-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
-        </svg>
-        Progreso
-    </a>
-    <button type="button" onclick="abrirMenuCliente(this)"
-        data-id="{{ $cliente->id }}"
-        data-nombre="{{ $cliente->name }}"
-        data-email="{{ $cliente->email }}"
-        data-semanas="{{ $cliente->plan?->semanas ?? 4 }}"
-        data-activo="{{ $cliente->status === 'activo' ? '1' : '0' }}"
-        data-url-historial="{{ route('entrenador.historial.anio', $cliente->id) }}"
-        data-url-toggle="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}"
-        class="w-16 flex flex-col items-center justify-center bg-gray-500 text-white text-xs font-semibold gap-1">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-        </svg>
-        Más
-    </button>
-</div>
+            <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}"
+                class="w-16 flex flex-col items-center justify-center bg-blue-500 text-white text-xs font-semibold gap-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Rutina
+            </a>
+            <a href="{{ route('entrenador.progreso.index', $cliente->id) }}"
+                class="w-16 flex flex-col items-center justify-center bg-violet-500 text-white text-xs font-semibold gap-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+                </svg>
+                Progreso
+            </a>
+            <button type="button" onclick="abrirMenuCliente(this)"
+                data-id="{{ $cliente->id }}"
+                data-nombre="{{ $cliente->name }}"
+                data-email="{{ $cliente->email }}"
+                data-semanas="{{ $cliente->plan?->semanas ?? 4 }}"
+                data-tiene-plan="{{ $cliente->plan ? '1' : '0' }}"
+                data-activo="{{ $cliente->status === 'activo' ? '1' : '0' }}"
+                data-url-historial="{{ route('entrenador.historial.anio', $cliente->id) }}"
+                data-url-toggle="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}"
+                class="w-16 flex flex-col items-center justify-center bg-gray-500 text-white text-xs font-semibold gap-1">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                </svg>
+                Más
+            </button>
+        </div>
 
         {{-- Card del cliente (la que se desliza) --}}
         <div class="swipe-card absolute inset-0 flex items-center gap-3 px-4 bg-white"
@@ -637,6 +638,69 @@
 </div>
 @endif
 
+{{-- ── Menú "Más" (hoja inferior, solo móvil) ── --}}
+<div id="menuCliente" class="sm:hidden fixed inset-0 z-[9000] hidden" aria-hidden="true">
+    <div id="menuClienteFondo" data-cerrar
+         class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-200"></div>
+
+    <div id="menuClientePanel" role="dialog" aria-modal="true" aria-labelledby="menuClienteTitulo"
+         class="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl
+                translate-y-full transition-transform duration-200 ease-out">
+        <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-gray-300"></div>
+        <p id="menuClienteTitulo" class="text-center text-sm font-bold text-gray-900 mb-1 truncate"></p>
+
+        <div class="flex flex-col divide-y divide-gray-100">
+            <button type="button" id="mcEditar" class="flex items-center gap-3 py-3 text-left text-sm font-medium text-gray-800">
+                <span class="grid place-items-center w-9 h-9 rounded-full bg-sky-100 text-sky-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+                    </svg>
+                </span>
+                Editar datos
+            </button>
+
+            <a id="mcHistorial" href="#" class="flex items-center gap-3 py-3 text-sm font-medium text-gray-800">
+                <span class="grid place-items-center w-9 h-9 rounded-full bg-indigo-100 text-indigo-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/>
+                    </svg>
+                </span>
+                Historial
+            </a>
+
+            <button type="button" id="mcPlan" class="flex items-center gap-3 py-3 text-left text-sm font-medium text-gray-800">
+                <span class="grid place-items-center w-9 h-9 rounded-full bg-emerald-100 text-emerald-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+                    </svg>
+                </span>
+                <span id="mcPlanTexto">Plan</span>
+            </button>
+
+            <form id="mcToggle" method="POST" action="#"
+                  onsubmit="cerrarMenuCliente(); return interceptarToggle(event, this)">
+                @csrf
+                @method('PATCH')
+                <button type="submit" id="mcToggleBtn" class="w-full flex items-center gap-3 py-3 text-left text-sm font-semibold">
+                    <span id="mcToggleIcono" class="grid place-items-center w-9 h-9 rounded-full">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
+                        </svg>
+                    </span>
+                    <span id="mcToggleTexto"></span>
+                </button>
+            </form>
+        </div>
+
+        <button type="button" data-cerrar
+            class="mt-2 w-full rounded-xl bg-gray-100 py-3 text-sm font-semibold text-gray-600">
+            Cancelar
+        </button>
+    </div>
+</div>
+
 <script>
 // ── Swipe ──────────────────────────────────────────────
 document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
@@ -653,13 +717,12 @@ document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
         card.style.transform  = open ? `translateX(-${actionsWidth()}px)` : 'translateX(0)';
     }
 
+    // Permite cerrar esta tarjeta desde fuera (otras tarjetas, menú "Más")
+    wrapper._cerrar = () => snapTo(false);
+
     function closeOthers() {
-        document.querySelectorAll('.swipe-card').forEach(c => {
-            if (c !== card) {
-                c.style.transition = 'transform 0.2s ease';
-                c.style.transform  = 'translateX(0)';
-                c.closest('.swipe-wrapper')._opened = false;
-            }
+        document.querySelectorAll('.swipe-wrapper').forEach(w => {
+            if (w !== wrapper && w._cerrar) w._cerrar();
         });
     }
 
@@ -695,6 +758,72 @@ document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
     document.addEventListener('touchstart', e => {
         if (opened && !wrapper.contains(e.target)) snapTo(false);
     }, { passive: true });
+});
+
+// ── Menú "Más" (hoja inferior) ───────────────────────────
+const menuCliente      = document.getElementById('menuCliente');
+const menuClientePanel = document.getElementById('menuClientePanel');
+const menuClienteFondo = document.getElementById('menuClienteFondo');
+let _clienteMenu = null;
+
+function abrirMenuCliente(boton) {
+    _clienteMenu = boton.dataset;
+    const activo = _clienteMenu.activo === '1';
+
+    // Cierra la tarjeta deslizada
+    boton.closest('.swipe-wrapper')?._cerrar?.();
+
+    document.getElementById('menuClienteTitulo').textContent = _clienteMenu.nombre;
+    document.getElementById('mcHistorial').href = _clienteMenu.urlHistorial;
+    document.getElementById('mcPlanTexto').textContent =
+        _clienteMenu.tienePlan === '1' ? 'Cambiar plan' : 'Crear plan';
+
+    const form = document.getElementById('mcToggle');
+    form.action = _clienteMenu.urlToggle;
+    form.dataset.nombre = _clienteMenu.nombre;
+    form.dataset.accion = activo ? 'desactivar' : 'activar';
+
+    document.getElementById('mcToggleTexto').textContent = activo ? 'Desactivar cliente' : 'Activar cliente';
+    document.getElementById('mcToggleBtn').classList.toggle('text-red-600', activo);
+    document.getElementById('mcToggleBtn').classList.toggle('text-green-600', !activo);
+    document.getElementById('mcToggleIcono').classList.toggle('bg-red-100', activo);
+    document.getElementById('mcToggleIcono').classList.toggle('bg-green-100', !activo);
+
+    // Mostrar con animación
+    menuCliente.classList.remove('hidden');
+    menuCliente.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('overflow-hidden');
+    menuClientePanel.offsetHeight; // fuerza reflow para que la transición se vea
+    menuClienteFondo.classList.replace('opacity-0', 'opacity-100');
+    menuClientePanel.classList.remove('translate-y-full');
+}
+
+function cerrarMenuCliente() {
+    if (menuCliente.classList.contains('hidden')) return;
+    menuClienteFondo.classList.replace('opacity-100', 'opacity-0');
+    menuClientePanel.classList.add('translate-y-full');
+    document.body.classList.remove('overflow-hidden');
+    setTimeout(() => {
+        menuCliente.classList.add('hidden');
+        menuCliente.setAttribute('aria-hidden', 'true');
+    }, 200);
+}
+
+menuCliente.querySelectorAll('[data-cerrar]').forEach(el =>
+    el.addEventListener('click', cerrarMenuCliente));
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarMenuCliente();
+});
+
+document.getElementById('mcEditar').addEventListener('click', () => {
+    cerrarMenuCliente();
+    abrirModalEditar(Number(_clienteMenu.id), _clienteMenu.nombre, _clienteMenu.email);
+});
+
+document.getElementById('mcPlan').addEventListener('click', () => {
+    cerrarMenuCliente();
+    abrirModalSemanas(Number(_clienteMenu.id), Number(_clienteMenu.semanas));
 });
 
 // ── Modal semanas / plan ─────────────────────────────────

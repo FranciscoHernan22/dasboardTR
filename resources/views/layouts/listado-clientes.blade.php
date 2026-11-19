@@ -220,7 +220,7 @@
                             </svg>
                         </a>
                         <button type="button"
-                            onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 4 }})"
+                            onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 'null' }}, @js($cliente->name))"
                             title="{{ $cliente->plan ? 'Cambiar plan' : 'Crear plan' }}"
                             class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition-colors">
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
@@ -311,7 +311,7 @@
                 Progreso
             </a>
             <button type="button"
-                onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 4 }})"
+                onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 'null' }}, @js($cliente->name))"
                 class="w-16 flex flex-col items-center justify-center bg-emerald-500 text-white text-xs font-semibold gap-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
@@ -536,37 +536,109 @@
     onclick="if(event.target===this)cerrarModalSemanas()"
     style="display:none;"
     class="fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-xs max-h-[85vh] overflow-y-auto shadow-2xl p-6">
-        <h3 class="text-base font-bold text-gray-900 mb-1">Plan de entrenamiento</h3>
-        <p class="text-sm text-gray-500 mb-4">¿Cuántas semanas durará el plan?</p>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            @foreach([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] as $s)
-            <button type="button"
-                onclick="seleccionarSemanas({{ $s }})"
-                id="btn-semana-{{ $s }}"
-                class="semana-btn py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                {{ $s }} {{ $s === 1 ? 'semana' : 'semanas' }}
-            </button>
-            @endforeach
+    <div role="dialog" aria-modal="true" aria-labelledby="planTitulo"
+         class="bg-white rounded-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto shadow-2xl">
+
+        {{-- Encabezado --}}
+        <div class="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100">
+            <span class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
+                </svg>
+            </span>
+            <div class="flex-1 min-w-0">
+                <h3 id="planTitulo" class="text-base font-bold text-gray-900">Plan de entrenamiento</h3>
+                <p id="planClienteNombre" class="text-xs text-gray-500 mt-0.5 truncate"></p>
+            </div>
+            <button type="button" onclick="cerrarModalSemanas()" aria-label="Cerrar"
+                class="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-gray-400 text-sm transition-colors flex-shrink-0">✕</button>
         </div>
 
-        <div class="flex flex-col gap-1 mb-4">
-            <label for="inputFechaInicioPlan" class="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Fecha de inicio (Semana 1 · Día 1)
-            </label>
-            <input type="date" id="inputFechaInicioPlan"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-            <p class="text-[11px] text-gray-400 mt-0.5">No puede ser anterior a hoy. Si el cliente ya tenía un plan, este lo reemplaza por completo.</p>
+        <div class="p-5 flex flex-col gap-4">
+
+            {{-- Duración --}}
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">Duración</p>
+                    <span id="planDiasTotal" class="text-[11px] font-semibold text-gray-400"></span>
+                </div>
+
+                <div class="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-3 py-3">
+                    <button type="button" id="btnSemanasMenos" onclick="cambiarSemanas(-1)" aria-label="Una semana menos"
+                        class="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-blue-500 hover:text-blue-600 text-gray-600 text-lg font-bold flex items-center justify-center transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">−</button>
+                    <div class="text-center">
+                        <div id="semanasValor" class="font-bold text-gray-900" style="font-size:2rem; line-height:1;">4</div>
+                        <div id="semanasEtiqueta" class="text-xs text-gray-500 mt-1">semanas</div>
+                    </div>
+                    <button type="button" id="btnSemanasMas" onclick="cambiarSemanas(1)" aria-label="Una semana más"
+                        class="w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-blue-500 hover:text-blue-600 text-gray-600 text-lg font-bold flex items-center justify-center transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">+</button>
+                </div>
+
+                {{-- Barra visual: una marca por semana (máx. 16) --}}
+                <div id="planBarraSemanas" class="flex gap-1" aria-hidden="true"></div>
+
+                <div class="flex gap-2">
+                    @foreach([4, 8, 12, 16] as $s)
+                    <button type="button" onclick="seleccionarSemanas({{ $s }})" data-semanas="{{ $s }}"
+                        class="semana-chip flex-1 py-2 border-2 border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-all">
+                        {{ $s }} sem
+                    </button>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="border-b border-gray-100"></div>
+
+            {{-- Inicio --}}
+            <div class="flex flex-col gap-3">
+                <label for="inputFechaInicioPlan" class="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Empieza
+                </label>
+                <div class="flex gap-2">
+                    <button type="button" data-inicio="hoy" onclick="elegirInicio('hoy')"
+                        class="inicio-chip flex-1 py-2 border-2 border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-all">Hoy</button>
+                    <button type="button" data-inicio="manana" onclick="elegirInicio('manana')"
+                        class="inicio-chip flex-1 py-2 border-2 border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-all">Mañana</button>
+                    <button type="button" data-inicio="lunes" onclick="elegirInicio('lunes')"
+                        class="inicio-chip flex-1 py-2 border-2 border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-all">Próx. lunes</button>
+                </div>
+                <input type="date" id="inputFechaInicioPlan" oninput="actualizarResumenPlan()"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+
+            {{-- Resumen inicio → fin --}}
+            <div class="flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                <div class="min-w-0">
+                    <div class="text-[11px] text-gray-500">Inicio</div>
+                    <div id="planFechaInicioTexto" class="text-sm font-semibold text-gray-900 truncate">—</div>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                </svg>
+                <div class="min-w-0" style="text-align:right;">
+                    <div class="text-[11px] text-gray-500">Termina</div>
+                    <div id="planFechaFin" class="text-sm font-semibold text-gray-900 truncate">—</div>
+                </div>
+            </div>
+
+            {{-- Aviso: solo si ya tenía plan --}}
+            <div id="planAvisoReemplazo" class="hidden flex items-start gap-2 bg-amber-100 text-amber-700 rounded-lg px-3 py-2">
+                <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                </svg>
+                <p class="text-[11px] font-medium">Este cliente ya tiene un plan. El nuevo lo reemplaza por completo.</p>
+            </div>
         </div>
 
-        <div class="flex gap-2">
+        {{-- Acciones --}}
+        <div class="flex gap-2 px-5" style="padding-bottom:1.25rem;">
             <button type="button" onclick="cerrarModalSemanas()"
                 class="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors">
                 Cancelar
             </button>
             <button type="button" id="btnConfirmarPlan" onclick="confirmarPlan()"
                 class="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                Guardar plan
+                <span id="planBotonTexto">Guardar plan</span>
             </button>
         </div>
     </div>
@@ -574,6 +646,7 @@
 
 <form id="formPlan" method="POST" class="hidden">
     @csrf
+    <input type="hidden" name="cliente_id_plan" id="inputClientePlan">
     <input type="hidden" name="semanas" id="inputSemanas">
     <input type="hidden" name="fecha_inicio" id="inputFechaInicioHidden">
 </form>
@@ -814,26 +887,41 @@ function hoyISO() {
     return new Date(d - tz).toISOString().slice(0, 10);
 }
 
-function abrirModalSemanas(clienteId, semanaActual) {
-    _clienteIdPendiente = clienteId;
-    _semanasSeleccionadas = semanaActual || null;
+const SEMANAS_MIN = 1, SEMANAS_MAX = 16;
 
-    document.querySelectorAll('.semana-btn').forEach((btn, i) => {
-        const s = i + 1;
-        if (s === semanaActual) {
-            btn.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.remove('border-gray-200', 'text-gray-600');
-        } else {
-            btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.add('border-gray-200', 'text-gray-600');
-        }
-    });
+// Fecha local en formato YYYY-MM-DD, desplazada N días desde hoy
+function isoEnDias(dias) {
+    const d = new Date();
+    d.setDate(d.getDate() + dias);
+    const tz = d.getTimezoneOffset() * 60000;
+    return new Date(d - tz).toISOString().slice(0, 10);
+}
+
+function fechaInicioRapida(tipo) {
+    if (tipo === 'hoy')    return isoEnDias(0);
+    if (tipo === 'manana') return isoEnDias(1);
+    // Próximo lunes (si hoy es lunes, el de la semana siguiente)
+    const dow = new Date().getDay();            // 0 = domingo … 1 = lunes
+    return isoEnDias(((8 - dow) % 7) || 7);
+}
+
+function formatearFecha(date) {
+    return date.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function abrirModalSemanas(clienteId, semanasActuales, nombre = '') {
+    _clienteIdPendiente = clienteId;
+    const tienePlan = !!semanasActuales;
+
+    document.getElementById('planClienteNombre').textContent = nombre;
+    document.getElementById('planAvisoReemplazo').classList.toggle('hidden', !tienePlan);
 
     const inputFecha = document.getElementById('inputFechaInicioPlan');
     const hoy = hoyISO();
     inputFecha.min = hoy;
     inputFecha.value = hoy;
 
+    seleccionarSemanas(semanasActuales || 4);
     document.getElementById('modalSemanas').style.display = 'flex';
 }
 
@@ -843,18 +931,67 @@ function cerrarModalSemanas() {
     _semanasSeleccionadas = null;
 }
 
+function cambiarSemanas(delta) {
+    seleccionarSemanas((_semanasSeleccionadas || 4) + delta);
+}
+
+function marcarChip(chip, activo) {
+    chip.classList.toggle('border-blue-500', activo);
+    chip.classList.toggle('text-blue-600', activo);
+    chip.classList.toggle('bg-blue-50', activo);
+    chip.classList.toggle('border-gray-200', !activo);
+    chip.classList.toggle('text-gray-600', !activo);
+}
+
 function seleccionarSemanas(semanas) {
+    semanas = Math.min(SEMANAS_MAX, Math.max(SEMANAS_MIN, semanas));
     _semanasSeleccionadas = semanas;
-    document.querySelectorAll('.semana-btn').forEach((btn, i) => {
-        const s = i + 1;
-        if (s === semanas) {
-            btn.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.remove('border-gray-200', 'text-gray-600');
-        } else {
-            btn.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
-            btn.classList.add('border-gray-200', 'text-gray-600');
-        }
-    });
+
+    document.getElementById('semanasValor').textContent    = semanas;
+    document.getElementById('semanasEtiqueta').textContent = semanas === 1 ? 'semana' : 'semanas';
+    document.getElementById('planDiasTotal').textContent   = (semanas * 7) + ' días';
+    document.getElementById('planBotonTexto').textContent  =
+        'Guardar · ' + semanas + (semanas === 1 ? ' semana' : ' semanas');
+    document.getElementById('btnSemanasMenos').disabled = semanas <= SEMANAS_MIN;
+    document.getElementById('btnSemanasMas').disabled   = semanas >= SEMANAS_MAX;
+
+    // Barra: una marca por semana
+    const barra = document.getElementById('planBarraSemanas');
+    barra.innerHTML = '';
+    for (let i = 1; i <= SEMANAS_MAX; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'flex-1 h-1.5 rounded-full transition-colors ' + (i <= semanas ? 'bg-blue-500' : 'bg-gray-100');
+        barra.appendChild(seg);
+    }
+
+    document.querySelectorAll('.semana-chip').forEach(chip =>
+        marcarChip(chip, Number(chip.dataset.semanas) === semanas));
+
+    actualizarResumenPlan();
+}
+
+function elegirInicio(tipo) {
+    document.getElementById('inputFechaInicioPlan').value = fechaInicioRapida(tipo);
+    actualizarResumenPlan();
+}
+
+function actualizarResumenPlan() {
+    const fecha    = document.getElementById('inputFechaInicioPlan').value;
+    const inicioEl = document.getElementById('planFechaInicioTexto');
+    const finEl    = document.getElementById('planFechaFin');
+
+    document.querySelectorAll('.inicio-chip').forEach(chip =>
+        marcarChip(chip, !!fecha && fechaInicioRapida(chip.dataset.inicio) === fecha));
+
+    if (!fecha || !_semanasSeleccionadas) {
+        inicioEl.textContent = '—';
+        finEl.textContent    = '—';
+        return;
+    }
+
+    const [y, m, d] = fecha.split('-').map(Number);
+    inicioEl.textContent = formatearFecha(new Date(y, m - 1, d));
+    finEl.textContent    = formatearFecha(new Date(y, m - 1, d + _semanasSeleccionadas * 7 - 1));
 }
 
 function confirmarPlan() {
@@ -877,6 +1014,7 @@ function confirmarPlan() {
 
     const form = document.getElementById('formPlan');
     form.action = '/entrenador/plan/' + _clienteIdPendiente;
+    document.getElementById('inputClientePlan').value = _clienteIdPendiente;
     document.getElementById('inputSemanas').value = _semanasSeleccionadas;
     document.getElementById('inputFechaInicioHidden').value = fecha;
     form.submit();
@@ -951,7 +1089,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 @if($errors->has('fecha_inicio') || $errors->has('semanas'))
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('modalSemanas').style.display = 'flex';
+    const idPrevio     = @js(old('cliente_id_plan'));
+    const semanasPrevs = Number(@js(old('semanas'))) || null;
+    const fechaPrevia  = @js(old('fecha_inicio'));
+    abrirModalSemanas(idPrevio ? Number(idPrevio) : null, semanasPrevs);
+    if (fechaPrevia) {
+        document.getElementById('inputFechaInicioPlan').value = fechaPrevia;
+        actualizarResumenPlan();
+    }
 });
 @endif
 

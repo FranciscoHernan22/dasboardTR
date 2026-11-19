@@ -352,82 +352,56 @@
             </form>
         </div>
 
-      {{-- Card del cliente (la que se desliza) --}}
-@php
-    [$avatarBg, $avatarText] = $avatarColor($cliente->id);
-    $activo = $cliente->status === 'activo';
-    $p = $cliente->progreso ?? null;
-    // Se reinician en cada vuelta del @foreach para no arrastrar valores del cliente anterior
-    $colorBarra = null; $completo = false; $semanasEnCero = 0;
+        {{-- Card del cliente (la que se desliza) --}}
+        <div class="swipe-card absolute inset-0 flex items-center gap-3 px-4 bg-white"
+             style="transition: transform 0.2s ease; will-change: transform;">
+            <div class="w-10 h-10 rounded-full {{ $avatarColor($cliente->id)[0] }} {{ $avatarColor($cliente->id)[1] }} flex items-center justify-center text-sm font-bold flex-shrink-0">
+                {{ strtoupper(substr($cliente->name, 0, 2)) }}
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-semibold text-gray-900 truncate">{{ $cliente->name }}</div>
+                <div class="text-xs text-gray-500 truncate">{{ $cliente->email }}</div>
 
-    if ($cliente->plan && $p && $p['estado'] !== 'no_iniciado') {
-        $completo   = $p['estado'] === 'finalizado' && $p['porcentaje'] === 100;
-        $colorBarra = $p['estado'] === 'finalizado'
-            ? ($completo ? 'bg-emerald-500' : 'bg-amber-400')
-            : 'bg-gray-900';
-        $semanasEnCero = count($p['semanas_sin_entrenar'] ?? []);
-    }
-@endphp
-
-<div class="swipe-card absolute inset-0 flex items-center gap-3 px-4 bg-white active:bg-gray-50"
-     style="transition: transform 0.2s ease; will-change: transform;">
-
-    {{-- Avatar con punto de estado --}}
-    <div class="relative flex-shrink-0">
-        <div class="w-10 h-10 rounded-full {{ $avatarBg }} {{ $avatarText }} flex items-center justify-center text-[13px] font-semibold tracking-wide">
-            {{ strtoupper(substr($cliente->name, 0, 2)) }}
-        </div>
-        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-white {{ $activo ? 'bg-emerald-500' : 'bg-gray-300' }}"
-              title="{{ $activo ? 'Activo' : 'Inactivo' }}"></span>
-    </div>
-
-    {{-- Info --}}
-    <div class="flex-1 min-w-0">
-        <div class="flex items-baseline justify-between gap-2">
-            <span class="text-sm font-medium text-gray-900 truncate">{{ $cliente->name }}</span>
-
-            {{-- Estado del plan, alineado a la derecha --}}
-            @if(!$cliente->plan)
-                <span class="text-[11px] text-amber-600 whitespace-nowrap">Sin plan</span>
-            @elseif($p['estado'] === 'no_iniciado')
-                <span class="text-[11px] text-gray-400 whitespace-nowrap">
-                    Inicia {{ $p['fecha_inicio']->translatedFormat('d M') }}
-                </span>
-            @elseif($p['estado'] === 'finalizado')
-                <span class="text-[11px] whitespace-nowrap {{ $completo ? 'text-emerald-600' : 'text-gray-500' }}">
-                    {{ $completo ? '✓ Completado' : 'Finalizó · '.$p['porcentaje'].'%' }}
-                </span>
-            @else
-                <span class="text-[11px] text-gray-500 whitespace-nowrap tabular-nums">
-                    Sem {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
-                </span>
-            @endif
-        </div>
-
-        <div class="text-xs text-gray-400 truncate">{{ $cliente->email }}</div>
-
-        {{-- Barra de progreso (solo con plan iniciado) --}}
-        @if($colorBarra)
-            <div class="flex items-center gap-2 mt-1.5">
-                <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full {{ $colorBarra }}" style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
-                </div>
-                <span class="text-[10px] text-gray-400 tabular-nums w-7 text-right">{{ $p['porcentaje'] ?? 0 }}%</span>
-                @if($semanasEnCero > 0)
-                    <span class="text-[10px] text-red-500 whitespace-nowrap"
-                          title="{{ $semanasEnCero }} semana(s) sin entrenar">
-                        {{ $semanasEnCero }} sem. en 0
+                @if(!$cliente->plan)
+                    <span class="inline-block mt-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold">
+                        Sin plan
                     </span>
+
+                @elseif($cliente->progreso['estado'] === 'no_iniciado')
+                    <span class="inline-block mt-1 text-[10px] text-gray-400 font-medium">
+                        Inicia {{ $cliente->progreso['fecha_inicio']->translatedFormat('d M') }}
+                    </span>
+
+                @else
+                    @php
+                        $p = $cliente->progreso;
+                        $colorBarra = $p['estado'] === 'finalizado'
+                            ? ($p['porcentaje'] === 100 ? 'bg-green-500' : 'bg-amber-500')
+                            : 'bg-blue-500';
+                    @endphp
+                    <div class="flex items-center gap-1.5 mt-1.5">
+                        <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[70px]">
+                            <div class="h-full rounded-full {{ $colorBarra }}" style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
+                        </div>
+                        <span class="text-[10px] font-semibold text-gray-500 whitespace-nowrap">
+                            @if($p['estado'] === 'finalizado')
+                                {{ $p['porcentaje'] === 100 ? '✓ 100%' : $p['porcentaje'].'%' }}
+                            @else
+                                S{{ $p['semana_actual'] }}/{{ $p['semanas_total'] }} · {{ $p['porcentaje'] }}%
+                            @endif
+                        </span>
+                        @if(count($p['semanas_sin_entrenar']) > 0)
+                        <span class="text-[10px] text-red-500 font-bold" title="{{ count($p['semanas_sin_entrenar']) }} semana(s) en 0">⚠</span>
+                        @endif
+                    </div>
                 @endif
             </div>
-        @endif
-    </div>
-
-    {{-- Hint de swipe --}}
-    <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-    </svg>
-</div>
+            <div class="w-2 h-2 rounded-full flex-shrink-0 {{ $cliente->status === 'activo' ? 'bg-green-500' : 'bg-gray-400' }}"></div>
+            {{-- Hint de swipe --}}
+            <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </div>
 
     </div>
 @empty

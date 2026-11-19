@@ -42,86 +42,88 @@
         </div>
     </div>
 
-    {{-- Semanas: vista compacta (fila = semana, cuadro = día) --}}
-    <div class="bg-white border border-gray-200 rounded-xl p-3 shadow-sm" style="max-width:640px;">
+    {{-- Semanas: 1 columna en móvil, 2–3 en computadora --}}
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:.75rem;">
+    @for($s = $semanaInicio; $s <= $semanaFin; $s++)
+        @php
+            $sVisual      = $s - $semanaInicio + 1;
+            $inicioSemana = $fechaInicio?->copy()->addDays(($sVisual - 1) * 7);
+            $finSemana    = $inicioSemana?->copy()->addDays(6);
 
-        {{-- Cabecera con el día de la semana (solo si conocemos la fecha de inicio) --}}
-        @if($fechaInicio)
-        <div class="flex items-center gap-1.5 px-2 mb-1">
-            <span class="w-12 flex-shrink-0"></span>
-            @for($d = 1; $d <= 7; $d++)
-                <span class="flex-1 text-center text-[10px] font-bold text-gray-400 uppercase">
-                    {{ rtrim($fechaInicio->copy()->addDays($d - 1)->translatedFormat('D'), '.') }}
-                </span>
-            @endfor
-        </div>
-        @endif
+            if ($inicioSemana) {
+                $estado = $hoy->lt($inicioSemana) ? 'proxima' : ($hoy->gt($finSemana) ? 'pasada' : 'actual');
+            } elseif ($semanaActual) {
+                $estado = $sVisual < $semanaActual ? 'pasada' : ($sVisual == $semanaActual ? 'actual' : 'proxima');
+            } else {
+                $estado = null;
+            }
+            $esActual = $estado === 'actual';
+        @endphp
 
-        <div class="flex flex-col gap-1">
-        @for($s = $semanaInicio; $s <= $semanaFin; $s++)
-            @php
-                $sVisual      = $s - $semanaInicio + 1;
-                $inicioSemana = $fechaInicio?->copy()->addDays(($sVisual - 1) * 7);
-                $finSemana    = $inicioSemana?->copy()->addDays(6);
+        <section class="rounded-xl border p-3 shadow-sm {{ $esActual ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white' }}">
 
-                if ($inicioSemana) {
-                    $esActual = $hoy->between($inicioSemana, $finSemana);
-                } else {
-                    $esActual = $semanaActual && $sVisual == $semanaActual;
-                }
-            @endphp
-
-            <div class="flex items-center gap-1.5 px-2 rounded-xl {{ $esActual ? 'bg-blue-50' : '' }}" style="padding-top:.375rem; padding-bottom:.375rem;"
-                 @if($inicioSemana) title="{{ $inicioSemana->translatedFormat('d M') }} – {{ $finSemana->translatedFormat('d M') }}" @endif>
-                <div class="w-12 flex-shrink-0 flex flex-col">
-                    <span class="text-[10px] font-medium {{ $esActual ? 'text-blue-600' : 'text-gray-400' }}" style="line-height:1.2;">Semana</span>
-                    <span class="text-sm font-bold {{ $esActual ? 'text-blue-600' : 'text-gray-900' }}" style="line-height:1.2;">{{ $sVisual }}</span>
+            {{-- Título de la semana --}}
+            <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <h2 class="text-sm font-bold {{ $esActual ? 'text-blue-600' : 'text-gray-900' }}">Semana {{ $sVisual }}</h2>
+                    @if($inicioSemana)
+                        <span class="text-[11px] text-gray-500 truncate">
+                            {{ $inicioSemana->translatedFormat('d M') }} – {{ $finSemana->translatedFormat('d M') }}
+                        </span>
+                    @endif
                 </div>
-
-                @for($d = 1; $d <= 7; $d++)
-                    @php
-                        $fechaDia = $inicioSemana?->copy()->addDays($d - 1);
-                        $esHoy    = $fechaDia && $fechaDia->isSameDay($hoy);
-                        $esPasado = $fechaDia && $fechaDia->lt($hoy);
-
-                        $clasesDia = $esHoy
-                            ? 'bg-blue-600 text-white border-blue-500'
-                            : ($esPasado
-                                ? 'bg-gray-50 text-gray-400 border-gray-100'
-                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-500 hover:text-blue-600');
-                    @endphp
-                    <a href="{{ route('entrenador.rutina.editar', ['cliente' => $cliente->id, 'semana' => $s, 'dia' => $d]) }}"
-                       title="Semana {{ $sVisual }} · Día {{ $d }}{{ $fechaDia ? ' · ' . $fechaDia->translatedFormat('l d M') : '' }}"
-                       class="flex-1 h-10 rounded-lg border flex flex-col items-center justify-center transition-colors {{ $clasesDia }}">
-                        @unless($fechaDia)
-                            <span class="text-[10px] font-medium" style="line-height:1;">Día</span>
-                        @endunless
-                        <span class="text-xs font-bold">{{ $fechaDia ? $fechaDia->format('j') : $d }}</span>
-                        @if($fechaDia && ($fechaDia->day === 1 || ($sVisual === 1 && $d === 1)))
-                            <span class="text-[10px] font-medium" style="line-height:1;">{{ $fechaDia->translatedFormat('M') }}</span>
-                        @endif
-                    </a>
-                @endfor
+                @if($estado === 'actual')
+                    <span class="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-semibold flex-shrink-0">En curso</span>
+                @elseif($estado === 'pasada')
+                    <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-semibold flex-shrink-0">Terminada</span>
+                @endif
             </div>
-        @endfor
-        </div>
 
-        {{-- Leyenda --}}
-        @if($fechaInicio)
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 mt-1" style="padding-top:.75rem; border-top:1px solid #f3f4f6;">
-            <span class="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
-                <span class="w-3 h-3 rounded bg-blue-600"></span> Hoy
-            </span>
-            <span class="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
-                <span class="w-3 h-3 rounded border border-gray-200 bg-white"></span> Próximo
-            </span>
-            <span class="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
-                <span class="w-3 h-3 rounded border border-gray-100 bg-gray-50"></span> Pasado
-            </span>
-            <span class="text-[11px] text-gray-400">· Toca un día para editar su rutina</span>
-        </div>
-        @endif
+            {{-- 7 días --}}
+            <div class="flex gap-1.5">
+            @for($d = 1; $d <= 7; $d++)
+                @php
+                    $fechaDia = $inicioSemana?->copy()->addDays($d - 1);
+                    $esHoy    = $fechaDia && $fechaDia->isSameDay($hoy);
+                    $esPasado = $fechaDia && $fechaDia->lt($hoy);
+
+                    $clasesDia = $esHoy
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : ($esPasado
+                            ? 'bg-gray-50 text-gray-400 border-gray-100'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-blue-500 hover:text-blue-600');
+                @endphp
+                <a href="{{ route('entrenador.rutina.editar', ['cliente' => $cliente->id, 'semana' => $s, 'dia' => $d]) }}"
+                   title="Semana {{ $sVisual }} · Día {{ $d }}{{ $fechaDia ? ' · ' . ucfirst($fechaDia->translatedFormat('l d M')) : '' }}"
+                   class="flex-1 h-12 rounded-lg border flex flex-col items-center justify-center gap-1 transition-colors {{ $clasesDia }}">
+                    <span class="text-[10px] font-semibold uppercase" style="line-height:1;">
+                        {{ $fechaDia ? rtrim($fechaDia->translatedFormat('D'), '.') : 'Día' }}
+                    </span>
+                    <span class="text-sm font-bold" style="line-height:1;">
+                        {{ $fechaDia ? $fechaDia->format('j') : $d }}
+                    </span>
+                </a>
+            @endfor
+            </div>
+        </section>
+    @endfor
     </div>
+
+    {{-- Leyenda --}}
+    @if($fechaInicio)
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1" style="margin-top:1rem;">
+        <span class="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
+            <span class="w-3 h-3 rounded bg-blue-600"></span> Hoy
+        </span>
+        <span class="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
+            <span class="w-3 h-3 rounded border border-gray-200 bg-white"></span> Próximo
+        </span>
+        <span class="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
+            <span class="w-3 h-3 rounded border border-gray-100 bg-gray-50"></span> Pasado
+        </span>
+        <span class="text-[11px] text-gray-400">· Toca un día para editar su rutina</span>
+    </div>
+    @endif
 </div>
 
 @endsection

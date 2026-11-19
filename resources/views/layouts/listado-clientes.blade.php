@@ -16,12 +16,12 @@
 
     // Clases compartidas
     $labelCls   = 'text-xs font-medium text-gray-600';
-    $inputCls   = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 sm:py-2 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition';
+    $inputCls   = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition';
     $btnPrimary = 'py-2.5 bg-gray-900 hover:bg-gray-800 rounded-lg text-sm font-medium text-white transition-colors';
     $btnGhost   = 'py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition-colors';
     $iconBtn    = 'w-8 h-8 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 flex items-center justify-center transition-colors';
-    $modalWrap  = 'fixed inset-0 bg-gray-900/30 backdrop-blur-[2px] z-[10000] flex items-end sm:items-center justify-center sm:p-4';
-    $modalCard  = 'bg-white rounded-t-3xl sm:rounded-2xl w-full max-h-[92vh] overflow-y-auto shadow-xl pb-[env(safe-area-inset-bottom)]';
+    $modalWrap  = 'fixed inset-0 bg-gray-900/30 backdrop-blur-[2px] z-[10000] flex items-center justify-center p-4';
+    $modalCard  = 'bg-white rounded-2xl w-full max-h-[92vh] overflow-y-auto shadow-xl';
 
     $totalActivos   = $clientes->where('status', 'activo')->count();
     $totalInactivos = $clientes->where('status', 'inactivo')->count();
@@ -29,9 +29,9 @@
 @endphp
 
 {{-- Header --}}
-<div class="flex flex-wrap items-end justify-between gap-3 mb-4 sm:mb-6">
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
     <div>
-        <h1 class="text-2xl sm:text-xl font-semibold text-gray-900 tracking-tight">Clientes</h1>
+        <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Clientes</h1>
         <p class="text-sm text-gray-500 mt-1">
             {{ $clientes->count() }} registrados
             <span class="text-gray-300 mx-1">·</span>
@@ -46,7 +46,7 @@
     </div>
     <button
         onclick="document.getElementById('modalNuevoCliente').style.display='flex'"
-        class="hidden sm:inline-flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-3.5 py-2 rounded-lg transition-colors">
+        class="inline-flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-3.5 py-2 rounded-lg transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
         </svg>
@@ -79,7 +79,7 @@
 @endif
 
 {{-- Buscador + filtros --}}
-<div class="flex flex-wrap gap-2 mb-3 sm:mb-4">
+<div class="flex flex-wrap gap-2 mb-4">
     <div class="relative flex-1 min-w-[180px]">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -92,32 +92,17 @@
             class="{{ $inputCls }} pl-9 bg-white">
     </div>
     <select id="filtroEstado" onchange="filtrarClientes()"
-        class="hidden sm:block text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 bg-white text-gray-600 focus:outline-none focus:border-gray-400 transition">
+        class="text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 bg-white text-gray-600 focus:outline-none focus:border-gray-400 transition">
         <option value="">Todos los estados</option>
         <option value="activo">Activos</option>
         <option value="inactivo">Inactivos</option>
     </select>
     <select id="filtroPlan" onchange="filtrarClientes()"
-        class="hidden sm:block text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 bg-white text-gray-600 focus:outline-none focus:border-gray-400 transition">
+        class="text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 bg-white text-gray-600 focus:outline-none focus:border-gray-400 transition">
         <option value="">Todos los planes</option>
         <option value="con_plan">Con plan</option>
         <option value="sin_plan">Sin plan</option>
     </select>
-</div>
-
-{{-- Filtros rápidos (solo móvil) --}}
-<div class="sm:hidden flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 mb-3" style="scrollbar-width:none;">
-    @foreach([
-        'todos'    => ['Todos',     $clientes->count()],
-        'activo'   => ['Activos',   $totalActivos],
-        'inactivo' => ['Inactivos', $totalInactivos],
-        'sin_plan' => ['Sin plan',  $sinPlanCount],
-    ] as $clave => [$texto, $num])
-    <button type="button" data-chip="{{ $clave }}" onclick="filtroChip('{{ $clave }}')"
-        class="chip-filtro flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-sm transition-colors">
-        {{ $texto }} <span class="chip-num tabular-nums">{{ $num }}</span>
-    </button>
-    @endforeach
 </div>
 
 {{-- ── DESKTOP: tabla ── --}}
@@ -279,8 +264,8 @@
     </table>
 </div>
 
-{{-- ── MÓVIL: lista de tarjetas + menú inferior ── --}}
-<div class="sm:hidden flex flex-col gap-2 pb-24">
+{{-- ── MÓVIL: swipe cards ── --}}
+<div class="sm:hidden bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
 @forelse($clientes as $cliente)
 @php
     [$avatarBg, $avatarText] = $avatarColor($cliente->id);
@@ -288,6 +273,7 @@
     $p = $cliente->progreso ?? null;
     // Se reinician en cada vuelta del bucle para no arrastrar valores del cliente anterior
     $colorBarra = null; $completo = false; $semanasEnCero = 0;
+
     if ($cliente->plan && $p && $p['estado'] !== 'no_iniciado') {
         $completo   = $p['estado'] === 'finalizado' && $p['porcentaje'] === 100;
         $colorBarra = $p['estado'] === 'finalizado'
@@ -295,148 +281,146 @@
             : 'bg-gray-900';
         $semanasEnCero = count($p['semanas_sin_entrenar'] ?? []);
     }
+    $swipeBtn = 'w-[72px] flex flex-col items-center justify-center gap-1 text-[11px] font-medium';
 @endphp
-<div class="cliente-movil"
+<div class="swipe-wrapper relative overflow-hidden"
+     style="height:76px;"
      data-id="{{ $cliente->id }}"
      data-nombre="{{ strtolower($cliente->name) }}"
      data-email="{{ strtolower($cliente->email) }}"
      data-estado="{{ $cliente->status }}"
-     data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}"
-     data-nombre-real="{{ $cliente->name }}"
-     data-email-real="{{ $cliente->email }}"
-     data-iniciales="{{ strtoupper(substr($cliente->name, 0, 2)) }}"
-     data-avatar="{{ $avatarBg }} {{ $avatarText }}"
-     data-semanas="{{ $cliente->plan?->semanas ?? 4 }}"
-     data-tiene-plan="{{ $cliente->plan ? '1' : '0' }}"
-     data-url-rutina="{{ route('entrenador.rutina.menu', $cliente->id) }}"
-     data-url-progreso="{{ route('entrenador.progreso.index', $cliente->id) }}"
-     data-url-historial="{{ route('entrenador.historial.anio', $cliente->id) }}"
-     data-url-toggle="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}">
+     data-plan="{{ $cliente->plan ? 'con_plan' : 'sin_plan' }}">
 
-    <button type="button" onclick="abrirSheet(this.parentElement)"
-        class="w-full flex items-center gap-3 px-4 py-3.5 bg-white border border-gray-200/80 rounded-2xl text-left active:scale-[0.99] active:bg-gray-50 transition">
+    {{-- Acciones IZQUIERDA (se revelan deslizando hacia la derecha →) --}}
+    <div class="swipe-actions-left absolute inset-y-0 left-0 flex items-stretch bg-gray-900 divide-x divide-white/10">
+        <a href="{{ route('entrenador.rutina.menu', $cliente->id) }}" class="{{ $swipeBtn }} text-white active:bg-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            Rutina
+        </a>
+        <a href="{{ route('entrenador.progreso.index', $cliente->id) }}" class="{{ $swipeBtn }} text-white active:bg-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+            </svg>
+            Progreso
+        </a>
+        <a href="{{ route('entrenador.historial.anio', $cliente->id) }}" class="{{ $swipeBtn }} text-white active:bg-gray-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/>
+            </svg>
+            Historial
+        </a>
+    </div>
+
+    {{-- Acciones DERECHA (se revelan deslizando hacia la izquierda ←) --}}
+    <div class="swipe-actions-right absolute inset-y-0 right-0 flex items-stretch bg-gray-50 divide-x divide-gray-200/70">
+        <button type="button"
+            onclick="abrirModalSemanas({{ $cliente->id }}, {{ $cliente->plan?->semanas ?? 4 }})"
+            class="{{ $swipeBtn }} text-gray-700 active:bg-gray-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
+            </svg>
+            Plan
+        </button>
+        <button type="button"
+            onclick="abrirModalEditar({{ $cliente->id }}, @js($cliente->name), @js($cliente->email))"
+            class="{{ $swipeBtn }} text-gray-700 active:bg-gray-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+            </svg>
+            Editar
+        </button>
+        <form action="{{ route('entrenador.clientes.toggleEstado', $cliente->id) }}" method="POST"
+              class="form-toggle-estado flex"
+              data-nombre="{{ $cliente->name }}"
+              data-accion="{{ $activo ? 'desactivar' : 'activar' }}"
+              onsubmit="return interceptarToggle(event, this)">
+            @csrf
+            @method('PATCH')
+            <button type="submit"
+                class="{{ $swipeBtn }} h-full {{ $activo ? 'text-red-600 bg-red-50 active:bg-red-100' : 'text-emerald-700 bg-emerald-50 active:bg-emerald-100' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
+                </svg>
+                {{ $activo ? 'Desactivar' : 'Activar' }}
+            </button>
+        </form>
+    </div>
+
+    {{-- Card del cliente (la que se desliza) --}}
+    <div class="swipe-card absolute inset-0 flex items-center gap-3 px-4 bg-white active:bg-gray-50"
+         style="transition: transform 0.22s ease; will-change: transform; touch-action: pan-y;">
 
         <div class="relative flex-shrink-0">
-            <div class="w-11 h-11 rounded-full {{ $avatarBg }} {{ $avatarText }} flex items-center justify-center text-sm font-semibold">
+            <div class="w-10 h-10 rounded-full {{ $avatarBg }} {{ $avatarText }} flex items-center justify-center text-[13px] font-semibold tracking-wide">
                 {{ strtoupper(substr($cliente->name, 0, 2)) }}
             </div>
-            <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white {{ $activo ? 'bg-emerald-500' : 'bg-gray-300' }}"></span>
+            <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-white {{ $activo ? 'bg-emerald-500' : 'bg-gray-300' }}"></span>
         </div>
 
         <div class="flex-1 min-w-0">
-            <p class="text-[15px] font-medium leading-tight truncate {{ $activo ? 'text-gray-900' : 'text-gray-400' }}">{{ $cliente->name }}</p>
+            <div class="flex items-baseline justify-between gap-2">
+                <span class="text-sm font-medium {{ $activo ? 'text-gray-900' : 'text-gray-400' }} truncate">{{ $cliente->name }}</span>
+                @if(!$cliente->plan)
+                    <span class="text-[11px] text-amber-600 whitespace-nowrap">Sin plan</span>
+                @elseif($p['estado'] === 'no_iniciado')
+                    <span class="text-[11px] text-gray-400 whitespace-nowrap">Inicia {{ $p['fecha_inicio']->translatedFormat('d M') }}</span>
+                @elseif($p['estado'] === 'finalizado')
+                    <span class="text-[11px] whitespace-nowrap {{ $completo ? 'text-emerald-600' : 'text-gray-500' }}">
+                        {{ $completo ? '✓ Completado' : 'Finalizó' }}
+                    </span>
+                @else
+                    <span class="text-[11px] text-gray-500 whitespace-nowrap tabular-nums">Sem {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}</span>
+                @endif
+            </div>
 
-            @if(!$cliente->plan)
-                <p class="text-[13px] text-amber-600 mt-0.5">Sin plan asignado</p>
-            @elseif($p['estado'] === 'no_iniciado')
-                <p class="text-[13px] text-gray-500 mt-0.5">Inicia el {{ $p['fecha_inicio']->translatedFormat('d \d\e F') }}</p>
-            @else
+            <div class="text-xs text-gray-400 truncate">{{ $cliente->email }}</div>
+
+            @if($colorBarra)
                 <div class="flex items-center gap-2 mt-1.5">
                     <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
                         <div class="h-full rounded-full {{ $colorBarra }}" style="width: {{ $p['porcentaje'] ?? 0 }}%"></div>
                     </div>
-                    <span class="text-xs tabular-nums whitespace-nowrap {{ $completo ? 'text-emerald-600' : 'text-gray-500' }}">
-                        @if($p['estado'] === 'finalizado')
-                            {{ $completo ? '✓ Completado' : 'Terminó · '.$p['porcentaje'].'%' }}
-                        @else
-                            Sem {{ $p['semana_actual'] }}/{{ $p['semanas_total'] }}
-                        @endif
-                    </span>
+                    <span class="text-[10px] text-gray-400 tabular-nums w-7 text-right">{{ $p['porcentaje'] ?? 0 }}%</span>
+                    @if($semanasEnCero > 0)
+                        <span class="text-[10px] text-red-500 whitespace-nowrap">{{ $semanasEnCero }} sem. en 0</span>
+                    @endif
                 </div>
-                @if($semanasEnCero > 0)
-                    <p class="text-xs text-red-500 mt-1">
-                        {{ $semanasEnCero === 1 ? '1 semana' : $semanasEnCero.' semanas' }} sin entrenar
-                    </p>
-                @endif
             @endif
         </div>
 
-        <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>
+        <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>
         </svg>
-    </button>
+    </div>
 </div>
 @empty
-    <div class="px-4 py-16 text-center bg-white border border-gray-200/80 rounded-2xl">
+    <div class="px-4 py-16 text-center">
         <p class="text-sm text-gray-500">Todavía no tienes clientes</p>
-        <p class="text-xs text-gray-400 mt-1">Toca el botón + para registrar el primero.</p>
+        <p class="text-xs text-gray-400 mt-1">Registra el primero con “Nuevo cliente”.</p>
     </div>
 @endforelse
 <div id="mensajeSinResultadosMovil" class="hidden px-4 py-16 text-center">
-    <p class="text-sm text-gray-500">Ningún cliente coincide con la búsqueda</p>
+    <p class="text-sm text-gray-500">Ningún cliente coincide con los filtros</p>
 </div>
 </div>
 
-{{-- Botón flotante: nuevo cliente (solo móvil) --}}
-<button type="button"
-    onclick="document.getElementById('modalNuevoCliente').style.display='flex'"
-    class="sm:hidden fixed right-5 z-40 w-14 h-14 rounded-full bg-gray-900 text-white shadow-lg shadow-gray-900/20 flex items-center justify-center active:scale-95 transition"
-    style="bottom: max(1.25rem, env(safe-area-inset-bottom));"
-    aria-label="Nuevo cliente">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
-    </svg>
-</button>
-
-{{-- Menú inferior con las acciones del cliente (solo móvil) --}}
-<div id="sheetCliente" class="sm:hidden fixed inset-0 z-[9999] hidden">
-    <div id="sheetFondo" class="absolute inset-0 bg-gray-900/30 opacity-0 transition-opacity duration-200" onclick="cerrarSheet()"></div>
-    <div id="sheetPanel"
-         class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl translate-y-full transition-transform duration-200 ease-out"
-         style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
-        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-2.5"></div>
-
-        <div class="flex items-center gap-3 px-5 pt-4 pb-5">
-            <div id="sheetAvatar" class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"></div>
-            <div class="min-w-0">
-                <p id="sheetNombre" class="text-base font-semibold text-gray-900 truncate"></p>
-                <p id="sheetEmail" class="text-sm text-gray-500 truncate"></p>
-            </div>
-        </div>
-
-        @php $tile = 'flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl bg-gray-50 active:bg-gray-100 text-gray-800 text-[13px] font-medium transition'; @endphp
-        <div class="grid grid-cols-3 gap-2 px-4">
-            <a id="sheetRutina" href="#" class="{{ $tile }}">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                Rutina
-            </a>
-            <a id="sheetProgreso" href="#" class="{{ $tile }}">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
-                Progreso
-            </a>
-            <a id="sheetHistorial" href="#" class="{{ $tile }}">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2"/></svg>
-                Historial
-            </a>
-            <button id="sheetPlan" type="button" class="{{ $tile }}">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/></svg>
-                <span id="sheetPlanTxt">Plan</span>
-            </button>
-            <button id="sheetEditar" type="button" class="{{ $tile }}">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
-                Editar
-            </button>
-            <button type="button" class="{{ $tile }}">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                Mensajes
-            </button>
-        </div>
-
-        <form id="sheetToggleForm" method="POST" action="#" class="form-toggle-estado px-4 pt-3"
-              onsubmit="cerrarSheet(); return interceptarToggle(event, this)">
-            @csrf
-            @method('PATCH')
-            <button id="sheetToggleBtn" type="submit" class="w-full py-3.5 rounded-2xl text-[15px] font-medium transition"></button>
-        </form>
-    </div>
-</div>
+{{-- Ayuda del swipe (solo móvil) --}}
+<p class="sm:hidden flex items-center justify-center gap-3 text-[11px] text-gray-400 mt-3">
+    <span>→ Rutina · Progreso · Historial</span>
+    <span class="text-gray-300">|</span>
+    <span>← Plan · Editar · Estado</span>
+</p>
 
 {{-- ── Modal nuevo cliente ── --}}
 <div id="modalNuevoCliente"
     onclick="if(event.target===this)this.style.display='none'"
     style="display:none;"
     class="{{ $modalWrap }}">
-    <div class="{{ $modalCard }} sm:max-w-md">
+    <div class="{{ $modalCard }} max-w-md">
         <div class="flex items-start justify-between px-6 pt-6 pb-2">
             <div>
                 <h3 class="text-base font-semibold text-gray-900">Nuevo cliente</h3>
@@ -491,7 +475,7 @@
     onclick="if(event.target===this)cerrarModalEditar()"
     style="display:none;"
     class="{{ $modalWrap }}">
-    <div class="{{ $modalCard }} sm:max-w-md">
+    <div class="{{ $modalCard }} max-w-md">
         <div class="flex items-start justify-between px-6 pt-6 pb-2">
             <div>
                 <h3 class="text-base font-semibold text-gray-900">Editar cliente</h3>
@@ -536,7 +520,7 @@
     onclick="if(event.target===this)cerrarModalSemanas()"
     style="display:none;"
     class="{{ $modalWrap }}">
-    <div class="{{ $modalCard }} sm:max-w-sm p-6">
+    <div class="{{ $modalCard }} max-w-sm p-6">
         <h3 class="text-base font-semibold text-gray-900">Plan de entrenamiento</h3>
         <p class="text-sm text-gray-500 mt-0.5 mb-5">Elige la duración y la fecha de inicio.</p>
 
@@ -579,7 +563,7 @@
     onclick="if(event.target===this)cerrarModalConfirmar()"
     style="display:none;"
     class="{{ $modalWrap }}">
-    <div class="{{ $modalCard }} sm:max-w-xs p-6 text-center">
+    <div class="{{ $modalCard }} max-w-xs p-6 text-center">
 
         <div id="iconoDesactivar" class="w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-50 text-red-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
@@ -614,7 +598,7 @@
 <div id="modalSinPlan"
     onclick="if(event.target===this)this.style.display='none'"
     class="{{ $modalWrap }}">
-    <div class="{{ $modalCard }} sm:max-w-sm p-6 text-center">
+    <div class="{{ $modalCard }} max-w-sm p-6 text-center">
         <div class="w-11 h-11 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5"/>
@@ -623,7 +607,7 @@
         <h3 class="text-base font-semibold text-gray-900 mb-1.5">Sin rutina asignada</h3>
         <p class="text-sm text-gray-500 mb-6 leading-relaxed">
             <span class="text-gray-900 font-medium">{{ session('sin_plan_cliente') }}</span>
-            todavía no tiene un plan. Asígnale uno desde la opción <span class="text-gray-900 font-medium">Plan</span>.
+            todavía no tiene un plan. Asígnale uno desde el botón de <span class="text-gray-900 font-medium">Plan</span>.
         </p>
         <button onclick="document.getElementById('modalSinPlan').style.display='none'" class="w-full {{ $btnPrimary }}">
             Entendido
@@ -633,89 +617,94 @@
 @endif
 
 <script>
-// ── Menú inferior del cliente (móvil) ───────────────────
-function abrirSheet(card) {
-    const d = card.dataset;
-    const activo = d.estado === 'activo';
+// ── Swipe en ambos lados ──────────────────────────────
+//  → derecha: revela Rutina / Progreso / Historial
+//  ← izquierda: revela Plan / Editar / Desactivar
+const SWIPE_UMBRAL = 40; // px que hay que arrastrar para abrir/cerrar
 
-    const avatar = document.getElementById('sheetAvatar');
-    avatar.className = 'w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ' + d.avatar;
-    avatar.textContent = d.iniciales;
-    document.getElementById('sheetNombre').textContent = d.nombreReal;
-    document.getElementById('sheetEmail').textContent  = d.emailReal;
-
-    document.getElementById('sheetRutina').href    = d.urlRutina;
-    document.getElementById('sheetProgreso').href  = d.urlProgreso;
-    document.getElementById('sheetHistorial').href = d.urlHistorial;
-    document.getElementById('sheetPlanTxt').textContent = d.tienePlan === '1' ? 'Cambiar plan' : 'Crear plan';
-
-    document.getElementById('sheetPlan').onclick = () => {
-        cerrarSheet();
-        abrirModalSemanas(Number(d.id), Number(d.semanas));
-    };
-    document.getElementById('sheetEditar').onclick = () => {
-        cerrarSheet();
-        abrirModalEditar(Number(d.id), d.nombreReal, d.emailReal);
-    };
-
-    const form = document.getElementById('sheetToggleForm');
-    form.action         = d.urlToggle;
-    form.dataset.nombre = d.nombreReal;
-    form.dataset.accion = activo ? 'desactivar' : 'activar';
-    const btn = document.getElementById('sheetToggleBtn');
-    btn.textContent = activo ? 'Desactivar cliente' : 'Activar cliente';
-    btn.className = 'w-full py-3.5 rounded-2xl text-[15px] font-medium transition ' +
-        (activo ? 'text-red-600 active:bg-red-50' : 'text-emerald-700 bg-emerald-50 active:bg-emerald-100');
-
-    const sheet = document.getElementById('sheetCliente');
-    sheet.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => {
-        document.getElementById('sheetFondo').classList.remove('opacity-0');
-        document.getElementById('sheetPanel').classList.remove('translate-y-full');
+function cerrarTodosLosSwipes(excepto) {
+    document.querySelectorAll('.swipe-wrapper').forEach(w => {
+        if (w !== excepto && w._pos !== 0 && w._snap) w._snap(0);
     });
 }
 
-function cerrarSheet() {
-    const sheet = document.getElementById('sheetCliente');
-    if (!sheet || sheet.classList.contains('hidden')) return;
-    document.getElementById('sheetFondo').classList.add('opacity-0');
-    document.getElementById('sheetPanel').classList.add('translate-y-full');
-    document.body.style.overflow = '';
-    setTimeout(() => sheet.classList.add('hidden'), 200);
-}
+document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
+    const card  = wrapper.querySelector('.swipe-card');
+    const left  = wrapper.querySelector('.swipe-actions-left');
+    const right = wrapper.querySelector('.swipe-actions-right');
+    const anchoIzq = () => left?.offsetWidth  ?? 0;
+    const anchoDer = () => right?.offsetWidth ?? 0;
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarSheet(); });
+    // _pos:  1 = acciones izquierdas abiertas · -1 = derechas abiertas · 0 = cerrada
+    wrapper._pos = 0;
+    let startX = 0, startY = 0, dx = 0, base = 0, eje = null;
 
-// ── Filtros rápidos (chips, móvil) ───────────────────────
-// Cada chip solo fija los dos <select> ocultos y reutiliza filtrarClientes()
-const CHIPS = {
-    todos:    { estado: '',         plan: '' },
-    activo:   { estado: 'activo',   plan: '' },
-    inactivo: { estado: 'inactivo', plan: '' },
-    sin_plan: { estado: '',         plan: 'sin_plan' },
-};
-const CHIP_ON  = ['bg-gray-900', 'border-gray-900', 'text-white'];
-const CHIP_OFF = ['bg-white', 'border-gray-200', 'text-gray-600'];
+    function moverA(x, animado) {
+        card.style.transition = animado ? 'transform 0.22s ease' : 'none';
+        card.style.transform  = `translateX(${x}px)`;
+    }
+    function snap(pos) {
+        wrapper._pos = pos;
+        moverA(pos === 1 ? anchoIzq() : pos === -1 ? -anchoDer() : 0, true);
+    }
+    wrapper._snap  = snap;
+    wrapper._mover = moverA;
 
-function filtroChip(clave) {
-    document.getElementById('filtroEstado').value = CHIPS[clave].estado;
-    document.getElementById('filtroPlan').value   = CHIPS[clave].plan;
-    filtrarClientes();
-}
+    card.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        dx = 0; eje = null;
+        base = wrapper._pos === 1 ? anchoIzq() : wrapper._pos === -1 ? -anchoDer() : 0;
+    }, { passive: true });
 
-function syncChips() {
-    const estado = document.getElementById('filtroEstado').value;
-    const plan   = document.getElementById('filtroPlan').value;
-    document.querySelectorAll('.chip-filtro').forEach(chip => {
-        const f = CHIPS[chip.dataset.chip];
-        const on = f.estado === estado && f.plan === plan;
-        chip.classList.remove(...(on ? CHIP_OFF : CHIP_ON));
-        chip.classList.add(...(on ? CHIP_ON : CHIP_OFF));
-        chip.querySelector('.chip-num').classList.toggle('text-gray-400', !on);
-        chip.querySelector('.chip-num').classList.toggle('text-white/60', on);
+    card.addEventListener('touchmove', e => {
+        const mx = e.touches[0].clientX - startX;
+        const my = e.touches[0].clientY - startY;
+        // Decide si el gesto es horizontal (swipe) o vertical (scroll de la página)
+        if (!eje && (Math.abs(mx) > 6 || Math.abs(my) > 6)) {
+            eje = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+        }
+        if (eje !== 'x') return;
+        dx = mx;
+        const x = Math.max(-anchoDer(), Math.min(anchoIzq(), base + dx));
+        moverA(x, false);
+    }, { passive: true });
+
+    card.addEventListener('touchend', () => {
+        if (eje !== 'x') return;
+        let destino = wrapper._pos;
+        if (wrapper._pos === 0) {
+            if (dx >  SWIPE_UMBRAL) destino = 1;
+            if (dx < -SWIPE_UMBRAL) destino = -1;
+        } else if (wrapper._pos === 1  && dx < -SWIPE_UMBRAL) {
+            destino = 0;
+        } else if (wrapper._pos === -1 && dx >  SWIPE_UMBRAL) {
+            destino = 0;
+        }
+        if (destino !== 0) cerrarTodosLosSwipes(wrapper);
+        snap(destino);
     });
-}
+
+    // Tocar la tarjeta abierta la cierra
+    card.addEventListener('click', () => { if (wrapper._pos !== 0) snap(0); });
+});
+
+// Tocar fuera de una tarjeta abierta la cierra
+document.addEventListener('touchstart', e => {
+    if (!e.target.closest('.swipe-wrapper')) cerrarTodosLosSwipes(null);
+}, { passive: true });
+
+// Pista la primera vez: la primera tarjeta se asoma a ambos lados
+document.addEventListener('DOMContentLoaded', () => {
+    const PISTA_KEY = 'clientes_swipe_pista_v2';
+    try { if (localStorage.getItem(PISTA_KEY)) return; } catch (e) { return; }
+    const primero = [...document.querySelectorAll('.swipe-wrapper')].find(w => w.offsetParent !== null);
+    if (!primero) return;
+    setTimeout(() => primero._mover(56, true), 600);
+    setTimeout(() => primero._mover(-56, true), 1300);
+    setTimeout(() => primero._mover(0, true), 2000);
+    try { localStorage.setItem(PISTA_KEY, '1'); } catch (e) {}
+});
 
 // ── Modal semanas / plan ─────────────────────────────────
 let _clienteIdPendiente   = null;
@@ -911,7 +900,7 @@ function filtrarClientes() {
 
     // Móvil
     let visiblesMovil = 0;
-    document.querySelectorAll('.cliente-movil').forEach(wrapper => {
+    document.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
         const nombre = wrapper.dataset.nombre?.toLowerCase() ?? '';
         const email  = wrapper.dataset.email?.toLowerCase()  ?? '';
         const est    = wrapper.dataset.estado ?? '';
@@ -925,10 +914,8 @@ function filtrarClientes() {
     });
     const mensajeSinResultadosMovil = document.getElementById('mensajeSinResultadosMovil');
     if (mensajeSinResultadosMovil) {
-        mensajeSinResultadosMovil.classList.toggle('hidden', visiblesMovil !== 0 || document.querySelectorAll('.cliente-movil').length === 0);
+        mensajeSinResultadosMovil.classList.toggle('hidden', visiblesMovil !== 0 || document.querySelectorAll('.swipe-wrapper').length === 0);
     }
-
-    syncChips();
 }
 
 // Restaurar filtros guardados al cargar la página

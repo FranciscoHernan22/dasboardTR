@@ -294,107 +294,6 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 #wp-nav a[data-dia]:active { cursor:grabbing; }
 #wp-nav a[data-dia].dia-drag-over { outline:2px solid #2563eb; outline-offset:-2px; background-color:#eff6ff; }
 #wp-nav a[data-dia].dia-dragging { opacity:.35; }
-
-/* ════════════════════════════════════════════════════════════
-   MÓVIL (≤ 640px) — escritorio no cambia
-   ════════════════════════════════════════════════════════════ */
-.serie-nav { display:none; }
-
-@media (max-width: 640px) {
-    :root { --serie-w: 124px; }
-    .serie-col .unidad-select { width:44px; padding:3px 0; }
-    .serie-col .peso-group .campo-input { padding:3px 2px; }
-
-    /* Evita el zoom automático de iOS al tocar un campo (< 16px) */
-    #form-rutina input,
-    #form-rutina select,
-    #form-rutina textarea { font-size:16px !important; }
-
-    /* ── Encabezado: nombre arriba, botones en cuadrícula 2×2 ── */
-    .page-header { gap:8px; }
-    .page-header h2 { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .page-header .btn-metodos { flex:1 1 calc(50% - 4px); justify-content:center; padding:8px 10px; }
-
-    /* ── Cabecera del bloque ── */
-    .bloque-header { gap:6px; padding:8px 10px; }
-    .btn-remove { width:30px; height:30px; }
-
-    /* ── Fila de ejercicio: segmento + ejercicio arriba, series abajo ── */
-    .ejercicio-row { flex-wrap:wrap; }
-    .col-segmento,
-    .col-ejercicio { flex:1 1 0; width:auto; min-width:0; }
-    .col-ejercicio { border-right:none; }
-    .col-series {
-        flex:0 0 100%; padding:6px 0;
-        border-top:1px dashed var(--border);
-    }
-    .ej-select-dropdown { width:min(260px, calc(100vw - 32px)); }
-
-    /* ── Series: carrusel horizontal sincronizado ── */
-    .series-cols,
-    .series-header-row .col-series-headers,
-    .descanso-row-cols {
-        overflow-x:auto; gap:5px; padding:0 8px;
-        -webkit-overflow-scrolling:touch; scrollbar-width:none;
-    }
-    .series-cols::-webkit-scrollbar,
-    .col-series-headers::-webkit-scrollbar,
-    .descanso-row-cols::-webkit-scrollbar { display:none; }
-
-    .serie-col,
-    .serie-header-col,
-    .descanso-serie-cell { flex:0 0 var(--serie-w); min-width:var(--serie-w); }
-
-    .series-header-row .col-info-header { display:none; }
-    .serie-header-col { border-right:none; border-radius:6px; padding:5px 4px; }
-    .btn-igualar-serie, .btn-reset-serie { padding:4px 7px; font-size:0.62rem; }
-
-    /* Barra "‹ Series 1–3 de 5 ›" (la crea el JS) */
-    .serie-nav {
-        display:flex; align-items:center; justify-content:space-between; gap:8px;
-        padding:6px 8px; background:#fff; border-bottom:1px solid var(--border);
-    }
-    .serie-nav[hidden] { display:none; }
-    .serie-nav-btn {
-        width:44px; height:36px; border:1px solid var(--border2); border-radius:8px; background:#fff;
-        color:var(--accent); font-size:1.4rem; font-weight:700; line-height:1; cursor:pointer;
-        display:flex; align-items:center; justify-content:center; padding:0 0 3px;
-    }
-    .serie-nav-btn:active { background:var(--accent-l); }
-    .serie-nav-btn:disabled { opacity:.3; }
-    .serie-nav-txt { font-size:.8rem; font-weight:700; color:var(--muted); }
-
-    /* Indicador "desliza" cuando hay más series de las que caben */
-    .series-header-row { position:relative; }
-    .series-header-row.tiene-mas::after {
-        content:'›'; position:absolute; right:0; top:0; bottom:0; width:30px;
-        display:flex; align-items:center; justify-content:flex-end; padding-right:6px;
-        font-size:1.2rem; font-weight:700; color:var(--accent); pointer-events:none;
-        background:linear-gradient(to right, rgba(240,242,245,0), #f0f2f5 70%);
-    }
-
-    /* ── Fila de descanso: etiqueta arriba, celdas abajo ── */
-    .descanso-row { flex-wrap:wrap; }
-    .descanso-row-label { width:100%; border-right:none; border-bottom:1px solid #bbf7d0; padding:6px 10px; }
-    .descanso-row-cols { padding:6px 8px; }
-    .descanso-serie-cell { border-right:none; background:white; border:1px solid #bbf7d0; border-radius:6px; }
-
-    /* ── Barra de agregar bloques: 2×2 ── */
-    .add-block-btn { flex:1 1 calc(50% - 4px); padding:10px 4px; font-size:0.78rem; }
-
-    /* ── Botones finales: PDF a lo ancho, Guardar fijo abajo ── */
-    #form-rutina { padding-bottom:84px; }
-    .btn-pdf { display:flex; justify-content:center; width:100%; margin-left:0; }
-    .btn-guardar {
-        position:fixed; left:12px; right:12px; z-index:900; margin:0;
-        bottom:calc(12px + env(safe-area-inset-bottom));
-        justify-content:center; padding:13px 20px; font-size:0.95rem;
-    }
-    .btn-guardar:hover { transform:none; }
-
-    /* ── Modales ── */
-    .modal-box { max-height:92vh; }
-}
 </style>
 
 {{-- MODAL MÉTODOS --}}
@@ -592,7 +491,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 
     <div id="semTrigger" onclick="toggleSemDropdown(event)"
          class="flex items-center gap-1 px-2.5 py-1 rounded-md border border-gray-200 bg-gray-50 cursor-pointer text-[11px] font-semibold text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors flex-shrink-0 select-none whitespace-nowrap">
-        <span>Semana {{ $semanaVisual }}</span>
+        <span>Sem {{ $semanaVisual }}</span>
         <i class="ti ti-chevron-down text-[10px] transition-transform duration-150" id="semChevron"></i>
     </div>
 
@@ -606,7 +505,7 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
             <a href="{{ route('entrenador.rutina.editar',[$cliente->id,$s,$dia]) }}"
                class="text-center py-1.5 rounded border text-[11px] font-medium transition-colors
                       {{ $s==$semana ? 'bg-blue-50 border-blue-300 text-blue-600' : ($tieneSem ? 'border-blue-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600' : 'border-gray-200 text-gray-400 hover:bg-gray-50') }}">
-                {{ $sVisual }}
+                S{{ $sVisual }}
             </a>
         @endfor
     </div>
@@ -1957,124 +1856,6 @@ function cerrarModalEliminar() {
     contenedor.addEventListener('dragleave', e => { const t=e.target.closest('.bloque'); if(t) t.classList.remove('drag-over'); });
     contenedor.addEventListener('drop', e => { e.preventDefault(); document.querySelectorAll('.bloque.drag-over').forEach(b=>b.classList.remove('drag-over')); stopScroll(); });
     document.addEventListener('dragend', stopScroll);
-})();
-
-/* ── Móvil: slide entre series ──────────────────────────────────
-   - Encabezados, series de cada ejercicio y descansos se mueven juntos.
-   - Al soltar el dedo se acomoda en la serie más cercana.
-   - Barra "‹ Series 1–3 de 5 ›" para avanzar de una en una.          */
-(function(){
-    const SEL = '.series-cols, .col-series-headers, .descanso-row-cols';
-    const MQ  = window.matchMedia('(max-width: 640px)');
-    const timers = new WeakMap();
-    const lideres = new WeakMap();   // fila que el usuario está moviendo; las demás la siguen
-
-    const scrollerDe = bloque => bloque.querySelector('.col-series-headers');
-    const numSeries  = bloque => bloque.querySelectorAll('.col-series-headers .serie-header-col').length;
-
-    // Ancho de una serie + separación
-    function paso(bloque) {
-        const col = bloque.querySelector('.col-series-headers .serie-header-col');
-        if (!col) return 0;
-        const gap = parseFloat(getComputedStyle(col.parentElement).columnGap) || 0;
-        return col.getBoundingClientRect().width + gap;
-    }
-
-    function sincronizar(bloque, origen) {
-        bloque.querySelectorAll(SEL).forEach(o => { if (o !== origen) o.scrollLeft = origen.scrollLeft; });
-    }
-
-    // Acomoda en la serie más cercana. Devuelve true si empezó a moverse.
-    function ajustar(el, bloque) {
-        const p = paso(bloque); if (!p) return false;
-        const max = el.scrollWidth - el.clientWidth;
-        if (el.scrollLeft >= max - 2) return false;           // ya está al final
-        const destino = Math.min(max, Math.round(el.scrollLeft / p) * p);
-        if (Math.abs(destino - el.scrollLeft) <= 2) return false;
-        el.scrollTo({ left: destino, behavior: 'smooth' });
-        return true;
-    }
-
-    function moverSeries(bloque, dir) {
-        const el = scrollerDe(bloque), p = paso(bloque);
-        if (!el || !p) return;
-        const actual = Math.round(el.scrollLeft / p);
-        lideres.set(bloque, el);
-        el.scrollTo({ left: Math.max(0, (actual + dir) * p), behavior: 'smooth' });
-    }
-
-    function asegurarBarra(bloque) {
-        let nav = bloque.querySelector(':scope > .serie-nav');
-        if (!nav) {
-            const hdr = bloque.querySelector('.series-header-row');
-            if (!hdr) return null;
-            nav = document.createElement('div');
-            nav.className = 'serie-nav';
-            nav.innerHTML = '<button type="button" class="serie-nav-btn" data-dir="-1" aria-label="Serie anterior">‹</button>'
-                          + '<span class="serie-nav-txt"></span>'
-                          + '<button type="button" class="serie-nav-btn" data-dir="1" aria-label="Serie siguiente">›</button>';
-            hdr.before(nav);
-        }
-        return nav;
-    }
-
-    function actualizar(bloque) {
-        if (!MQ.matches) return;
-        const nav = asegurarBarra(bloque);
-        const el  = scrollerDe(bloque);
-        const hdr = bloque.querySelector('.series-header-row');
-        if (!nav || !el) return;
-
-        const n = numSeries(bloque), p = paso(bloque);
-        const gap = p ? p - bloque.querySelector('.col-series-headers .serie-header-col').getBoundingClientRect().width : 0;
-        const visibles = p ? Math.max(1, Math.floor((el.clientWidth - 16 + gap) / p)) : n;
-        const ocultar  = n <= visibles;
-        if (nav.hidden !== ocultar) nav.hidden = ocultar;
-        hdr?.classList.toggle('tiene-mas', !ocultar && el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
-        if (ocultar) return;
-
-        const alFinal = el.scrollLeft >= el.scrollWidth - el.clientWidth - 2;
-        const primero = alFinal ? Math.max(1, n - visibles + 1) : Math.min(n, Math.round(el.scrollLeft / p) + 1);
-        const ultimo  = alFinal ? n : Math.min(n, primero + visibles - 1);
-        const texto   = primero === ultimo ? `Serie ${primero} de ${n}` : `Series ${primero}–${ultimo} de ${n}`;
-        const span = nav.querySelector('.serie-nav-txt');
-        if (span.textContent !== texto) span.textContent = texto;   // evita bucles con el observer
-        const [ant, sig] = nav.querySelectorAll('.serie-nav-btn');
-        ant.disabled = el.scrollLeft <= 2;
-        sig.disabled = el.scrollLeft >= el.scrollWidth - el.clientWidth - 2;
-    }
-    function actualizarTodos() { contenedor.querySelectorAll('.bloque').forEach(actualizar); }
-
-    // Deslizar con el dedo
-    document.addEventListener('scroll', e => {
-        const el = e.target;
-        if (!MQ.matches || !(el instanceof Element) || !el.matches(SEL)) return;
-        const bloque = el.closest('.bloque');
-        if (!bloque) return;
-        const lider = lideres.get(bloque);
-        if (lider && lider !== el) return;                    // eco de una fila que solo está siguiendo
-        lideres.set(bloque, el);
-        sincronizar(bloque, el);
-        actualizar(bloque);
-        clearTimeout(timers.get(bloque));
-        timers.set(bloque, setTimeout(() => {
-            if (!ajustar(el, bloque)) lideres.delete(bloque);  // terminó: cualquier fila puede volver a mandar
-        }, 140));
-    }, true);
-
-    // Flechas ‹ ›
-    contenedor.addEventListener('click', e => {
-        const btn = e.target.closest('.serie-nav-btn');
-        if (btn) moverSeries(btn.closest('.bloque'), +btn.dataset.dir);
-    });
-
-    // Al cambiar series, agregar bloques, girar el celular…
-    let t;
-    new MutationObserver(() => { clearTimeout(t); t = setTimeout(actualizarTodos, 60); })
-        .observe(contenedor, { childList: true, subtree: true });
-    window.addEventListener('resize', actualizarTodos);
-    MQ.addEventListener('change', actualizarTodos);
-    actualizarTodos();
 })();
 </script>
 

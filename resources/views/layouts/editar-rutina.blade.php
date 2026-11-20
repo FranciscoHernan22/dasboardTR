@@ -295,21 +295,28 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 #wp-nav a[data-dia].dia-drag-over { outline:2px solid #2563eb; outline-offset:-2px; background-color:#eff6ff; }
 #wp-nav a[data-dia].dia-dragging { opacity:.35; }
 
-/* ── FIX: desplazamiento horizontal de series ─────────────────────
+/* ── FIX: desplazamiento horizontal de todo el bloque ──────────────
    Antes, en pantallas angostas las series se aplastaban (≈14px) y los
-   encabezados S1, S2… se salían de la tarjeta, desplazando toda la página.
-   Ahora cada serie tiene un ancho mínimo y encabezados, series y descansos
-   se desplazan de lado dentro del bloque, alineados entre sí.          */
+   encabezados S1, S2… se salían de la tarjeta, desplazando la página.
+   Ahora cada serie tiene un ancho mínimo y el bloque completo (número,
+   segmento, ejercicio, series y descanso) se desliza de lado como una
+   tabla. La cabecera y el pie del bloque se quedan fijos.            */
+.bloque { overflow-x:auto; scrollbar-width:thin; }
+.bloque-header, .bloque-footer { position:sticky !important; left:0; }
+.series-header-row,
+.ejercicio-row,
+.descanso-row { min-width:min-content; }
 .series-header-row .col-series-headers,
 .descanso-row-cols { gap:5px; padding:0 6px; }
-.series-cols,
-.series-header-row .col-series-headers,
-.descanso-row-cols { overflow-x:auto; scrollbar-width:thin; }
 .serie-col,
 .serie-header-col,
 .descanso-serie-cell { flex:1 0 var(--serie-min, 92px); min-width:var(--serie-min, 92px); }
 .serie-header-col { border-right:none; border-radius:6px; }
 .descanso-serie-cell { border-right:none; }
+/* Los campos del descanso se ajustan al ancho de la serie (no al revés) */
+.descanso-serie-cell .desc-select-min,
+.descanso-serie-cell .desc-input-seg { width:0; }
+.descanso-serie-cell .desc-select-min { flex:1.7; }
 </style>
 
 {{-- MODAL MÉTODOS --}}
@@ -1874,24 +1881,42 @@ function cerrarModalEliminar() {
     document.addEventListener('dragend', stopScroll);
 })();
 
-/* ── FIX: encabezados, series y descansos se desplazan juntos ── */
+/* ── FIX: la lista de ejercicios flota sobre la página ──
+   Como el bloque ahora se desliza de lado, la lista se abre con
+   posición fija para que el bloque no la recorte.               */
 (function(){
-    const SEL = '.series-cols, .col-series-headers, .descanso-row-cols';
-    const lideres = new WeakMap();   // fila que el usuario mueve; las demás la siguen
-    const timers  = new WeakMap();
+    function posicionar(dd, trigger) {
+        const r = trigger.getBoundingClientRect();
+        const ancho = Math.min(260, window.innerWidth - 16);
+        dd.style.position = 'fixed';
+        dd.style.width = ancho + 'px';
+        dd.style.left = Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8)) + 'px';
+        const abajo = window.innerHeight - r.bottom, arriba = r.top;
+        if (abajo < 200 && arriba > abajo) {          // poco espacio abajo: abrir hacia arriba
+            dd.style.top = 'auto';
+            dd.style.bottom = (window.innerHeight - r.top + 3) + 'px';
+            dd.style.maxHeight = Math.min(280, arriba - 11) + 'px';
+        } else {
+            dd.style.bottom = 'auto';
+            dd.style.top = (r.bottom + 3) + 'px';
+            dd.style.maxHeight = Math.min(280, abajo - 11) + 'px';
+        }
+    }
 
+    const _toggleDropdown = window.toggleDropdown;
+    window.toggleDropdown = function (trigger) {
+        _toggleDropdown(trigger);
+        const dd = trigger.closest('.ej-select-wrapper')?.querySelector('.ej-select-dropdown');
+        if (dd && dd.classList.contains('open')) posicionar(dd, trigger);
+    };
+
+    // Si se desplaza la página o el bloque, cerrar la lista (salvo que se desplace la propia lista)
+    const cerrar = () => document.querySelectorAll('.ej-select-dropdown.open').forEach(d => d.classList.remove('open'));
     document.addEventListener('scroll', e => {
-        const el = e.target;
-        if (!(el instanceof Element) || !el.matches(SEL)) return;
-        const bloque = el.closest('.bloque');
-        if (!bloque) return;
-        const lider = lideres.get(bloque);
-        if (lider && lider !== el) return;                  // eco de una fila que solo sigue
-        lideres.set(bloque, el);
-        bloque.querySelectorAll(SEL).forEach(o => { if (o !== el) o.scrollLeft = el.scrollLeft; });
-        clearTimeout(timers.get(bloque));
-        timers.set(bloque, setTimeout(() => lideres.delete(bloque), 150));
+        if (e.target instanceof Element && e.target.closest('.ej-select-dropdown')) return;
+        cerrar();
     }, true);
+    window.addEventListener('resize', cerrar);
 })();
 </script>
 

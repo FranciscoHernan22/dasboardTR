@@ -317,6 +317,19 @@ body, .entrenador-content { font-family:'DM Sans',sans-serif; background:var(--b
 .descanso-serie-cell .desc-select-min,
 .descanso-serie-cell .desc-input-seg { width:0; }
 .descanso-serie-cell .desc-select-min { flex:1.7; }
+
+/* ── FIX: reordenar bloques con el dedo (pantallas táctiles) ── */
+@media (pointer: coarse) {
+    .bloque-drag-handle {
+        width:30px !important; height:32px; font-size:1.15rem !important;
+        color:#9ca3af !important; border-radius:6px; touch-action:none;
+    }
+    .bloque-drag-handle:active { background:#e5e7eb; }
+}
+.bloque.arrastrando-touch {
+    opacity:.92; border-color:var(--accent);
+    box-shadow:0 10px 28px rgba(37,99,235,.28); position:relative; z-index:50;
+}
 </style>
 
 {{-- MODAL MÉTODOS --}}
@@ -1917,6 +1930,61 @@ function cerrarModalEliminar() {
         cerrar();
     }, true);
     window.addEventListener('resize', cerrar);
+})();
+
+/* ── FIX: reordenar bloques con el dedo ──
+   El arrastre original usa eventos de ratón, que no existen en pantallas táctiles.
+   Aquí el ícono ⠿ también funciona con el dedo.                                   */
+(function(){
+    let bloque = null, dedoY = 0, dir = 0, raf = null;
+
+    function reordenar() {
+        const otros = [...contenedor.querySelectorAll('.bloque')].filter(b => b !== bloque);
+        let antesDe = null;
+        for (const b of otros) {
+            const r = b.getBoundingClientRect();
+            if (dedoY < r.top + r.height / 2) { antesDe = b; break; }
+        }
+        if (antesDe) { if (bloque.nextElementSibling !== antesDe) contenedor.insertBefore(bloque, antesDe); }
+        else if (contenedor.lastElementChild !== bloque) contenedor.appendChild(bloque);
+    }
+
+    // Desplazar la página sola cuando el dedo está cerca del borde
+    function autoDesplazar() {
+        if (!bloque || !dir) { raf = null; return; }
+        window.scrollBy(0, dir * 10);
+        reordenar();
+        raf = requestAnimationFrame(autoDesplazar);
+    }
+
+    contenedor.addEventListener('touchstart', e => {
+        const handle = e.target.closest('.bloque-drag-handle');
+        if (!handle) return;
+        e.preventDefault();                       // que el dedo arrastre el bloque, no la página
+        bloque = handle.closest('.bloque');
+        dedoY = e.touches[0].clientY;
+        bloque.classList.add('arrastrando-touch');
+        if (navigator.vibrate) navigator.vibrate(15);
+    }, { passive: false });
+
+    document.addEventListener('touchmove', e => {
+        if (!bloque) return;
+        e.preventDefault();
+        dedoY = e.touches[0].clientY;
+        reordenar();
+        const zona = 90;
+        dir = dedoY < zona ? -1 : (dedoY > window.innerHeight - zona ? 1 : 0);
+        if (dir && !raf) raf = requestAnimationFrame(autoDesplazar);
+    }, { passive: false });
+
+    function soltar() {
+        if (!bloque) return;
+        bloque.classList.remove('arrastrando-touch');
+        bloque = null; dir = 0;
+        actualizarOrden();
+    }
+    document.addEventListener('touchend', soltar);
+    document.addEventListener('touchcancel', soltar);
 })();
 </script>
 

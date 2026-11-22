@@ -1936,7 +1936,26 @@ function cerrarModalEliminar() {
    El arrastre original usa eventos de ratón, que no existen en pantallas táctiles.
    Aquí el ícono ⠿ también funciona con el dedo.                                   */
 (function(){
-    let bloque = null, dedoY = 0, dir = 0, raf = null;
+    let bloque = null, dedoY = 0, dir = 0, vel = 0, raf = null, scroller = null;
+
+    // El elemento que realmente se desplaza: puede ser la ventana o un contenedor del layout
+    function buscarScroller() {
+        let el = contenedor.parentElement;
+        while (el && el !== document.body && el !== document.documentElement) {
+            const oy = getComputedStyle(el).overflowY;
+            if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') && el.scrollHeight > el.clientHeight + 1) return el;
+            el = el.parentElement;
+        }
+        return document.scrollingElement || document.documentElement;
+    }
+
+    // Zona visible del scroller (para saber cuándo el dedo está cerca del borde)
+    function limites() {
+        const alto = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        if (scroller === document.scrollingElement || scroller === document.documentElement) return [0, alto];
+        const r = scroller.getBoundingClientRect();
+        return [Math.max(0, r.top), Math.min(alto, r.bottom)];
+    }
 
     function reordenar() {
         const otros = [...contenedor.querySelectorAll('.bloque')].filter(b => b !== bloque);
@@ -1952,7 +1971,7 @@ function cerrarModalEliminar() {
     // Desplazar la página sola cuando el dedo está cerca del borde
     function autoDesplazar() {
         if (!bloque || !dir) { raf = null; return; }
-        window.scrollBy(0, dir * 10);
+        scroller.scrollTop += dir * vel;
         reordenar();
         raf = requestAnimationFrame(autoDesplazar);
     }
@@ -1962,6 +1981,7 @@ function cerrarModalEliminar() {
         if (!handle) return;
         e.preventDefault();                       // que el dedo arrastre el bloque, no la página
         bloque = handle.closest('.bloque');
+        scroller = buscarScroller();
         dedoY = e.touches[0].clientY;
         bloque.classList.add('arrastrando-touch');
         if (navigator.vibrate) navigator.vibrate(15);
@@ -1972,8 +1992,10 @@ function cerrarModalEliminar() {
         e.preventDefault();
         dedoY = e.touches[0].clientY;
         reordenar();
-        const zona = 90;
-        dir = dedoY < zona ? -1 : (dedoY > window.innerHeight - zona ? 1 : 0);
+        const zona = 90, [arriba, abajo] = limites();
+        if (dedoY < arriba + zona)      { dir = -1; vel = 4 + 14 * Math.min(1, (arriba + zona - dedoY) / zona); }
+        else if (dedoY > abajo - zona)  { dir =  1; vel = 4 + 14 * Math.min(1, (dedoY - (abajo - zona)) / zona); }
+        else dir = 0;                   // más cerca del borde = más rápido
         if (dir && !raf) raf = requestAnimationFrame(autoDesplazar);
     }, { passive: false });
 

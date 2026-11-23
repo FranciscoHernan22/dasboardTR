@@ -58,8 +58,8 @@
                 <tr class="hover:bg-slate-50">
                     <td class="px-4 py-3 font-medium">
                         {{ $entrenador->nombre }}
-                        @if($entrenador->usuario)
-                            <div class="text-xs text-slate-400 font-normal">{{ '@' . $entrenador->usuario }}</div>
+                        @if($entrenador->username)
+                            <div class="text-xs text-slate-400 font-normal">{{ '@' . $entrenador->username }}</div>
                         @endif
                     </td>
                     <td class="px-4 py-3 text-slate-500">{{ $entrenador->email }}</td>
@@ -125,8 +125,8 @@
                                     </div>
                                     <div class="min-w-[150px]">
                                         <label class="block text-xs text-slate-500 mb-1">Usuario</label>
-                                        <input type="text" name="usuario"
-                                               value="{{ $conErrores ? old('usuario') : $entrenador->usuario }}"
+                                        <input type="text" name="username"
+                                               value="{{ $conErrores ? old('username') : $entrenador->username }}"
                                                class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
                                     </div>
                                 </div>

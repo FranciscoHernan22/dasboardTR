@@ -14,7 +14,7 @@ class DashboardController extends Controller
         $query = Entrenador::query()
             ->withCount([
                 // Cuenta solo los clientes activos de cada entrenador
-                'clientes as clientes_activos_count' => fn ($q) => $q->where('activo', true),
+                'users as clientes_activos_count' => fn ($q) => $q->where('activo', true),
             ])
             ->orderBy('nombre');
 

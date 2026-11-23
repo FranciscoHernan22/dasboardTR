@@ -7,6 +7,12 @@
     <h1 class="text-xl font-semibold">Entrenadores</h1>
 </div>
 
+@if (session('ok'))
+    <div class="mb-4 rounded-md bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
+        {{ session('ok') }}
+    </div>
+@endif
+
 <div class="flex flex-wrap items-center gap-2 mb-4">
     @php
         $filtros = ['' => 'Todos', 'activos' => 'Activos', 'inactivos' => 'Inactivos', 'vencidos' => 'Vencidos'];
@@ -36,6 +42,7 @@
                 <th class="px-4 py-3 font-medium">Nombre</th>
                 <th class="px-4 py-3 font-medium">Email</th>
                 <th class="px-4 py-3 font-medium">Estatus</th>
+                <th class="px-4 py-3 font-medium text-center">Clientes activos</th>
                 <th class="px-4 py-3 font-medium">Último pago</th>
                 <th class="px-4 py-3 font-medium">Vence</th>
                 <th class="px-4 py-3 font-medium">Notas</th>
@@ -44,8 +51,17 @@
         </thead>
         <tbody class="divide-y divide-slate-100">
             @forelse ($entrenadores as $entrenador)
+                @php
+                    // Si el guardado falló por validación, reabrimos el panel de este entrenador con lo que se escribió
+                    $conErrores = old('entrenador_id') == $entrenador->id;
+                @endphp
                 <tr class="hover:bg-slate-50">
-                    <td class="px-4 py-3 font-medium">{{ $entrenador->nombre }}</td>
+                    <td class="px-4 py-3 font-medium">
+                        {{ $entrenador->nombre }}
+                        @if($entrenador->usuario)
+                            <div class="text-xs text-slate-400 font-normal">{{ '@' . $entrenador->usuario }}</div>
+                        @endif
+                    </td>
                     <td class="px-4 py-3 text-slate-500">{{ $entrenador->email }}</td>
                     <td class="px-4 py-3">
                         @if($entrenador->activo)
@@ -56,6 +72,12 @@
                         @if($entrenador->vence_el && $entrenador->vence_el->isPast())
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 ml-1">Vencido</span>
                         @endif
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="inline-flex min-w-[2rem] justify-center px-2 py-0.5 rounded-full text-xs font-medium
+                                     {{ $entrenador->clientes_activos_count > 0 ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-400' }}">
+                            {{ $entrenador->clientes_activos_count }}
+                        </span>
                     </td>
                     <td class="px-4 py-3 text-slate-500">{{ $entrenador->ultimo_pago?->format('d/m/Y') ?? '—' }}</td>
                     <td class="px-4 py-3 text-slate-500">{{ $entrenador->vence_el?->format('d/m/Y') ?? '—' }}</td>
@@ -70,49 +92,92 @@
                         </button>
                     </td>
                 </tr>
-                <tr id="editar-{{ $entrenador->id }}" class="hidden bg-slate-50">
-                    <td colspan="7" class="px-4 py-4">
-                        <form method="POST" action="{{ route('admin.entrenadores.estado', $entrenador) }}"
-                              class="flex flex-wrap items-end gap-3">
+                <tr id="editar-{{ $entrenador->id }}" class="{{ $conErrores ? '' : 'hidden' }} bg-slate-50">
+                    <td colspan="8" class="px-4 py-4">
+                        <form method="POST" action="{{ route('admin.entrenadores.update', $entrenador) }}" class="space-y-4">
                             @csrf
                             @method('PATCH')
+                            <input type="hidden" name="entrenador_id" value="{{ $entrenador->id }}">
 
+                            @if($conErrores && $errors->any())
+                                <ul class="rounded-md bg-red-50 border border-red-200 px-4 py-2 text-xs text-red-700 list-disc list-inside">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            {{-- Datos del entrenador --}}
                             <div>
-                                <label class="block text-xs text-slate-500 mb-1">Estatus</label>
-                                <select name="activo" class="rounded-md border border-slate-300 px-2 py-1.5 text-sm">
-                                    <option value="1" @selected($entrenador->activo)>Activo</option>
-                                    <option value="0" @selected(!$entrenador->activo)>Inactivo</option>
-                                </select>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Datos</p>
+                                <div class="flex flex-wrap items-end gap-3">
+                                    <div class="flex-1 min-w-[180px]">
+                                        <label class="block text-xs text-slate-500 mb-1">Nombre</label>
+                                        <input type="text" name="nombre" required
+                                               value="{{ $conErrores ? old('nombre') : $entrenador->nombre }}"
+                                               class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                                    </div>
+                                    <div class="flex-1 min-w-[200px]">
+                                        <label class="block text-xs text-slate-500 mb-1">Email</label>
+                                        <input type="email" name="email" required
+                                               value="{{ $conErrores ? old('email') : $entrenador->email }}"
+                                               class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                                    </div>
+                                    <div class="min-w-[150px]">
+                                        <label class="block text-xs text-slate-500 mb-1">Usuario</label>
+                                        <input type="text" name="usuario"
+                                               value="{{ $conErrores ? old('usuario') : $entrenador->usuario }}"
+                                               class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                                    </div>
+                                </div>
                             </div>
 
+                            {{-- Estatus y pago --}}
                             <div>
-                                <label class="block text-xs text-slate-500 mb-1">Último pago</label>
-                                <input type="date" name="ultimo_pago" value="{{ $entrenador->ultimo_pago?->format('Y-m-d') }}"
-                                       class="rounded-md border border-slate-300 px-2 py-1.5 text-sm">
-                            </div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Estatus y pago</p>
+                                <div class="flex flex-wrap items-end gap-3">
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Estatus</label>
+                                        @php $activo = $conErrores ? (bool) old('activo') : $entrenador->activo; @endphp
+                                        <select name="activo" class="rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                                            <option value="1" @selected($activo)>Activo</option>
+                                            <option value="0" @selected(!$activo)>Inactivo</option>
+                                        </select>
+                                    </div>
 
-                            <div>
-                                <label class="block text-xs text-slate-500 mb-1">Vence el</label>
-                                <input type="date" name="vence_el" value="{{ $entrenador->vence_el?->format('Y-m-d') }}"
-                                       class="rounded-md border border-slate-300 px-2 py-1.5 text-sm">
-                            </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Último pago</label>
+                                        <input type="date" name="ultimo_pago"
+                                               value="{{ $conErrores ? old('ultimo_pago') : $entrenador->ultimo_pago?->format('Y-m-d') }}"
+                                               class="rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                                    </div>
 
-                            <div class="flex-1 min-w-[180px]">
-                                <label class="block text-xs text-slate-500 mb-1">Notas</label>
-                                <input type="text" name="notas_pago" value="{{ $entrenador->notas_pago }}"
-                                       class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
-                            </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Vence el</label>
+                                        <input type="date" name="vence_el"
+                                               value="{{ $conErrores ? old('vence_el') : $entrenador->vence_el?->format('Y-m-d') }}"
+                                               class="rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                                    </div>
 
-                            <button type="submit"
-                                    class="bg-slate-900 text-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-800">
-                                Guardar
-                            </button>
+                                    <div class="flex-1 min-w-[180px]">
+                                        <label class="block text-xs text-slate-500 mb-1">Notas</label>
+                                        <input type="text" name="notas_pago"
+                                               value="{{ $conErrores ? old('notas_pago') : $entrenador->notas_pago }}"
+                                               class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                                    </div>
+
+                                    <button type="submit"
+                                            class="bg-slate-900 text-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-800">
+                                        Guardar
+                                    </button>
+                                </div>
+                            </div>
                         </form>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay entrenadores que coincidan.</td>
+                    <td colspan="8" class="px-4 py-8 text-center text-slate-400">No hay entrenadores que coincidan.</td>
                 </tr>
             @endforelse
         </tbody>

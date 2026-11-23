@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Entrenador;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
@@ -43,6 +44,42 @@ class DashboardController extends Controller
             'estado'       => $request->estado,
             'buscar'       => $request->buscar,
         ]);
+    }
+
+    // Crear entrenador desde el panel
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'nombre'   => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'unique:entrenadores,username'],
+            'email'    => ['required', 'email', 'max:255', 'unique:entrenadores,email'],
+            'password' => ['required', 'confirmed', 'min:8'],
+        ]);
+
+        $data['password'] = Hash::make($data['password']);
+        $data['activo']   = true;
+
+        $entrenador = Entrenador::create($data);
+
+        return back()->with('status', "Entrenador {$entrenador->nombre} creado.");
+    }
+
+    // Eliminar entrenador (solo si no tiene clientes asignados)
+    public function destroy(Entrenador $entrenador)
+    {
+        $clientes = $entrenador->users()->count();
+
+        if ($clientes > 0) {
+            return back()->with('error',
+                "No se puede eliminar a {$entrenador->nombre}: tiene {$clientes} cliente(s) asignado(s). " .
+                "Márcalo como inactivo o reasigna sus clientes primero."
+            );
+        }
+
+        $nombre = $entrenador->nombre;
+        $entrenador->delete();
+
+        return back()->with('status', "Entrenador {$nombre} eliminado.");
     }
 
     // Editar datos del entrenador + estatus/pago desde el panel "Editar"

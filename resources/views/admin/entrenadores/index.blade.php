@@ -5,13 +5,74 @@
 @section('content')
 <div class="flex items-center justify-between mb-6">
     <h1 class="text-xl font-semibold">Entrenadores</h1>
+    <button type="button"
+            onclick="document.getElementById('nuevo-entrenador').classList.toggle('hidden')"
+            class="bg-slate-900 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-slate-800">
+        + Nuevo entrenador
+    </button>
 </div>
 
-@if (session('ok'))
+@if (session('status'))
     <div class="mb-4 rounded-md bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
-        {{ session('ok') }}
+        {{ session('status') }}
     </div>
 @endif
+
+@if (session('error'))
+    <div class="mb-4 rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
+        {{ session('error') }}
+    </div>
+@endif
+
+{{-- Formulario para crear entrenador --}}
+@php $creandoConErrores = old('_form') === 'crear'; @endphp
+<div id="nuevo-entrenador" class="{{ $creandoConErrores ? '' : 'hidden' }} mb-6 bg-white rounded-xl border border-slate-200 p-4">
+    <h2 class="text-sm font-semibold mb-3">Nuevo entrenador</h2>
+
+    @if($creandoConErrores && $errors->any())
+        <ul class="mb-3 rounded-md bg-red-50 border border-red-200 px-4 py-2 text-xs text-red-700 list-disc list-inside">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    @endif
+
+    <form method="POST" action="{{ route('admin.entrenadores.store') }}" class="flex flex-wrap items-end gap-3">
+        @csrf
+        <input type="hidden" name="_form" value="crear">
+
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs text-slate-500 mb-1">Nombre</label>
+            <input type="text" name="nombre" required value="{{ $creandoConErrores ? old('nombre') : '' }}"
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        </div>
+        <div class="min-w-[150px]">
+            <label class="block text-xs text-slate-500 mb-1">Usuario</label>
+            <input type="text" name="username" required value="{{ $creandoConErrores ? old('username') : '' }}"
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        </div>
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-xs text-slate-500 mb-1">Email</label>
+            <input type="email" name="email" required value="{{ $creandoConErrores ? old('email') : '' }}"
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        </div>
+        <div class="min-w-[150px]">
+            <label class="block text-xs text-slate-500 mb-1">Contraseña</label>
+            <input type="password" name="password" required minlength="8"
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        </div>
+        <div class="min-w-[150px]">
+            <label class="block text-xs text-slate-500 mb-1">Confirmar contraseña</label>
+            <input type="password" name="password_confirmation" required minlength="8"
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        </div>
+
+        <button type="submit"
+                class="bg-slate-900 text-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-800">
+            Crear
+        </button>
+    </form>
+</div>
 
 <div class="flex flex-wrap items-center gap-2 mb-4">
     @php
@@ -84,12 +145,20 @@
                     <td class="px-4 py-3 text-slate-500 max-w-[200px] truncate" title="{{ $entrenador->notas_pago }}">
                         {{ $entrenador->notas_pago ?? '—' }}
                     </td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
                         <button type="button"
                                 onclick="document.getElementById('editar-{{ $entrenador->id }}').classList.toggle('hidden')"
                                 class="text-slate-600 hover:text-slate-900 text-sm underline">
                             Editar
                         </button>
+                        <form method="POST" action="{{ route('admin.entrenadores.destroy', $entrenador) }}" class="inline ml-3"
+                              onsubmit="return confirm('¿Eliminar a {{ addslashes($entrenador->nombre) }}? Esta acción no se puede deshacer.')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm underline">
+                                Eliminar
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 <tr id="editar-{{ $entrenador->id }}" class="{{ $conErrores ? '' : 'hidden' }} bg-slate-50">

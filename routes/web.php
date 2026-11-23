@@ -223,6 +223,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('/entrenadores/{entrenador}/estado', [DashboardController::class, 'actualizarEstado'])
             ->name('entrenadores.estado');
 
+               Route::patch('/entrenadores/{entrenador}', [DashboardController::class, 'actualizar'])
+        ->name('entrenadores.update');
+
         Route::get('/plantilla', [PlantillaEjercicioWebController::class, 'index'])->name('plantilla.index');
         Route::post('/plantilla', [PlantillaEjercicioWebController::class, 'store'])->name('plantilla.store');
         Route::put('/plantilla/{ejercicio}', [PlantillaEjercicioWebController::class, 'update'])->name('plantilla.update');

@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $query = Entrenador::query()
             ->withCount([
                 // Cuenta solo los clientes activos de cada entrenador
-                'users as clientes_activos_count' => fn ($q) => $q->where('activo', true),
+                'users as clientes_activos_count' => fn ($q) => $q->where('status', 'activo'),
             ])
             ->orderBy('nombre');
 
@@ -62,24 +62,6 @@ class DashboardController extends Controller
         $entrenador = Entrenador::create($data);
 
         return back()->with('status', "Entrenador {$entrenador->nombre} creado.");
-    }
-
-    // Eliminar entrenador (solo si no tiene clientes asignados)
-    public function destroy(Entrenador $entrenador)
-    {
-        $clientes = $entrenador->users()->count();
-
-        if ($clientes > 0) {
-            return back()->with('error',
-                "No se puede eliminar a {$entrenador->nombre}: tiene {$clientes} cliente(s) asignado(s). " .
-                "Márcalo como inactivo o reasigna sus clientes primero."
-            );
-        }
-
-        $nombre = $entrenador->nombre;
-        $entrenador->delete();
-
-        return back()->with('status', "Entrenador {$nombre} eliminado.");
     }
 
     // Editar datos del entrenador + estatus/pago desde el panel "Editar"

@@ -151,13 +151,18 @@
                                 class="text-slate-600 hover:text-slate-900 text-sm underline">
                             Editar
                         </button>
-                        <form method="POST" action="{{ route('admin.entrenadores.destroy', $entrenador) }}" class="inline ml-3"
-                              onsubmit="return confirm('¿Eliminar a {{ addslashes($entrenador->nombre) }}? Esta acción no se puede deshacer.')">
+                        <form method="POST" action="{{ route('admin.entrenadores.estado', $entrenador) }}" class="inline ml-3"
+                              @if($entrenador->activo)
+                                  onsubmit="return confirm('¿Desactivar a {{ addslashes($entrenador->nombre) }}?')"
+                              @endif>
                             @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm underline">
-                                Eliminar
-                            </button>
+                            @method('PATCH')
+                            <input type="hidden" name="activo" value="{{ $entrenador->activo ? 0 : 1 }}">
+                            @if($entrenador->activo)
+                                <button type="submit" class="text-red-600 hover:text-red-800 text-sm underline">Desactivar</button>
+                            @else
+                                <button type="submit" class="text-green-700 hover:text-green-900 text-sm underline">Activar</button>
+                            @endif
                         </form>
                     </td>
                 </tr>

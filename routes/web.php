@@ -223,6 +223,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('/entrenadores/{entrenador}/estado', [DashboardController::class, 'actualizarEstado'])
             ->name('entrenadores.estado');
 
+            Route::post('/entrenadores', [DashboardController::class, 'store'])->name('entrenadores.store');
+Route::delete('/entrenadores/{entrenador}', [DashboardController::class, 'destroy'])->name('entrenadores.destroy');
+
                Route::patch('/entrenadores/{entrenador}', [DashboardController::class, 'actualizar'])
         ->name('entrenadores.update');
 
